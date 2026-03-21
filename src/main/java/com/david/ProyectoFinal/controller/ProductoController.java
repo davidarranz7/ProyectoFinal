@@ -3,6 +3,7 @@ package com.david.ProyectoFinal.controller;
 
 import com.david.ProyectoFinal.model.Producto;
 import com.david.ProyectoFinal.service.ProductoService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -40,5 +41,11 @@ public class ProductoController {
     @PutMapping
     public Producto actualizar(@RequestParam Long id, @RequestBody Producto producto) {
         return productoService.actualizar(id, producto);
+    }
+
+    @PostMapping("/scrapear")
+    public ResponseEntity<List<Producto>> scrapearProductos(){
+        List<Producto> productos = productoService.scrapearYGuardar();
+        return ResponseEntity.ok(productos);
     }
 }
