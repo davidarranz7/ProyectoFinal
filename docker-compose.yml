@@ -1,0 +1,15 @@
+services:
+  mariadb:
+    image: mariadb:11
+    container_name: ropa_mariadb
+    restart: always
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_DATABASE: ropa_db
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+
+volumes:
+  mariadb_data:
