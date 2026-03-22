@@ -21,6 +21,14 @@ public class UsuarioService {
     }
 
     public Usuario guardar(Usuario usuario){
+        if (usuarioRepository.existsByNombre(usuario.getNombre())) {
+            throw new RuntimeException("El nombre de usuario ya existe");
+        }
+
+        if (usuarioRepository.existsByEmail(usuario.getEmail())) {
+            throw new RuntimeException("El email ya está registrado");
+        }
+
         return usuarioRepository.save(usuario);
     }
 
@@ -42,6 +50,15 @@ public class UsuarioService {
             usuario.setRol(usuarioActualizado.getRol());;
 
             return usuarioRepository.save(usuario);
+        }
+        return null;
+    }
+
+    public Usuario login(String nombre, String password) {
+        for (Usuario u : usuarioRepository.findAll()) {
+            if (u.getNombre().equals(nombre) && u.getPassword().equals(password)) {
+                return u;
+            }
         }
         return null;
     }

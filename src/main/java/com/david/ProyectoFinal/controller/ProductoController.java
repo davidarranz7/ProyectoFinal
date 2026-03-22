@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/productos")
 public class ProductoController {
@@ -30,7 +31,7 @@ public class ProductoController {
 
     @GetMapping("/{id}")
     public Producto obtenerPorId(@PathVariable Long id) {
-        return productoService.obternerPorId(id);
+        return productoService.obtenerPorId(id);
     }
 
     @DeleteMapping("/{id}")
@@ -38,8 +39,8 @@ public class ProductoController {
         productoService.eliminar(id);
     }
 
-    @PutMapping
-    public Producto actualizar(@RequestParam Long id, @RequestBody Producto producto) {
+    @PutMapping("/{id}")
+    public Producto actualizar(@PathVariable Long id, @RequestBody Producto producto) {
         return productoService.actualizar(id, producto);
     }
 
@@ -47,5 +48,10 @@ public class ProductoController {
     public ResponseEntity<List<Producto>> scrapearProductos(){
         List<Producto> productos = productoService.scrapearYGuardar();
         return ResponseEntity.ok(productos);
+    }
+
+    @GetMapping("/tienda/{nombre}")
+    public List<Producto> obtenerPorTienda(@PathVariable String nombre) {
+        return productoService.obtenerPorTienda(nombre);
     }
 }

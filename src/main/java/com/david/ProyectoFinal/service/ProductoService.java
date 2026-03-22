@@ -10,6 +10,7 @@ import com.david.ProyectoFinal.scraper.gestor.GestorScraping;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class ProductoService {
@@ -34,7 +35,7 @@ public class ProductoService {
         return productoRepository.save(producto);
     }
 
-    public Producto obternerPorId(Long id){
+    public Producto obtenerPorId(Long id){
         return productoRepository.findById(id).orElse(null);
     }
 
@@ -69,7 +70,7 @@ public class ProductoService {
             Tienda tiendaScrapeada = producto.getTienda();
 
             if (tiendaScrapeada != null) {
-                java.util.Optional<Tienda> tiendaExistente =
+                Optional<Tienda> tiendaExistente =
                         tiendaRepository.findByNombre(tiendaScrapeada.getNombre());
 
                 if (tiendaExistente.isPresent()) {
@@ -82,7 +83,7 @@ public class ProductoService {
             Categoria categoriaScrapeada = producto.getCategoria();
 
             if (categoriaScrapeada != null) {
-                java.util.Optional<Categoria> categoriaExistente =
+                Optional<Categoria> categoriaExistente =
                         categoriaRepository.findByNombre(categoriaScrapeada.getNombre());
 
                 if (categoriaExistente.isPresent()) {
@@ -93,7 +94,7 @@ public class ProductoService {
             }
 
 
-            java.util.Optional<Producto> existente =
+                Optional<Producto> existente =
                     productoRepository.findByUrlProducto(producto.getUrlProducto());
 
             if (existente.isPresent()) {
@@ -116,5 +117,9 @@ public class ProductoService {
         }
 
         return productosGuardados;
+    }
+
+    public List<Producto> obtenerPorTienda(String nombreTienda) {
+        return productoRepository.findByTiendaNombre(nombreTienda);
     }
 }

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro</title>
+    <link rel="stylesheet" href="../estilos/login.css">
+</head>
+<body>
+    <main class="login-page">
+        <section class="login-wrapper">
+            <div class="login-visual"></div>
+
+            <div class="login-box">
+                <a href="login.html" class="back-btn">←</a>
+
+                <div class="brand">
+                    <div class="brand-logo">M</div>
+                    <div class="brand-text">
+                        <strong>MODA</strong>
+                    </div>
+                </div>
+
+                <div class="login-header">
+                    <h1>Crear cuenta</h1>
+                </div>
+
+                <form id="register-form" class="login-form">
+                    <div class="field">
+                        <input type="text" id="usuario" placeholder=" " required>
+                        <label for="usuario">Usuario</label>
+                    </div>
+
+                    <div class="field">
+                        <input type="email" id="email" placeholder=" " required>
+                        <label for="email">Email</label>
+                    </div>
+
+                    <div class="field">
+                        <input type="password" id="password" placeholder=" " required>
+                        <label for="password">Contraseña</label>
+                        <span class="field-icon toggle-password" id="togglePassword">●</span>
+                    </div>
+
+                    <button type="submit" class="login-btn">Registrarse</button>
+
+                    <p class="register-text">
+                        ¿Ya tienes cuenta? <a href="login.html">Inicia sesión</a>
+                    </p>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <div id="modal-login" class="modal">
+        <div class="modal-overlay"></div>
+
+        <div class="modal-panel">
+            <button id="cerrar-modal" class="modal-close" type="button">×</button>
+
+            <span class="modal-tag" id="modal-tag">ERROR</span>
+            <h2 id="modal-titulo">Error</h2>
+
+            <p id="modal-mensaje">Mensaje aquí</p>
+
+            <div class="modal-actions">
+                <button id="cerrar-modal-secundario" class="modal-btn modal-btn-dark" type="button">
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../script/register.js"></script>
+</body>
+</html>
