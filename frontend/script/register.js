@@ -42,6 +42,30 @@ function mostrarModal(tag, titulo, mensaje) {
     modal.style.display = "flex";
 }
 
+function estaEnIframe() {
+    return window.self !== window.top;
+}
+
+function finalizarRegistro(nombreUsuario) {
+    if (estaEnIframe()) {
+        if (window.parent && typeof window.parent.actualizarMenuUsuario === "function") {
+            window.parent.actualizarMenuUsuario();
+        }
+
+        setTimeout(() => {
+            if (window.parent && typeof window.parent.cerrarAuthOverlay === "function") {
+                window.parent.cerrarAuthOverlay();
+            }
+        }, 1200);
+
+        return;
+    }
+
+    setTimeout(() => {
+        window.location.href = "index.html";
+    }, 1200);
+}
+
 form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
@@ -80,10 +104,7 @@ form.addEventListener("submit", async (e) => {
         localStorage.setItem("nombreUsuario", data.nombre);
 
         mostrarModal("CORRECTO", "Cuenta creada", "Tu cuenta se ha registrado correctamente.");
-
-        setTimeout(() => {
-            window.location.href = "index.html";
-        }, 1200);
+        finalizarRegistro(data.nombre);
 
     } catch (error) {
         console.error("Error en registro:", error);

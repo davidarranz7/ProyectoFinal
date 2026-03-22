@@ -25,7 +25,7 @@
         <div class="nav-right">
             <input type="text" placeholder="Buscar...">
 
-            <a href="login.html" class="login-btn" id="login-link">Iniciar sesión</a>
+            <button class="login-btn" id="login-link" type="button">Iniciar sesión</button>
 
             <div class="profile-menu" id="profile-menu" style="display: none;">
                 <button class="profile-btn" id="profile-btn" type="button">
@@ -43,3 +43,14 @@
         </div>
     </div>
 </nav>
+
+<!-- OVERLAY -->
+<div class="auth-overlay" id="auth-overlay">
+    <div class="auth-backdrop" id="auth-backdrop"></div>
+
+    <div class="auth-frame-container">
+        <button class="auth-close" id="auth-close">×</button>
+
+        <iframe id="auth-frame" src=""></iframe>
+    </div>
+</div>

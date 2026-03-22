@@ -8,28 +8,26 @@ body {
     font-family: Arial, sans-serif;
 }
 
-/* Navbar */
 .navbar {
     width: 100%;
     background: #fff;
     border-bottom: 1px solid #eee;
     position: sticky;
     top: 0;
-    z-index: 1000;
+    z-index: 5000;
+    overflow: visible;
 }
 
-/* Contenedor */
 .nav-container {
     max-width: 1200px;
     margin: auto;
     padding: 15px 20px;
-
     display: flex;
     justify-content: space-between;
     align-items: center;
+    overflow: visible;
 }
 
-/* Logo */
 .logo {
     font-size: 24px;
     font-weight: bold;
@@ -41,14 +39,12 @@ body {
     color: #888;
 }
 
-/* Menú */
 .nav-menu {
     list-style: none;
     display: flex;
     gap: 25px;
 }
 
-/* Links */
 .nav-link {
     text-decoration: none;
     color: black;
@@ -60,7 +56,6 @@ body {
     color: #777;
 }
 
-/* Dropdown */
 .dropdown {
     position: relative;
 }
@@ -74,7 +69,9 @@ body {
     display: none;
     min-width: 180px;
     padding: 8px 0;
-    z-index: 1001;
+    z-index: 5500;
+    border-radius: 10px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
 }
 
 .dropdown-content li {
@@ -93,19 +90,17 @@ body {
     background-color: #f5f5f5;
 }
 
-/* Mostrar dropdown */
 .dropdown:hover .dropdown-content {
     display: block;
 }
 
-/* Right section */
 .nav-right {
     display: flex;
     align-items: center;
     gap: 12px;
+    overflow: visible;
 }
 
-/* Buscador */
 .nav-right input {
     padding: 8px 12px;
     border: 1px solid #ccc;
@@ -113,7 +108,6 @@ body {
     outline: none;
 }
 
-/* Botón login */
 .login-btn {
     text-decoration: none;
     background: black;
@@ -124,20 +118,20 @@ body {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    border: none;
+    cursor: pointer;
 }
 
 .login-btn:hover {
     background: #333;
 }
 
-/* ===== PERFIL ===== */
-
 .profile-menu {
     position: relative;
     display: none;
+    overflow: visible;
 }
 
-/* Botón perfil */
 .profile-btn {
     border: none;
     background: black;
@@ -160,7 +154,6 @@ body {
     font-size: 12px;
 }
 
-/* Dropdown perfil */
 .profile-dropdown {
     display: none;
     position: absolute;
@@ -172,14 +165,13 @@ body {
     border-radius: 12px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
     padding: 8px 0;
-    z-index: 2000;
+    z-index: 6000;
 }
 
 .profile-dropdown.activo {
     display: block;
 }
 
-/* Opciones */
 .profile-dropdown a {
     display: block;
     padding: 12px 16px;
@@ -193,24 +185,19 @@ body {
     background: #f5f5f5;
 }
 
-/* Logout en rojo */
 .profile-dropdown a:last-child {
     color: #b00020;
 }
 
-
-
-
-
+/* ===== OVERLAY LOGIN / REGISTRO ===== */
 
 .auth-overlay {
     position: fixed;
     inset: 0;
     display: none;
-    align-items: center;
     justify-content: center;
-    z-index: 3000;
-    padding: 20px;
+    align-items: center;
+    z-index: 9999;
 }
 
 .auth-overlay.activo {
@@ -220,220 +207,43 @@ body {
 .auth-backdrop {
     position: absolute;
     inset: 0;
-    background: rgba(15, 15, 15, 0.35);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    background: rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
 }
 
-.auth-panel {
+.auth-frame-container {
     position: relative;
-    width: 100%;
-    max-width: 520px;
-    background: rgba(255, 255, 255, 0.88);
-    border: 1px solid rgba(255, 255, 255, 0.5);
-    border-radius: 28px;
-    padding: 34px 28px 28px;
-    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.16);
+    width: 90%;
+    max-width: 1100px;
+    height: 90%;
     z-index: 2;
-    animation: aparecerOverlay 0.28s ease;
 }
 
-@keyframes aparecerOverlay {
-    from {
-        opacity: 0;
-        transform: translateY(14px) scale(0.98);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
+#auth-frame {
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: 20px;
+    background: transparent;
 }
 
 .auth-close {
     position: absolute;
-    top: 16px;
-    right: 16px;
+    top: 10px;
+    right: 10px;
+    z-index: 10;
     width: 40px;
     height: 40px;
-    border: none;
     border-radius: 50%;
-    background: rgba(0, 0, 0, 0.06);
-    color: #222;
-    font-size: 1.4rem;
+    border: none;
+    background: white;
     cursor: pointer;
+    font-size: 18px;
     transition: 0.2s;
 }
 
 .auth-close:hover {
-    background: rgba(0, 0, 0, 0.12);
     transform: scale(1.05);
-}
-
-.auth-tabs {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 28px;
-}
-
-.auth-tab {
-    flex: 1;
-    height: 46px;
-    border: none;
-    border-radius: 14px;
-    background: #f3f3f3;
-    color: #222;
-    font-size: 0.95rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: 0.2s;
-}
-
-.auth-tab:hover {
-    background: #ebebeb;
-}
-
-.auth-tab.active {
-    background: black;
-    color: white;
-}
-
-.auth-box {
-    display: block;
-}
-
-.auth-panel .brand {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 24px;
-}
-
-.auth-panel .brand-logo {
-    width: 42px;
-    height: 42px;
-    border-radius: 14px;
-    display: grid;
-    place-items: center;
-    font-weight: 800;
-    color: white;
-    background: linear-gradient(135deg, #6e4b3a, #b8895c);
-}
-
-.auth-panel .brand-text strong {
-    display: block;
-    font-size: 1rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-}
-
-.auth-panel .login-header {
-    margin-bottom: 24px;
-}
-
-.auth-panel .login-header h1 {
-    font-size: 2rem;
-    line-height: 1;
-    letter-spacing: -0.03em;
-}
-
-.auth-panel .login-form {
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
-}
-
-.auth-panel .field {
-    position: relative;
-}
-
-.auth-panel .field input {
-    width: 100%;
-    height: 58px;
-    padding: 22px 48px 12px 16px;
-    border: 1px solid rgba(110, 75, 58, 0.14);
-    border-radius: 18px;
-    background: rgba(255, 255, 255, 0.9);
-    outline: none;
-    color: #2f241d;
-    font-size: 0.97rem;
-    transition: 0.25s;
-}
-
-.auth-panel .field input:focus {
-    border-color: rgba(184, 137, 92, 0.7);
-    box-shadow: 0 0 0 4px rgba(184, 137, 92, 0.12);
-}
-
-.auth-panel .field label {
-    position: absolute;
-    left: 16px;
-    top: 18px;
-    color: #9d8d80;
-    pointer-events: none;
-    transition: 0.25s;
-    font-size: 0.95rem;
-}
-
-.auth-panel .field input:focus + label,
-.auth-panel .field input:not(:placeholder-shown) + label {
-    top: 8px;
-    font-size: 0.72rem;
-    color: #6e4b3a;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-.auth-panel .field-icon {
-    position: absolute;
-    right: 16px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #9d8d80;
-    font-size: 1rem;
-    transition: 0.25s;
-}
-
-.auth-panel .toggle-password {
-    cursor: pointer;
-    user-select: none;
-}
-
-.auth-panel .login-btn {
-    height: 56px;
-    border: none;
-    border-radius: 18px;
-    cursor: pointer;
-    color: white;
-    font-size: 0.97rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    background: linear-gradient(135deg, #6e4b3a, #b8895c);
-    box-shadow: 0 12px 24px rgba(110, 75, 58, 0.18);
-    transition: 0.25s;
-}
-
-.auth-panel .login-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 16px 28px rgba(110, 75, 58, 0.24);
-}
-
-@media (max-width: 640px) {
-    .auth-panel {
-        max-width: 100%;
-        padding: 28px 18px 22px;
-        border-radius: 24px;
-    }
-
-    .auth-tabs {
-        flex-direction: column;
-    }
-
-    .auth-panel .login-header h1 {
-        font-size: 1.7rem;
-    }
-
-    .auth-panel .field input {
-        height: 54px;
-    }
+    background: #f5f5f5;
 }
