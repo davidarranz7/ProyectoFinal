@@ -3,13 +3,13 @@ package com.david.ProyectoFinal.scraper.config;
 
 import com.david.ProyectoFinal.model.Seccion;
 
-public class ConfigScrapingZara {
+public class ConfigScrapingTienda {
 
     private String url;
     private Seccion seccion;
     private String nombreCategoria;
 
-    public ConfigScrapingZara(String url, Seccion seccion, String nombreCategoria) {
+    public ConfigScrapingTienda(String url, Seccion seccion, String nombreCategoria) {
         this.url = url;
         this.seccion = seccion;
         this.nombreCategoria = nombreCategoria;

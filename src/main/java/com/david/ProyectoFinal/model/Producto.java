@@ -13,6 +13,8 @@ public class Producto {
     private Long id;
 
     private String nombre;
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String descripcion;
     private BigDecimal precio;///PAra poder evvitar probelmas de redondeo
     private String urlImagen;
