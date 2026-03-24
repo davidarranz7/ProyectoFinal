@@ -14,7 +14,6 @@ body {
     width: 100%;
 }
 
-/* --- HERO SECTION --- */
 .hero-zara {
     height: 90vh;
     width: 100%;
@@ -66,7 +65,6 @@ body {
     color: #000;
 }
 
-/* --- TIENDAS GRID --- */
 .tiendas-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -135,7 +133,6 @@ body {
     filter: brightness(1.08);
 }
 
-/* --- SECCION DESTACADA --- */
 .seccion-destacada {
     max-width: 1400px;
     margin: 80px auto;
@@ -166,7 +163,6 @@ body {
     letter-spacing: 1px;
 }
 
-/* --- GRID PRODUCTOS HOME --- */
 .grid-productos-home {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -228,7 +224,6 @@ body {
     font-weight: 700;
 }
 
-/* --- RESPONSIVO --- */
 @media (max-width: 1024px) {
     .tiendas-grid {
         grid-template-columns: repeat(2, 1fr);
@@ -289,4 +284,13 @@ body {
         margin: 50px auto;
         padding: 0 18px;
     }
+}
+#menu-container {
+    width: 100%;
+    min-height: 72px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 5001;
+    overflow: visible;
 }

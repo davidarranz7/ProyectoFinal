@@ -37,10 +37,9 @@ body::before {
 #menu-container {
     width: 100%;
     min-height: 72px;
-    background: rgba(255,255,255,0.28);
-    backdrop-filter: blur(10px);
-    border-bottom: 1px solid rgba(0,0,0,0.05);
-    position: relative;
+    position: fixed;
+    top: 0;
+    left: 0;
     z-index: 5001;
     overflow: visible;
 }

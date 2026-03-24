@@ -12,7 +12,7 @@
             <div class="login-visual"></div>
 
             <div class="login-box">
-                <a href="index.html" class="back-btn">←</a>
+                <a href="#" class="back-btn" onclick="window.parent.cerrarAuthOverlay(); return false;">←</a>
 
                 <div class="brand">
                     <div class="brand-logo">M</div>
@@ -49,7 +49,8 @@
                     <button type="submit" class="login-btn">Entrar</button>
 
                     <p class="register-text">
-                        ¿No tienes cuenta? <a href="#" onclick="parent.abrirRegistro()">Regístrate</a>
+                        ¿No tienes cuenta?
+                        <a href="#" onclick="window.parent.abrirRegistro(); return false;">Regístrate</a>
                     </p>
                 </form>
             </div>

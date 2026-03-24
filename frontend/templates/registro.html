@@ -12,7 +12,7 @@
             <div class="login-visual"></div>
 
             <div class="login-box">
-                <a href="login.html" class="back-btn">←</a>
+                <a href="#" class="back-btn" onclick="window.parent.abrirLogin(); return false;">←</a>
 
                 <div class="brand">
                     <div class="brand-logo">M</div>
@@ -45,7 +45,8 @@
                     <button type="submit" class="login-btn">Registrarse</button>
 
                     <p class="register-text">
-                        ¿Ya tienes cuenta? <a href="#" onclick="parent.abrirLogin()">Inicia sesión</a>
+                        ¿Ya tienes cuenta?
+                        <a href="#" onclick="window.parent.abrirLogin(); return false;">Inicia sesión</a>
                     </p>
                 </form>
             </div>

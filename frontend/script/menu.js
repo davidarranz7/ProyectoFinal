@@ -1,7 +1,23 @@
 fetch("../templates/menu.html")
     .then(response => response.text())
     .then(data => {
-        document.getElementById("menu-container").innerHTML = data;
+        const temp = document.createElement("div");
+        temp.innerHTML = data;
+
+        const nav = temp.querySelector(".navbar");
+        const authOverlay = temp.querySelector("#auth-overlay");
+
+        const menuContainer = document.getElementById("menu-container");
+
+        if (menuContainer && nav) {
+            menuContainer.innerHTML = "";
+            menuContainer.appendChild(nav);
+        }
+
+        if (authOverlay && !document.getElementById("auth-overlay")) {
+            document.body.appendChild(authOverlay);
+        }
+
         inicializarMenu();
     })
     .catch(error => console.error("Error al cargar el menú:", error));
@@ -24,52 +40,30 @@ function inicializarMenu() {
         const nombreUsuario = localStorage.getItem("nombreUsuario");
 
         if (usuarioLogueado && nombreUsuario) {
-            if (loginLink) {
-                loginLink.style.display = "none";
-            }
-            if (profileMenu) {
-                profileMenu.style.display = "block";
-            }
-            if (profileName) {
-                profileName.textContent = nombreUsuario;
-            }
+            if (loginLink) loginLink.style.display = "none";
+            if (profileMenu) profileMenu.style.display = "block";
+            if (profileName) profileName.textContent = nombreUsuario;
         } else {
-            if (loginLink) {
-                loginLink.style.display = "inline-flex";
-            }
-            if (profileMenu) {
-                profileMenu.style.display = "none";
-            }
+            if (loginLink) loginLink.style.display = "inline-flex";
+            if (profileMenu) profileMenu.style.display = "none";
         }
     }
 
     function abrirLogin() {
-        if (authFrame) {
-            authFrame.src = "login.html";
-        }
-        if (authOverlay) {
-            authOverlay.classList.add("activo");
-        }
+        if (authFrame) authFrame.src = "login.html";
+        if (authOverlay) authOverlay.classList.add("activo");
         document.body.style.overflow = "hidden";
     }
 
     function abrirRegistro() {
-        if (authFrame) {
-            authFrame.src = "registro.html";
-        }
-        if (authOverlay) {
-            authOverlay.classList.add("activo");
-        }
+        if (authFrame) authFrame.src = "registro.html";
+        if (authOverlay) authOverlay.classList.add("activo");
         document.body.style.overflow = "hidden";
     }
 
     function cerrarOverlay() {
-        if (authOverlay) {
-            authOverlay.classList.remove("activo");
-        }
-        if (authFrame) {
-            authFrame.src = "";
-        }
+        if (authOverlay) authOverlay.classList.remove("activo");
+        if (authFrame) authFrame.src = "";
         document.body.style.overflow = "";
     }
 
