@@ -13,6 +13,7 @@ public class Carrito {
     private Long id;
 
     @OneToOne
+    @JoinColumn(name = "usuario_id", nullable = false, unique = true)/// Relación uno a uno con Usuario, cada carrito pertenece a un solo usuario y cada usuario tiene un solo carrito
     private Usuario usuario;
 
     private LocalDateTime fechaCreacion;

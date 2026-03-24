@@ -1,5 +1,6 @@
 package com.david.ProyectoFinal.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 
 @Entity/// Convierte la clase en tabla
@@ -14,6 +15,7 @@ public class Usuario {
 
     private String nombre;
     private String email;
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)/// Evita que la contraseña se muestre en las respuestas JSON
     private String password;
 
 

@@ -7,7 +7,10 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity/// Convierte la clase en tabla
-@Table(name = "favoritos")/// nombre de la Tabla
+@Table(
+        name = "favoritos",/// nombre de la Tabla
+        uniqueConstraints = @UniqueConstraint(columnNames = {"usuario_id", "producto_id"})
+)
 public class Favorito {
 
     @Id/// Indica que el campo es la clave primaria
@@ -15,9 +18,11 @@ public class Favorito {
     private Long id;
 
     @ManyToOne/// Muchos favoritos pueden pertenecer a un usuario
+    @JoinColumn(name = "usuario_id", nullable = false)/// Nombre de la columna en la tabla y no puede ser nulo
     private Usuario usuario;
 
     @ManyToOne/// Muchos favoritos pueden pertenecer a un producto
+    @JoinColumn(name = "producto_id", nullable = false)/// Nombre de la columna en la tabla y no puede ser nulo
     private Producto producto;
 
     private LocalDateTime fechaAgregado;
