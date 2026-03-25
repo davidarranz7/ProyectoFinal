@@ -5,6 +5,7 @@ import com.david.ProyectoFinal.model.ItemCarrito;
 import com.david.ProyectoFinal.service.CarritoService;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController/// indicamos que es un controllador
@@ -19,24 +20,32 @@ public class CarritoController {
         this.carritoService = carritoService;
     }
 
-    @PostMapping("/agregar")
-    /// ruta para agregar un producto al carrito
+    @PostMapping("/agregar")/// ruta para agregar un producto al carrito
     public ItemCarrito agregarproducto(@RequestParam Long usuarioId,
                                        @RequestParam Long productoId,
                                        @RequestParam Integer cantidad) {
         return carritoService.agregarProducto(usuarioId, productoId, cantidad);
     }
 
-    @GetMapping("/usuario/{usuarioId}")
-    /// ruta para obtener el carrito de un usuario
+    @GetMapping("/usuario/{usuarioId}")/// ruta para obtener el carrito de un usuario
     public List<ItemCarrito> obtenerItemsDelCarrito(@PathVariable Long usuarioId) {
         return carritoService.obtenerItemsDelCarrito(usuarioId);
     }
 
-    @DeleteMapping("/eliminar")
-    /// ruta para eliminar un producto del carrito
+    @DeleteMapping("/eliminar")/// ruta para eliminar un producto del carrito
     public void eliminarProducto(@RequestParam Long usuarioId,
                                  @RequestParam Long productoId) {
         carritoService.eliminarProducto(usuarioId, productoId);
     }
+
+    @GetMapping("/total/{usuarioId}")/// ruta para obtener el total del carrito de un usuario
+    public BigDecimal caclularTotal(@PathVariable Long usuarioId) {
+        return carritoService.calcularTotal(usuarioId);
+    }
+
+    @DeleteMapping("/vaciar")/// ruta para vaciar el carrito de un usuario
+    public void vaciarCarrito(@RequestParam Long usuarioId) {
+        carritoService.vaciarCarrito(usuarioId);
+    }
+
 }

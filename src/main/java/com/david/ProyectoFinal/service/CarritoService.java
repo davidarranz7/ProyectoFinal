@@ -12,6 +12,7 @@ import com.david.ProyectoFinal.repository.UsuarioRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -124,6 +125,42 @@ public class CarritoService {
 
         /// eliminamos el producto del carrito
         itemCarritoRepository.deleteByCarritoIdAndProductoId(carrito.getId(), productoId);
+    }
+
+    public BigDecimal calcularTotal(Long usuarioId){
+
+        /// obtenemos los items del carrito del usuario
+        List<ItemCarrito> items = obtenerItemsDelCarrito(usuarioId);
+
+        /// nicializar el total en 0
+        BigDecimal total = BigDecimal.ZERO;
+
+        /// Recorremos los items
+        for(ItemCarrito item : items){
+            /// sacamos el precio y la cantidad
+            BigDecimal precio = item.getProducto().getPrecio();
+            Integer cantidad = item.getCantidad();
+
+            /// Multiplicamos y sumamos
+            total = total.add(precio.multiply(BigDecimal.valueOf(cantidad)));
+        }
+
+        return total;
+    }
+
+    @Transactional/// para eliminar de manera segura
+    public void vaciarCarrito(Long usuarioId){
+        /// obtenemos el carrito del usuario o lo creamos si no existe
+        Carrito carrito = obtenerOCrearCarrito(usuarioId);
+
+        /// si algo falla se detiene el proceso
+        if (carrito == null){
+            return;
+        }
+        /// buscamos todos los ItemCarrito que pertenecen a ese carrito
+        List<ItemCarrito> items = itemCarritoRepository.findByCarritoId(carrito.getId());
+        /// eliminamos todos los items del carrito
+        itemCarritoRepository.deleteAll();
     }
 
 }

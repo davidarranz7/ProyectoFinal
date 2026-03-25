@@ -12,8 +12,8 @@ public class Carrito {
     @GeneratedValue(strategy = jakarta.persistence.GenerationType.IDENTITY)/// Genera el valor automáticamente
     private Long id;
 
-    @OneToOne
-    @JoinColumn(name = "usuario_id", nullable = false, unique = true)/// Relación uno a uno con Usuario, cada carrito pertenece a un solo usuario y cada usuario tiene un solo carrito
+    @OneToOne/// Relación uno a uno con Usuario, cada carrito pertenece a un solo usuario y cada usuario tiene un solo carrito
+    @JoinColumn(name = "usuario_id", nullable = false, unique = true)
     private Usuario usuario;
 
     private LocalDateTime fechaCreacion;
