@@ -1,4 +1,4 @@
-fetch("../templates/menu.html")
+fetch("menu.html")
     .then(response => response.text())
     .then(data => {
         const temp = document.createElement("div");
