@@ -1,9 +1,11 @@
 package com.david.ProyectoFinal.controller;
 
 import com.david.ProyectoFinal.model.EstadoPedido;
+import com.david.ProyectoFinal.model.ItemPedido;
 import com.david.ProyectoFinal.model.MetodoPago;
 import com.david.ProyectoFinal.model.Pedido;
 import com.david.ProyectoFinal.service.PedidoService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,6 +18,11 @@ public class PedidoController {
 
     public PedidoController(PedidoService pedidoService) {
         this.pedidoService = pedidoService;
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Pedido> obtenerPedidoPorId(@PathVariable Long id) {
+        return ResponseEntity.ok(pedidoService.obtenerPorId(id));
     }
 
     @PostMapping("/crear")/// ruta para crear un pedido a partir del carrito de un usuario
@@ -37,5 +44,10 @@ public class PedidoController {
     public List<Pedido> obtenerPedidosPorUsuarioYEstado(@PathVariable Long usuarioId,
                                                         @PathVariable EstadoPedido estado) {
         return pedidoService.obtenerPedidosPorUsuarioYEstado(usuarioId, estado);
+    }
+
+    @GetMapping("/{pedidoId}/items")/// ruta para obtener un pedido por su id
+    public List<ItemPedido> obtenerItemsDePedido(@PathVariable Long pedidoId) {
+        return pedidoService.obtenerItemsDePedido(pedidoId);
     }
 }
