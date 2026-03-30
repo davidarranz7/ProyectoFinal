@@ -1,6 +1,8 @@
 package com.david.ProyectoFinal.controller;
 
 
+import com.david.ProyectoFinal.dto.ProductoTallaStockDTO;
+import com.david.ProyectoFinal.dto.ProductoTallaStockResponseDTO;
 import com.david.ProyectoFinal.model.Producto;
 import com.david.ProyectoFinal.service.ProductoService;
 import org.springframework.http.ResponseEntity;
@@ -53,4 +55,16 @@ public class ProductoController {
     public List<Producto> obtenerPorTienda(@PathVariable String nombre) {
         return productoService.obtenerPorTienda(nombre);
     }
+
+    @PostMapping("/talla-stock")
+    public ResponseEntity<String> asignarTallaStock(@RequestBody ProductoTallaStockDTO dto){
+        productoService.asignarTallaStock(dto);
+        return ResponseEntity.ok("Talla y stock asignados correctamente");
+    }
+
+    @GetMapping("/{productoId}/talla-stock")
+    public ResponseEntity<List<ProductoTallaStockResponseDTO>> obtenerTallasStockPorProducto(@PathVariable Long productoId) {
+        return ResponseEntity.ok(productoService.obtenerTallasStockPorProducto(productoId));
+    }
+
 }

@@ -3,6 +3,8 @@ package com.david.ProyectoFinal.model;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity/// Convierte la clase en tabla
 @Table(name = "productos")/// nombre de la Tabla
@@ -29,6 +31,8 @@ public class Producto {
     @ManyToOne/// Muchos productos pueden pertenecer a una tienda
     private Tienda tienda;
 
+    @OneToMany(mappedBy = "producto", cascade = CascadeType.ALL, orphanRemoval = true)/// Un producto puede tener muchas tallas y stock
+    private List<ProductoTallaStock> tallaStocks;
 
     /// Constructores
     /// Constructor vacío-> necesario para JPA para que pueda crear el objeto la base de datos
@@ -36,7 +40,7 @@ public class Producto {
     }
 
     /// Constructor con parámetros-> Todos los necesarios de un Producto
-    public Producto(Long id, String nombre, String descripcion, BigDecimal precio, String urlImagen, String urlProducto, Seccion seccion, Categoria categoria, Tienda tienda) {
+    public Producto(Long id, String nombre, String descripcion, BigDecimal precio, String urlImagen, String urlProducto, Seccion seccion, Categoria categoria, Tienda tienda, List<ProductoTallaStock> tallaStocks) {
         this.id = id;
         this.nombre = nombre;
         this.descripcion = descripcion;
@@ -46,6 +50,7 @@ public class Producto {
         this.seccion = seccion;
         this.categoria = categoria;
         this.tienda = tienda;
+        this.tallaStocks = new ArrayList<>();
     }
 
     /// Getters y Setters
@@ -120,5 +125,13 @@ public class Producto {
 
     public void setTienda(Tienda tienda) {
         this.tienda = tienda;
+    }
+
+    public List<ProductoTallaStock> getTallaStocks() {
+        return tallaStocks;
+    }
+
+    public void setTallaStocks(List<ProductoTallaStock> tallaStocks) {
+        this.tallaStocks = tallaStocks;
     }
 }

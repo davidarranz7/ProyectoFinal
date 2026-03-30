@@ -1,10 +1,14 @@
 package com.david.ProyectoFinal.service;
 
+import com.david.ProyectoFinal.dto.ProductoTallaStockDTO;
+import com.david.ProyectoFinal.dto.ProductoTallaStockResponseDTO;
 import com.david.ProyectoFinal.model.Categoria;
 import com.david.ProyectoFinal.model.Producto;
+import com.david.ProyectoFinal.model.ProductoTallaStock;
 import com.david.ProyectoFinal.model.Tienda;
 import com.david.ProyectoFinal.repository.CategoriaRepository;
 import com.david.ProyectoFinal.repository.ProductoRepository;
+import com.david.ProyectoFinal.repository.ProductoTallaStockRepository;
 import com.david.ProyectoFinal.repository.TiendaRepository;
 import com.david.ProyectoFinal.scraper.gestor.GestorScraping;
 import org.springframework.stereotype.Service;
@@ -15,16 +19,22 @@ import java.util.Optional;
 @Service
 public class ProductoService {
 
+
+    /// instanciamos las dependecias
     private final ProductoRepository productoRepository;
     private final GestorScraping gestorScraping;
     private final TiendaRepository tiendaRepository;
     private final CategoriaRepository categoriaRepository;
+    private final ProductoTallaStockRepository productoTallaStockRepository;
 
-    public ProductoService(ProductoRepository productoRepository, GestorScraping gestorScraping, TiendaRepository tiendaRepository, CategoriaRepository categoriaRepository) {
+
+    /// creamos el constructor para inyectar las dependencias
+    public ProductoService(ProductoRepository productoRepository, GestorScraping gestorScraping, TiendaRepository tiendaRepository, CategoriaRepository categoriaRepository, ProductoTallaStockRepository productoTallaStockRepository) {
         this.productoRepository = productoRepository;
         this.gestorScraping = gestorScraping;
         this.tiendaRepository = tiendaRepository;
         this.categoriaRepository = categoriaRepository;
+        this.productoTallaStockRepository = productoTallaStockRepository;
     }
 
     public List<Producto> obtenerTodos(){
@@ -121,5 +131,32 @@ public class ProductoService {
 
     public List<Producto> obtenerPorTienda(String nombreTienda) {
         return productoRepository.findByTiendaNombre(nombreTienda);
+    }
+
+    public void asignarTallaStock(ProductoTallaStockDTO dto){
+        Producto producto = productoRepository.findById(dto.getProductoId()).orElseThrow(() -> new RuntimeException("producto no encontrado"));
+
+        ProductoTallaStock productoTallaStock = new ProductoTallaStock();
+
+        productoTallaStock.setProducto(producto);
+        productoTallaStock.setTalla(dto.getTalla());
+        productoTallaStock.setStock(dto.getStock());
+
+        productoTallaStockRepository.save(productoTallaStock);
+
+    }
+
+    public List<ProductoTallaStockResponseDTO> obtenerTallasStockPorProducto(Long productoId) {
+
+        List<ProductoTallaStock> lista = productoTallaStockRepository.findByProductoId(productoId);
+
+        return lista.stream()
+                .map(item -> {
+                    ProductoTallaStockResponseDTO dto = new ProductoTallaStockResponseDTO();
+                    dto.setTalla(item.getTalla());
+                    dto.setStock(item.getStock());
+                    return dto;
+                })
+                .toList();
     }
 }
