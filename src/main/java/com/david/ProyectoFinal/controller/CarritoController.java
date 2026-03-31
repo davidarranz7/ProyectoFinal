@@ -2,6 +2,7 @@ package com.david.ProyectoFinal.controller;
 
 
 import com.david.ProyectoFinal.model.ItemCarrito;
+import com.david.ProyectoFinal.model.Talla;
 import com.david.ProyectoFinal.service.CarritoService;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,8 +24,9 @@ public class CarritoController {
     @PostMapping("/agregar")/// ruta para agregar un producto al carrito
     public ItemCarrito agregarproducto(@RequestParam Long usuarioId,
                                        @RequestParam Long productoId,
+                                       @RequestParam Talla talla,
                                        @RequestParam Integer cantidad) {
-        return carritoService.agregarProducto(usuarioId, productoId, cantidad);
+        return carritoService.agregarProducto(usuarioId, productoId, talla, cantidad);
     }
 
     @GetMapping("/usuario/{usuarioId}")/// ruta para obtener el carrito de un usuario
@@ -34,8 +36,9 @@ public class CarritoController {
 
     @DeleteMapping("/eliminar")/// ruta para eliminar un producto del carrito
     public void eliminarProducto(@RequestParam Long usuarioId,
-                                 @RequestParam Long productoId) {
-        carritoService.eliminarProducto(usuarioId, productoId);
+                                 @RequestParam Long productoId,
+                                 @RequestParam Talla talla) {
+        carritoService.eliminarProducto(usuarioId, productoId, talla);
     }
 
     @GetMapping("/total/{usuarioId}")/// ruta para obtener el total del carrito de un usuario

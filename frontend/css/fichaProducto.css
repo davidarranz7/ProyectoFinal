@@ -1,0 +1,187 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #ffffff;
+    color: #111111;
+}
+
+.ficha-container {
+    max-width: 1200px;
+    margin: 40px auto;
+    padding: 0 24px;
+}
+
+.ficha-producto {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    align-items: start;
+}
+
+.ficha-imagen {
+    width: 100%;
+}
+
+.ficha-imagen img {
+    width: 100%;
+    max-height: 700px;
+    object-fit: cover;
+    display: block;
+    border-radius: 6px;
+    background-color: #f5f5f5;
+}
+
+.ficha-info {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.producto-tienda {
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    color: #777;
+    letter-spacing: 1px;
+}
+
+#producto-nombre {
+    font-size: 2rem;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.producto-precio {
+    font-size: 1.4rem;
+    font-weight: 500;
+}
+
+.producto-categoria {
+    font-size: 0.95rem;
+    color: #666;
+}
+
+.producto-descripcion h3,
+.producto-tallas h3 {
+    font-size: 1rem;
+    margin-bottom: 10px;
+}
+
+#producto-descripcion {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: #333;
+}
+
+.tallas-lista {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.talla-btn {
+    min-width: 55px;
+    padding: 10px 14px;
+    border: 1px solid #111;
+    background-color: #fff;
+    cursor: pointer;
+    transition: 0.2s ease;
+    font-size: 0.9rem;
+}
+
+.talla-btn:hover:not(:disabled) {
+    background-color: #111;
+    color: #fff;
+}
+
+.talla-btn.agotada {
+    border-color: #ccc;
+    color: #999;
+    background-color: #f3f3f3;
+    cursor: not-allowed;
+}
+
+.producto-acciones {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.btn-principal,
+.btn-secundario,
+.btn-tienda {
+    width: 100%;
+    padding: 14px 18px;
+    font-size: 0.95rem;
+    text-align: center;
+    text-decoration: none;
+    border: 1px solid #111;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.btn-principal {
+    background-color: #111;
+    color: #fff;
+}
+
+.btn-principal:hover {
+    background-color: #333;
+}
+
+.btn-secundario,
+.btn-tienda {
+    background-color: #fff;
+    color: #111;
+}
+
+.btn-secundario:hover,
+.btn-tienda:hover {
+    background-color: #f5f5f5;
+}
+
+.poco-stock {
+    border: 1px solid grey;
+    color: grey;
+}
+
+.seleccionada {
+    border: 2px solid black;
+    background-color: black;
+    color: white;
+}
+
+.talla-btn.seleccionada {
+    background-color: #111;
+    color: #fff;
+}
+
+.mensaje-validacion {
+    margin-top: 10px;
+    font-size: 0.9rem;
+    color: #b00020;
+}
+
+.oculto {
+    display: none;
+}
+
+@media (max-width: 900px) {
+    .ficha-producto {
+        grid-template-columns: 1fr;
+        gap: 30px;
+    }
+
+    #producto-nombre {
+        font-size: 1.6rem;
+    }
+
+    .producto-precio {
+        font-size: 1.2rem;
+    }
+}

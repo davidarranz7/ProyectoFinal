@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 
 @Entity/// Convierte la clase en tabla
 @Table(name = "items_carrito",/// nombre de la Tabla
-        uniqueConstraints = @UniqueConstraint(columnNames = {"carrito_id", "producto_id"}))/// Evita que un mismo producto se agregue varias veces al mismo carrito, cada combinación de carrito y producto debe ser única
+        uniqueConstraints = @UniqueConstraint(columnNames = {"carrito_id", "producto_id","talla"}))/// Evita que un mismo producto se agregue varias veces al mismo carrito, cada combinación de carrito y producto debe ser única
 public class ItemCarrito {
 
     @Id/// Indica que el campo es la clave primaria
@@ -19,6 +19,11 @@ public class ItemCarrito {
     @JoinColumn(name = "producto_id", nullable = false)/// Clave foránea que referencia al producto, no puede ser nula
     private Producto producto;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Talla talla;
+
+    @Column(nullable = false)
     private Integer cantidad;
 
     /// Constructores
@@ -29,10 +34,11 @@ public class ItemCarrito {
 
     /// Constructor con parámetros-> Todos los necesarios de un ItemCarrito
 
-    public ItemCarrito(Long id, Carrito carrito, Producto producto, Integer cantidad) {
+    public ItemCarrito(Long id, Carrito carrito, Producto producto, Talla talla, Integer cantidad) {
         this.id = id;
         this.carrito = carrito;
         this.producto = producto;
+        this.talla = talla;
         this.cantidad = cantidad;
     }
 
@@ -60,6 +66,14 @@ public class ItemCarrito {
 
     public void setProducto(Producto producto) {
         this.producto = producto;
+    }
+
+    public Talla getTalla() {
+        return talla;
+    }
+
+    public void setTalla(Talla talla) {
+        this.talla = talla;
     }
 
     public Integer getCantidad() {

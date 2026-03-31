@@ -1,6 +1,7 @@
 package com.david.ProyectoFinal.repository;
 
 import com.david.ProyectoFinal.model.ItemCarrito;
+import com.david.ProyectoFinal.model.Talla;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -10,7 +11,9 @@ public interface ItemCarritoRepository extends JpaRepository<ItemCarrito, Long> 
 
     List<ItemCarrito> findByCarritoId(Long carritoId);///devuelve todos los items de un carrito
 
-    Optional<ItemCarrito> findByCarritoIdAndProductoId(Long carritoId, Long productoId);///busca si ese producto ya está en ese carrito
+    Optional<ItemCarrito> findByCarritoIdAndProductoIdAndTalla(Long carritoId, Long productoId, Talla talla);///busca si ese producto ya está en ese carrito
 
-    void deleteByCarritoIdAndProductoId(Long carritoId, Long productoId);///elimina un producto concreto del carrito
+    void deleteByCarritoIdAndProductoIdAndTalla (Long carritoId, Long productoId, Talla talla);///elimina un producto concreto del carrito
+
+    void deleteByCarritoId(Long carritoId);///elimina todos los items de un carrito
 }

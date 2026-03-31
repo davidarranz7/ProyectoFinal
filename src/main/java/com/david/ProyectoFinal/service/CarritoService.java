@@ -1,10 +1,7 @@
 package com.david.ProyectoFinal.service;
 
 
-import com.david.ProyectoFinal.model.Carrito;
-import com.david.ProyectoFinal.model.ItemCarrito;
-import com.david.ProyectoFinal.model.Producto;
-import com.david.ProyectoFinal.model.Usuario;
+import com.david.ProyectoFinal.model.*;
 import com.david.ProyectoFinal.repository.CarritoRepository;
 import com.david.ProyectoFinal.repository.ItemCarritoRepository;
 import com.david.ProyectoFinal.repository.ProductoRepository;
@@ -59,7 +56,11 @@ public class CarritoService {
         return carritoRepository.save(nuevoCarrito);
     }
 
-    public ItemCarrito agregarProducto (Long usuarioId, Long productoId, Integer cantidad){
+    public ItemCarrito agregarProducto (Long usuarioId, Long productoId, Talla talla, Integer cantidad){
+
+        if (cantidad == null || cantidad <= 0) {
+            throw new IllegalArgumentException("La cantidad debe ser mayor que 0");
+        }
 
         /// obtenemos o creamos el carrito del usuario
         Carrito carrito = obtenerOCrearCarrito(usuarioId);
@@ -78,7 +79,7 @@ public class CarritoService {
         }
 
         /// busacmos el producto en el carrito
-        Optional<ItemCarrito> itemExistente = itemCarritoRepository.findByCarritoIdAndProductoId(carrito.getId(), productoId);
+        Optional<ItemCarrito> itemExistente = itemCarritoRepository.findByCarritoIdAndProductoIdAndTalla(carrito.getId(), productoId, talla);
 
         /// si ya existe el producto  no creas otro solo aumentas la cantidad
         if (itemExistente.isPresent()){
@@ -91,6 +92,7 @@ public class CarritoService {
         ItemCarrito nuevoItem = new ItemCarrito();
         nuevoItem.setCarrito(carrito);
         nuevoItem.setProducto(productoOptional.get());
+        nuevoItem.setTalla(talla);
         nuevoItem.setCantidad(cantidad);
 
         /// guardamos el nuevo item en la base de datos
@@ -113,7 +115,7 @@ public class CarritoService {
     }
 
     @Transactional/// para eliminar de manera segura
-    public void eliminarProducto (Long usuarioId, Long productoId){
+    public void eliminarProducto (Long usuarioId, Long productoId, Talla talla){
 
         /// obtenemos el carrito del usuario o lo creamos si no existe
         Carrito carrito = obtenerOCrearCarrito(usuarioId);
@@ -124,7 +126,7 @@ public class CarritoService {
         }
 
         /// eliminamos el producto del carrito
-        itemCarritoRepository.deleteByCarritoIdAndProductoId(carrito.getId(), productoId);
+        itemCarritoRepository.deleteByCarritoIdAndProductoIdAndTalla(carrito.getId(), productoId, talla);
     }
 
     public BigDecimal calcularTotal(Long usuarioId){
@@ -157,10 +159,9 @@ public class CarritoService {
         if (carrito == null){
             return;
         }
-        /// buscamos todos los ItemCarrito que pertenecen a ese carrito
-        List<ItemCarrito> items = itemCarritoRepository.findByCarritoId(carrito.getId());
+
         /// eliminamos todos los items del carrito
-        itemCarritoRepository.deleteAll();
+        itemCarritoRepository.deleteByCarritoId(carrito.getId());
     }
 
 }

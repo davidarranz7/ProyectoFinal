@@ -1,5 +1,6 @@
 package com.david.ProyectoFinal.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 @Entity
@@ -12,6 +13,7 @@ public class ProductoTallaStock {
 
     @ManyToOne
     @JoinColumn(name = "producto_id", nullable = false)/// clave foranea
+    @JsonIgnore/// evitamos el bucle
     private Producto producto;
 
     @Enumerated(EnumType.STRING)

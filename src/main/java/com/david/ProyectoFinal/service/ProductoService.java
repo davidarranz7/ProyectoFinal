@@ -2,10 +2,7 @@ package com.david.ProyectoFinal.service;
 
 import com.david.ProyectoFinal.dto.ProductoTallaStockDTO;
 import com.david.ProyectoFinal.dto.ProductoTallaStockResponseDTO;
-import com.david.ProyectoFinal.model.Categoria;
-import com.david.ProyectoFinal.model.Producto;
-import com.david.ProyectoFinal.model.ProductoTallaStock;
-import com.david.ProyectoFinal.model.Tienda;
+import com.david.ProyectoFinal.model.*;
 import com.david.ProyectoFinal.repository.CategoriaRepository;
 import com.david.ProyectoFinal.repository.ProductoRepository;
 import com.david.ProyectoFinal.repository.ProductoTallaStockRepository;
@@ -13,6 +10,7 @@ import com.david.ProyectoFinal.repository.TiendaRepository;
 import com.david.ProyectoFinal.scraper.gestor.GestorScraping;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -150,11 +148,22 @@ public class ProductoService {
 
         List<ProductoTallaStock> lista = productoTallaStockRepository.findByProductoId(productoId);
 
-        return lista.stream()
-                .map(item -> {
+        return Arrays.stream(Talla.values())
+                .map(tallaEnum -> {
                     ProductoTallaStockResponseDTO dto = new ProductoTallaStockResponseDTO();
-                    dto.setTalla(item.getTalla());
-                    dto.setStock(item.getStock());
+                    dto.setTalla(tallaEnum);
+
+                    ProductoTallaStock tallaEncontrada = lista.stream()
+                            .filter(item -> item.getTalla() == tallaEnum)
+                            .findFirst()
+                            .orElse(null);
+
+                    if (tallaEncontrada != null) {
+                        dto.setStock(tallaEncontrada.getStock());
+                    } else {
+                        dto.setStock(0);
+                    }
+
                     return dto;
                 })
                 .toList();

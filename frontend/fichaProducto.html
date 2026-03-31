@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ficha de producto</title>
+
+    <link rel="stylesheet" href="css/menu.css">
+    <link rel="stylesheet" href="css/fichaProducto.css">
+</head>
+<body>
+
+<div id="menu-container"></div>
+
+<main class="ficha-container">
+    <section class="ficha-producto">
+
+        <div class="ficha-imagen">
+            <img id="producto-imagen" src="" alt="Imagen del producto">
+        </div>
+
+        <div class="ficha-info">
+            <p class="producto-tienda" id="producto-tienda">Tienda</p>
+            <h1 id="producto-nombre">Nombre del producto</h1>
+            <p class="producto-precio" id="producto-precio">0,00 €</p>
+            <p class="producto-categoria" id="producto-categoria">Categoría</p>
+
+            <div class="producto-descripcion">
+                <h3>Descripción</h3>
+                <p id="producto-descripcion">Aquí irá la descripción del producto.</p>
+            </div>
+
+            <div class="producto-tallas">
+                <h3>Tallas</h3>
+                <div class="tallas-lista" id="tallas-lista"></div>
+            </div>
+
+            <div class="producto-acciones">
+                <button class="btn-principal" id="btn-carrito">Añadir al carrito</button>
+                <button class="btn-secundario" id="btn-favorito">Añadir a favoritos</button>
+                <a href="#" class="btn-tienda" id="btn-tienda-original" target="_blank">Ver en tienda original</a>
+            </div>
+        </div>
+
+    </section>
+</main>
+
+<script src="js/menu.js"></script>
+<script src="js/fichaProducto.js"></script>
+</body>
+</html>
