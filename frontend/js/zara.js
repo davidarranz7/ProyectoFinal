@@ -269,6 +269,10 @@ function renderizarProductos(productos, reiniciar = true) {
                 tallaSeleccionada = null;
                 mensajeStock.textContent = "Selecciona una talla";
                 mostrarToastCarrito("Añadido al carrito");
+
+                if (typeof window.actualizarContadorCarrito === "function") {
+                    window.actualizarContadorCarrito();
+                }
             } catch (error) {
                 console.error("Error al añadir al carrito:", error);
                 mensajeStock.textContent = "Error al añadir";

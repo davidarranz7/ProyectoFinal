@@ -46,7 +46,6 @@ function inicializarMenu() {
     const authFrame = document.getElementById("auth-frame");
 
     const btnAbrirCarritoMenu = document.getElementById("btn-carrito-menu");
-    const btnAbrirCarritoDropdown = document.getElementById("abrir-carrito-dropdown");
     const carritoLateral = document.getElementById("carrito-lateral");
     const overlayCarrito = document.getElementById("overlay-carrito");
     const btnCerrarCarrito = document.getElementById("cerrar-carrito");
@@ -60,9 +59,11 @@ function inicializarMenu() {
             if (loginLink) loginLink.style.display = "none";
             if (profileMenu) profileMenu.style.display = "block";
             if (profileName) profileName.textContent = nombreUsuario;
+            if (btnAbrirCarritoMenu) btnAbrirCarritoMenu.style.display = "inline-flex";
         } else {
             if (loginLink) loginLink.style.display = "inline-flex";
             if (profileMenu) profileMenu.style.display = "none";
+            if (btnAbrirCarritoMenu) btnAbrirCarritoMenu.style.display = "none";
         }
     }
 
@@ -84,6 +85,42 @@ function inicializarMenu() {
         document.body.style.overflow = "";
     }
 
+    async function actualizarContadorCarrito() {
+        const usuarioId = sessionStorage.getItem("usuarioId");
+        const contador = document.getElementById("contador-carrito");
+
+        if (!contador) return;
+
+        if (!usuarioId) {
+            contador.style.display = "none";
+            contador.textContent = "0";
+            return;
+        }
+
+        try {
+            const response = await fetch(`http://localhost:8080/carrito/usuario/${usuarioId}`);
+
+            if (!response.ok) {
+                throw new Error("No se pudo cargar el contador del carrito");
+            }
+
+            const items = await response.json();
+            const totalUnidades = items.reduce((acc, item) => acc + item.cantidad, 0);
+
+            if (totalUnidades > 0) {
+                contador.textContent = totalUnidades;
+                contador.style.display = "block";
+            } else {
+                contador.textContent = "0";
+                contador.style.display = "none";
+            }
+        } catch (error) {
+            console.error("Error al actualizar contador del carrito:", error);
+            contador.style.display = "none";
+            contador.textContent = "0";
+        }
+    }
+
     async function cargarMiniCarrito() {
         const usuarioId = sessionStorage.getItem("usuarioId");
         const contenedorItems = document.getElementById("carrito-items");
@@ -94,6 +131,7 @@ function inicializarMenu() {
         if (!usuarioId) {
             contenedorItems.innerHTML = `<p class="carrito-vacio">Inicia sesión para ver tu carrito.</p>`;
             totalElemento.textContent = "0 €";
+            actualizarContadorCarrito();
             return;
         }
 
@@ -113,6 +151,7 @@ function inicializarMenu() {
             if (!items || items.length === 0) {
                 contenedorItems.innerHTML = `<p class="carrito-vacio">Tu carrito está vacío.</p>`;
                 totalElemento.textContent = "0 €";
+                actualizarContadorCarrito();
                 return;
             }
 
@@ -129,13 +168,30 @@ function inicializarMenu() {
                     <div class="carrito-item-info">
                         <h3 class="carrito-item-nombre">${producto.nombre}</h3>
                         <p class="carrito-item-detalle">Talla: ${item.talla}</p>
-                        <p class="carrito-item-detalle">Cantidad: ${item.cantidad}</p>
+
+                        <div class="carrito-cantidad-fila">
+                            <button class="btn-cantidad btn-restar" type="button">-</button>
+                            <span class="carrito-cantidad-valor">${item.cantidad}</span>
+                            <button class="btn-cantidad btn-sumar" type="button">+</button>
+                        </div>
+
                         <p class="carrito-item-precio">${subtotal.toFixed(2)} €</p>
-                        <button class="carrito-item-eliminar" type="button">Eliminar</button>
+
+                        <button class="carrito-item-eliminar" type="button" aria-label="Eliminar producto del carrito" title="Eliminar">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                <path d="M3 6h18"></path>
+                                <path d="M8 6V4h8v2"></path>
+                                <path d="M19 6l-1 14H6L5 6"></path>
+                                <path d="M10 11v6"></path>
+                                <path d="M14 11v6"></path>
+                            </svg>
+                        </button>
                     </div>
                 `;
 
                 const btnEliminar = itemHtml.querySelector(".carrito-item-eliminar");
+                const btnRestar = itemHtml.querySelector(".btn-restar");
+                const btnSumar = itemHtml.querySelector(".btn-sumar");
 
                 btnEliminar.addEventListener("click", async () => {
                     try {
@@ -150,9 +206,50 @@ function inicializarMenu() {
                             throw new Error("No se pudo eliminar el producto");
                         }
 
-                        cargarMiniCarrito();
+                        await cargarMiniCarrito();
+                        await actualizarContadorCarrito();
                     } catch (error) {
                         console.error("Error al eliminar producto del carrito:", error);
+                    }
+                });
+
+                btnSumar.addEventListener("click", async () => {
+                    try {
+                        const response = await fetch(
+                            `http://localhost:8080/carrito/actualizar-cantidad?usuarioId=${usuarioId}&productoId=${producto.id}&talla=${item.talla}&nuevaCantidad=${item.cantidad + 1}`,
+                            {
+                                method: "PUT"
+                            }
+                        );
+
+                        if (!response.ok) {
+                            throw new Error("No se pudo aumentar la cantidad");
+                        }
+
+                        await cargarMiniCarrito();
+                        await actualizarContadorCarrito();
+                    } catch (error) {
+                        console.error("Error al aumentar cantidad:", error);
+                    }
+                });
+
+                btnRestar.addEventListener("click", async () => {
+                    try {
+                        const response = await fetch(
+                            `http://localhost:8080/carrito/actualizar-cantidad?usuarioId=${usuarioId}&productoId=${producto.id}&talla=${item.talla}&nuevaCantidad=${item.cantidad - 1}`,
+                            {
+                                method: "PUT"
+                            }
+                        );
+
+                        if (!response.ok) {
+                            throw new Error("No se pudo reducir la cantidad");
+                        }
+
+                        await cargarMiniCarrito();
+                        await actualizarContadorCarrito();
+                    } catch (error) {
+                        console.error("Error al reducir cantidad:", error);
                     }
                 });
 
@@ -160,10 +257,12 @@ function inicializarMenu() {
             });
 
             totalElemento.textContent = `${Number(total).toFixed(2)} €`;
+            actualizarContadorCarrito();
         } catch (error) {
             console.error("Error al cargar mini carrito:", error);
             contenedorItems.innerHTML = `<p class="carrito-vacio">No se pudo cargar el carrito.</p>`;
             totalElemento.textContent = "0 €";
+            actualizarContadorCarrito();
         }
     }
 
@@ -190,6 +289,7 @@ function inicializarMenu() {
     }
 
     actualizarEstadoUsuario();
+    actualizarContadorCarrito();
 
     if (loginLink) {
         loginLink.addEventListener("click", abrirLogin);
@@ -214,13 +314,6 @@ function inicializarMenu() {
 
     if (btnAbrirCarritoMenu) {
         btnAbrirCarritoMenu.addEventListener("click", abrirCarrito);
-    }
-
-    if (btnAbrirCarritoDropdown) {
-        btnAbrirCarritoDropdown.addEventListener("click", (e) => {
-            e.preventDefault();
-            abrirCarrito();
-        });
     }
 
     if (btnCerrarCarrito) {
@@ -252,6 +345,7 @@ function inicializarMenu() {
             sessionStorage.removeItem("nombreUsuario");
             sessionStorage.removeItem("usuarioId");
             actualizarEstadoUsuario();
+            actualizarContadorCarrito();
             cerrarOverlay();
             cerrarCarrito();
         });
@@ -276,4 +370,5 @@ function inicializarMenu() {
     window.abrirCarritoLateral = abrirCarrito;
     window.cerrarCarritoLateral = cerrarCarrito;
     window.cargarMiniCarrito = cargarMiniCarrito;
+    window.actualizarContadorCarrito = actualizarContadorCarrito;
 }

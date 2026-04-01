@@ -11,6 +11,14 @@ mensajeTalla.textContent = "Selecciona una talla antes de continuar.";
 
 document.getElementById("tallas-lista").after(mensajeTalla);
 
+function refrescarContadorCarritoConEspera() {
+    setTimeout(() => {
+        if (typeof window.actualizarContadorCarrito === "function") {
+            window.actualizarContadorCarrito();
+        }
+    }, 150);
+}
+
 fetch(`http://localhost:8080/productos/${productoId}`)
     .then(res => res.json())
     .then(producto => {
@@ -57,6 +65,8 @@ fetch(`http://localhost:8080/productos/${productoId}`)
                 mensajeTalla.textContent = "Producto añadido al carrito correctamente.";
                 mensajeTalla.classList.remove("oculto");
                 mensajeTalla.classList.add("mensaje-exito");
+
+                refrescarContadorCarritoConEspera();
             } catch (error) {
                 console.error("Error al añadir al carrito:", error);
                 mensajeTalla.textContent = "Hubo un error al añadir el producto al carrito.";

@@ -164,4 +164,39 @@ public class CarritoService {
         itemCarritoRepository.deleteByCarritoId(carrito.getId());
     }
 
+    @Transactional
+    public ItemCarrito actualizarCantidad(Long usuarioId, Long productoId, Talla talla, Integer nuevaCantidad) {
+
+        /// obtenemos el carrito del usuario o lo creamos si no existe
+        Carrito carrito = obtenerOCrearCarrito(usuarioId);
+
+        /// si algo falla se detiene el proceso
+        if (carrito == null) {
+            return null;
+        }
+
+        /// buscamos el item en el carrito
+        Optional<ItemCarrito> itemOptional = itemCarritoRepository.findByCarritoIdAndProductoIdAndTalla(
+                carrito.getId(),
+                productoId,
+                talla
+        );
+
+        /// si el item no existe, no se puede actualizar
+        if (itemOptional.isEmpty()) {
+            return null;
+        }
+
+        /// actualizamos la cantidad
+        ItemCarrito item = itemOptional.get();
+
+        /// si la nueva cantidad es 0 o negativa, eliminamos el item del carrito
+        if (nuevaCantidad == null || nuevaCantidad <= 0) {
+            itemCarritoRepository.delete(item);
+            return null;
+        }
+        item.setCantidad(nuevaCantidad);
+        return itemCarritoRepository.save(item);
+    }
+
 }

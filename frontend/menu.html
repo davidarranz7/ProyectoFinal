@@ -27,7 +27,14 @@
 
             <button class="login-btn" id="login-link" type="button">Iniciar sesión</button>
 
-            <button class="carrito-menu-btn" id="btn-carrito-menu" type="button">Carrito</button>
+            <button id="btn-carrito-menu" class="btn-carrito-icono" type="button" aria-label="Abrir carrito" title="Carrito">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                    <path d="M6 7h15l-1.4 6.8a2 2 0 0 1-2 1.6H9.2a2 2 0 0 1-2-1.6L5.6 4.8A1 1 0 0 0 4.6 4H3"></path>
+                    <circle cx="9.5" cy="19" r="1.2"></circle>
+                    <circle cx="17.5" cy="19" r="1.2"></circle>
+                </svg>
+                <span id="contador-carrito" class="contador-carrito">0</span>
+            </button>
 
             <div class="profile-menu" id="profile-menu" style="display: none;">
                 <button class="profile-btn" id="profile-btn" type="button">
@@ -38,7 +45,7 @@
                 <div class="profile-dropdown" id="profile-dropdown">
                     <a href="#">Mi cuenta</a>
                     <a href="#">Favoritos</a>
-                    <a href="#" id="abrir-carrito-dropdown">Carrito</a>
+                    <a href="#">Pedidos</a>
                     <a href="#" id="logout-btn">Cerrar sesión</a>
                 </div>
             </div>
@@ -46,6 +53,7 @@
     </div>
 </nav>
 
+<!-- OVERLAY LOGIN -->
 <div class="auth-overlay" id="auth-overlay">
     <div class="auth-backdrop" id="auth-backdrop"></div>
 
@@ -55,8 +63,10 @@
     </div>
 </div>
 
+<!-- OVERLAY CARRITO -->
 <div id="overlay-carrito" class="overlay-carrito"></div>
 
+<!-- MINI CARRITO -->
 <aside id="carrito-lateral" class="carrito-lateral">
     <div class="carrito-header">
         <h2>CARRITO</h2>

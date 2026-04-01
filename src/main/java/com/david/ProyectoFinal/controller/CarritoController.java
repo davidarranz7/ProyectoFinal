@@ -41,6 +41,14 @@ public class CarritoController {
         carritoService.eliminarProducto(usuarioId, productoId, talla);
     }
 
+    @PutMapping("/actualizar-cantidad")/// ruta para actualizar la cantidad de un producto en el carrito
+    public ItemCarrito actulizarCantidad(@RequestParam Long usuarioId,
+                                         @RequestParam Long productoId,
+                                         @RequestParam Talla talla,
+                                         @RequestParam Integer nuevaCantidad) {
+        return carritoService.actualizarCantidad(usuarioId, productoId, talla, nuevaCantidad);
+    }
+
     @GetMapping("/total/{usuarioId}")/// ruta para obtener el total del carrito de un usuario
     public BigDecimal caclularTotal(@PathVariable Long usuarioId) {
         return carritoService.calcularTotal(usuarioId);
