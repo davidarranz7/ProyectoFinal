@@ -1,5 +1,6 @@
 const params = new URLSearchParams(window.location.search);
 const productoId = params.get("id");
+const usuarioId = sessionStorage.getItem("usuarioId");
 
 let tallaSeleccionada = null;
 
@@ -23,15 +24,45 @@ fetch(`http://localhost:8080/productos/${productoId}`)
         document.getElementById("producto-categoria").textContent = producto.categoria?.nombre || "Categoría";
         document.getElementById("btn-tienda-original").href = producto.urlProducto;
 
-        document.getElementById("btn-carrito").addEventListener("click", () => {
-            if (!tallaSeleccionada) {
+        document.getElementById("btn-carrito").addEventListener("click", async () => {
+            if (!usuarioId) {
+                mensajeTalla.textContent = "Debes iniciar sesión para añadir productos al carrito.";
                 mensajeTalla.classList.remove("oculto");
+                mensajeTalla.classList.remove("mensaje-exito");
                 return;
             }
 
-            console.log("Añadir al carrito:");
-            console.log("Producto ID:", productoId);
-            console.log("Talla:", tallaSeleccionada);
+            if (!tallaSeleccionada) {
+                mensajeTalla.textContent = "Selecciona una talla antes de continuar.";
+                mensajeTalla.classList.remove("oculto");
+                mensajeTalla.classList.remove("mensaje-exito");
+                return;
+            }
+
+            try {
+                const response = await fetch(
+                    `http://localhost:8080/carrito/agregar?usuarioId=${usuarioId}&productoId=${productoId}&talla=${tallaSeleccionada}&cantidad=1`,
+                    {
+                        method: "POST"
+                    }
+                );
+
+                if (!response.ok) {
+                    throw new Error("No se pudo añadir al carrito");
+                }
+
+                const itemCarrito = await response.json();
+                console.log("Producto añadido al carrito:", itemCarrito);
+
+                mensajeTalla.textContent = "Producto añadido al carrito correctamente.";
+                mensajeTalla.classList.remove("oculto");
+                mensajeTalla.classList.add("mensaje-exito");
+            } catch (error) {
+                console.error("Error al añadir al carrito:", error);
+                mensajeTalla.textContent = "Hubo un error al añadir el producto al carrito.";
+                mensajeTalla.classList.remove("oculto");
+                mensajeTalla.classList.remove("mensaje-exito");
+            }
         });
 
         fetch(`http://localhost:8080/productos/${productoId}/talla-stock`)
@@ -68,11 +99,11 @@ fetch(`http://localhost:8080/productos/${productoId}`)
                                 boton.classList.add("seleccionada");
                                 tallaSeleccionada = item.talla;
                                 mensajeTalla.classList.add("oculto");
+                                mensajeTalla.classList.remove("mensaje-exito");
                             }
 
                             console.log("Talla seleccionada:", tallaSeleccionada);
                         });
-
                     } else {
                         boton.classList.add("agotada");
                         boton.disabled = true;
@@ -83,6 +114,5 @@ fetch(`http://localhost:8080/productos/${productoId}`)
                 });
             })
             .catch(err => console.error("Error al cargar tallas:", err));
-
     })
     .catch(err => console.error("Error al cargar producto:", err));

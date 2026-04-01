@@ -101,8 +101,9 @@ form.addEventListener("submit", async (e) => {
 
         const data = await response.json();
 
-        localStorage.setItem("usuarioLogueado", "true");
-        localStorage.setItem("nombreUsuario", data.nombre);
+        sessionStorage.setItem("usuarioLogueado", "true");
+        sessionStorage.setItem("nombreUsuario", data.nombre);
+        sessionStorage.setItem("usuarioId", data.id);
 
         mostrarModal("CORRECTO", "Bienvenido", `Hola ${data.nombre}`);
         finalizarLogin(data.nombre);

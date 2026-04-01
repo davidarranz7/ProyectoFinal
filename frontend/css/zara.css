@@ -44,8 +44,6 @@ body::before {
     overflow: visible;
 }
 
-/* ===== LAYOUT GENERAL ===== */
-
 .zara-container {
     width: min(1400px, 92%);
     margin: 30px auto 56px;
@@ -54,8 +52,6 @@ body::before {
     gap: 36px;
     align-items: start;
 }
-
-/* ===== SIDEBAR FILTROS ===== */
 
 .sidebar-filtros {
     position: sticky;
@@ -158,15 +154,12 @@ body::before {
     background: #111;
     transform: scaleX(1);
 }
-/* ===== CONTENIDO ===== */
 
 .contenido-productos {
     display: flex;
     flex-direction: column;
     gap: 24px;
 }
-
-/* ===== HEADER ZARA ===== */
 
 .zara-header {
     position: relative;
@@ -217,23 +210,24 @@ body::before {
     color: rgba(255,255,255,0.90);
 }
 
-/* ===== GRID PRODUCTOS ===== */
-
 .grid-zara {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     gap: 18px;
+    align-items: stretch;
 }
 
-/* ===== TARJETAS ===== */
-
 .tarjeta-zara {
+    position: relative;
     background: rgba(255,255,255,0.82);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255,255,255,0.55);
     overflow: hidden;
     transition: transform 0.35s ease, box-shadow 0.35s ease;
     box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
 }
 
 .tarjeta-zara:hover {
@@ -252,6 +246,7 @@ body::before {
     overflow: hidden;
     height: 360px;
     background: #ddd;
+    flex-shrink: 0;
 }
 
 .img-wrapper::after {
@@ -281,8 +276,6 @@ body::before {
     filter: brightness(0.96);
 }
 
-/* ===== FAVORITO ===== */
-
 .btn-fav {
     position: absolute;
     top: 12px;
@@ -307,11 +300,15 @@ body::before {
     transform: scale(1.06);
 }
 
-/* ===== INFO PRODUCTO ===== */
-
 .info-producto {
+    position: relative;
     padding: 18px 18px 22px;
     background: rgba(255,255,255,0.93);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    flex: 1;
+    min-height: 190px;
 }
 
 .nombre-prenda {
@@ -322,6 +319,8 @@ body::before {
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: #111;
+    min-height: 64px;
+    display: block;
 }
 
 .producto-footer {
@@ -329,7 +328,7 @@ body::before {
     justify-content: space-between;
     align-items: center;
     gap: 12px;
-    margin-top: 8px;
+    margin-top: auto;
 }
 
 .p-final {
@@ -356,8 +355,6 @@ body::before {
     color: white;
 }
 
-/* ===== MENSAJE SIN RESULTADOS ===== */
-
 .sin-resultados {
     grid-column: 1 / -1;
     padding: 28px;
@@ -370,8 +367,6 @@ body::before {
     text-transform: uppercase;
     box-shadow: 0 10px 30px rgba(0,0,0,0.08);
 }
-
-/* ===== MODAL ===== */
 
 .modal {
     position: fixed;
@@ -486,8 +481,6 @@ body::before {
     }
 }
 
-/* ===== RESPONSIVE ===== */
-
 @media (max-width: 1100px) {
     .zara-container {
         grid-template-columns: 1fr;
@@ -532,6 +525,14 @@ body::before {
         height: 290px;
     }
 
+    .info-producto {
+        min-height: 170px;
+    }
+
+    .nombre-prenda {
+        min-height: 56px;
+    }
+
     .producto-footer {
         flex-direction: column;
         align-items: stretch;
@@ -567,3 +568,153 @@ body::before {
     }
 }
 
+.mini-menu-talla {
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    bottom: 70px;
+    background: white;
+    border: 1px solid rgba(17,17,17,0.12);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+    pointer-events: none;
+    transition: all 0.2s ease;
+    z-index: 20;
+}
+
+.mini-menu-talla.activo {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+}
+
+.select-talla {
+    width: 100%;
+    border: 1px solid rgba(17,17,17,0.18);
+    background: white;
+    color: #111;
+    padding: 11px 12px;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.select-talla:focus {
+    border-color: #111;
+    box-shadow: 0 0 0 3px rgba(17,17,17,0.08);
+}
+
+.btn-confirmar-carrito {
+    width: 100%;
+    border: 1px solid #111;
+    background: #111;
+    color: white;
+    padding: 11px 14px;
+    font-size: 0.68rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-confirmar-carrito:hover {
+    background: #333;
+    border-color: #333;
+}
+
+.lista-tallas {
+    display: flex;
+    flex-direction: column;
+    border-top: 1px solid rgba(17, 17, 17, 0.08);
+    border-bottom: 1px solid rgba(17, 17, 17, 0.08);
+}
+
+.btn-talla {
+    width: 100%;
+    border: none;
+    border-bottom: 1px solid rgba(17, 17, 17, 0.08);
+    background: transparent;
+    color: #111;
+    padding: 11px 4px;
+    text-align: left;
+    font-size: 0.74rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-talla:last-child {
+    border-bottom: none;
+}
+
+.btn-talla:hover {
+    background: rgba(17, 17, 17, 0.04);
+    padding-left: 8px;
+}
+
+.btn-talla.seleccionada {
+    background: rgba(17, 17, 17, 0.08);
+    font-weight: 700;
+    padding-left: 8px;
+}
+
+.btn-talla.agotada {
+    color: rgba(17, 17, 17, 0.3);
+    cursor: not-allowed;
+}
+
+.btn-talla.agotada:hover {
+    background: transparent;
+    padding-left: 4px;
+}
+
+.mensaje-stock {
+    min-height: 18px;
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(17, 17, 17, 0.58);
+    margin: 2px 0 0;
+}
+
+.toast-carrito {
+    position: fixed;
+    top: 95px;
+    right: 24px;
+    background: #111;
+    color: white;
+    padding: 14px 18px;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.18);
+    z-index: 6000;
+
+    opacity: 0;
+    transform: translateY(-10px);
+    pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.toast-carrito.activo {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+@media (max-width: 768px) {
+    .toast-carrito {
+        top: 82px;
+        right: 12px;
+        left: 12px;
+        text-align: center;
+    }
+}

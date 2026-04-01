@@ -185,3 +185,39 @@ body {
         font-size: 1.2rem;
     }
 }
+
+.toast-carrito {
+    position: fixed;
+    top: 95px;
+    right: 24px;
+    background: #111;
+    color: white;
+    padding: 14px 18px;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.18);
+    z-index: 6000;
+
+    opacity: 0;
+    transform: translateY(-10px);
+    pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.toast-carrito.activo {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+@media (max-width: 768px) {
+    .toast-carrito {
+        top: 82px;
+        right: 12px;
+        left: 12px;
+        text-align: center;
+    }
+}
+.mensaje-exito {
+    color: #1a7f37;
+}

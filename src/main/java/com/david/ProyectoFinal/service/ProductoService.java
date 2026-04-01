@@ -128,7 +128,35 @@ public class ProductoService {
     }
 
     public List<Producto> obtenerPorTienda(String nombreTienda) {
-        return productoRepository.findByTiendaNombre(nombreTienda);
+        List<Producto> productos = productoRepository.findByTiendaNombre(nombreTienda);
+
+        for (Producto producto : productos) {
+            List<ProductoTallaStock> tallaStocksExistentes =
+                    productoTallaStockRepository.findByProductoId(producto.getId());
+
+            List<ProductoTallaStock> tallaStocksCompletos = Arrays.stream(Talla.values())
+                    .map(tallaEnum -> {
+                        ProductoTallaStock tallaEncontrada = tallaStocksExistentes.stream()
+                                .filter(item -> item.getTalla() == tallaEnum)
+                                .findFirst()
+                                .orElse(null);
+
+                        if (tallaEncontrada != null) {
+                            return tallaEncontrada;
+                        }
+
+                        ProductoTallaStock nueva = new ProductoTallaStock();
+                        nueva.setProducto(producto);
+                        nueva.setTalla(tallaEnum);
+                        nueva.setStock(0);
+                        return nueva;
+                    })
+                    .toList();
+
+            producto.setTallaStocks(tallaStocksCompletos);
+        }
+
+        return productos;
     }
 
     public void asignarTallaStock(ProductoTallaStockDTO dto){
