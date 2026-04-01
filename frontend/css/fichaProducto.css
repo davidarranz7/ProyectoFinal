@@ -221,3 +221,37 @@ body {
 .mensaje-exito {
     color: #1a7f37;
 }
+
+.ficha-producto {
+    position: relative;
+}
+
+.ficha-volver {
+    position: absolute;
+    top: -6px;
+    left: -78px;
+}
+
+.btn-volver {
+    border: 1px solid #111;
+    background: white;
+    color: #111;
+    padding: 10px 14px;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-volver:hover {
+    background: #111;
+    color: white;
+}
+
+@media (max-width: 1200px) {
+    .ficha-volver {
+        position: static;
+        margin-bottom: 18px;
+    }
+}

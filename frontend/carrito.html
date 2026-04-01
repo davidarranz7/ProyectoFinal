@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carrito | MODA</title>
+
+    <link rel="stylesheet" href="css/menu.css">
+    <link rel="stylesheet" href="css/carrito.css">
+</head>
+<body>
+
+<div id="menu-container"></div>
+
+<header class="cabecera">
+    <h1>Mi carrito</h1>
+    <p>Revisa tus productos antes de finalizar la compra</p>
+</header>
+
+<main class="contenedor-carrito">
+
+    <section class="carrito-productos">
+        <h2>Productos añadidos</h2>
+
+        <!-- Aquí JavaScript insertará los productos reales -->
+        <div id="lista-carrito" class="lista-carrito"></div>
+
+        <div id="carrito-vacio" class="carrito-vacio" style="display: none;">
+            <p>Tu carrito está vacío.</p>
+            <a href="zara.html" class="btn-seguir-comprando">Seguir comprando</a>
+        </div>
+    </section>
+
+    <aside class="carrito-resumen">
+        <h2>Resumen del pedido</h2>
+
+        <div class="resumen-linea">
+            <span>Subtotal</span>
+            <span id="subtotal">0.00 €</span>
+        </div>
+
+        <div class="resumen-linea">
+            <span>Gastos de envío</span>
+            <span id="gastos-envio-texto">Se calculará en el siguiente paso</span>
+        </div>
+
+        <hr>
+
+        <div class="resumen-linea total">
+            <span>Total</span>
+            <span id="total">0.00 €</span>
+        </div>
+
+        <button id="btn-comprar" class="btn-comprar">Finalizar compra</button>
+    </aside>
+
+</main>
+
+<script src="js/menu.js"></script>
+<script src="js/carrito.js"></script>
+</body>
+</html>

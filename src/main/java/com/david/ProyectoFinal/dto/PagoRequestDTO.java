@@ -5,24 +5,37 @@ import com.david.ProyectoFinal.model.MetodoPago;
 /// Esto representa los datos que el usuario envía para pagar.
 public class PagoRequestDTO {
 
-    /// Atributos
     private Long usuarioId;
     private MetodoPago metodoPago;
+
     private String numeroTarjeta;
     private String nombreTitular;
     private String fechaExpiracion;
     private String cvv;
 
+    private String emailPaypal;
+
+    private Double importeEntrega;
+
     public PagoRequestDTO() {
     }
 
-    public PagoRequestDTO(Long usuarioId, MetodoPago metodoPago, String numeroTarjeta, String nombreTitular, String fechaExpiracion, String cvv) {
+    public PagoRequestDTO(Long usuarioId,
+                          MetodoPago metodoPago,
+                          String numeroTarjeta,
+                          String nombreTitular,
+                          String fechaExpiracion,
+                          String cvv,
+                          String emailPaypal,
+                          Double importeEntrega) {
         this.usuarioId = usuarioId;
         this.metodoPago = metodoPago;
         this.numeroTarjeta = numeroTarjeta;
         this.nombreTitular = nombreTitular;
         this.fechaExpiracion = fechaExpiracion;
         this.cvv = cvv;
+        this.emailPaypal = emailPaypal;
+        this.importeEntrega = importeEntrega;
     }
 
     public Long getUsuarioId() {
@@ -71,5 +84,21 @@ public class PagoRequestDTO {
 
     public void setCvv(String cvv) {
         this.cvv = cvv;
+    }
+
+    public String getEmailPaypal() {
+        return emailPaypal;
+    }
+
+    public void setEmailPaypal(String emailPaypal) {
+        this.emailPaypal = emailPaypal;
+    }
+
+    public Double getImporteEntrega() {
+        return importeEntrega;
+    }
+
+    public void setImporteEntrega(Double importeEntrega) {
+        this.importeEntrega = importeEntrega;
     }
 }

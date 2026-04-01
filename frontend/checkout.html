@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout | MODA</title>
+
+    <link rel="stylesheet" href="css/menu.css">
+    <link rel="stylesheet" href="css/checkout.css">
+</head>
+<body>
+
+<div id="menu-container"></div>
+
+<header class="cabecera-checkout">
+    <h1>Finalizar compra</h1>
+    <p>Revisa tu pedido, selecciona el método de envío y completa el pago</p>
+</header>
+
+<main class="contenedor-checkout">
+
+    <section class="checkout-izquierda">
+
+        <div id="mensaje-checkout" class="mensaje-feedback oculto"></div>
+
+        <div class="bloque-checkout">
+            <h2>Método de envío</h2>
+
+            <label class="opcion-radio">
+                <input type="radio" name="metodoEnvio" value="domicilio" checked>
+                <span>Envío a domicilio</span>
+            </label>
+
+            <label class="opcion-radio" id="opcion-recogida-tienda">
+                <input type="radio" name="metodoEnvio" value="tienda">
+                <span>Recogida en tienda</span>
+            </label>
+
+            <label class="opcion-radio">
+                <input type="radio" name="metodoEnvio" value="punto">
+                <span>Punto de recogida</span>
+            </label>
+
+            <p id="mensaje-multitienda" class="mensaje-checkout" style="display: none;">
+                Como tu pedido incluye productos de varias tiendas, solo está disponible el envío a domicilio o el punto de recogida.
+            </p>
+        </div>
+
+        <div class="bloque-checkout" id="bloque-domicilio">
+            <h2>Datos de envío</h2>
+
+            <div class="grupo-campos">
+                <input type="text" id="nombre-envio" placeholder="Nombre completo">
+                <input type="text" id="direccion-envio" placeholder="Dirección">
+            </div>
+
+            <div class="grupo-campos">
+                <input type="text" id="provincia-envio" placeholder="Provincia">
+                <input type="text" id="ciudad-envio" placeholder="Ciudad">
+            </div>
+
+            <div class="grupo-campos">
+                <input type="text" id="cp-envio" placeholder="Código postal">
+            </div>
+        </div>
+
+        <div class="bloque-checkout" id="bloque-tienda" style="display: none;">
+            <h2>Recogida en tienda</h2>
+            <p class="texto-ayuda">
+                Selecciona un establecimiento disponible en Vigo según la tienda de tus productos.
+            </p>
+
+            <select id="select-tienda">
+                <option value="">Selecciona una tienda</option>
+            </select>
+        </div>
+
+        <div class="bloque-checkout" id="bloque-punto" style="display: none;">
+            <h2>Punto de recogida</h2>
+            <p class="texto-ayuda">
+                Elige el punto de recogida que prefieras.
+            </p>
+
+            <select id="select-punto-recogida">
+                <option value="">Selecciona un punto de recogida</option>
+                <option value="vigo-centro">Punto Vigo Centro</option>
+                <option value="gran-via">Punto Gran Vía</option>
+                <option value="calvario">Punto O Calvario</option>
+                <option value="travesia">Punto Travesía</option>
+            </select>
+        </div>
+
+        <div class="bloque-checkout">
+            <h2>Método de pago</h2>
+
+            <label class="opcion-radio">
+                <input type="radio" name="metodoPago" value="tarjeta" checked>
+                <span>Tarjeta bancaria</span>
+            </label>
+
+            <label class="opcion-radio">
+                <input type="radio" name="metodoPago" value="paypal">
+                <span>PayPal</span>
+            </label>
+
+            <label class="opcion-radio">
+                <input type="radio" name="metodoPago" value="contra_reembolso">
+                <span>Contra reembolso</span>
+            </label>
+
+            <div id="bloque-tarjeta" class="bloque-metodo-pago">
+                <div class="grupo-campos">
+                    <input type="text" id="numero-tarjeta" placeholder="Número de tarjeta">
+                    <input type="text" id="nombre-titular" placeholder="Nombre del titular">
+                </div>
+
+                <div class="grupo-campos">
+                    <input type="text" id="fecha-expiracion" placeholder="MM/AA">
+                    <input type="text" id="cvv" placeholder="CVV">
+                </div>
+            </div>
+
+            <div id="bloque-paypal" class="bloque-metodo-pago" style="display: none;">
+                <div class="grupo-campos">
+                    <input type="email" id="email-paypal" placeholder="Email de PayPal">
+                </div>
+            </div>
+
+            <div id="bloque-contra-reembolso" class="bloque-metodo-pago" style="display: none;">
+                <div class="grupo-campos">
+                    <input type="number" id="importe-entrega" placeholder="Importe con el que pagarás" min="0" step="0.01">
+                </div>
+            </div>
+        </div>
+
+    </section>
+
+    <aside class="checkout-derecha">
+        <div class="bloque-checkout resumen-checkout">
+            <h2>Resumen de la compra</h2>
+
+            <div id="lista-resumen-checkout" class="lista-resumen-checkout"></div>
+
+            <hr>
+
+            <div class="resumen-linea">
+                <span>Subtotal</span>
+                <span id="subtotal-checkout">0.00 €</span>
+            </div>
+
+            <div class="resumen-linea">
+                <span>Envío</span>
+                <span id="envio-checkout">4.00 €</span>
+            </div>
+
+            <div class="resumen-linea total">
+                <span>Total</span>
+                <span id="total-checkout">0.00 €</span>
+            </div>
+
+            <button id="btn-confirmar-pedido" class="btn-confirmar-pedido">
+                Confirmar pedido
+            </button>
+        </div>
+    </aside>
+
+</main>
+
+<script src="js/menu.js"></script>
+<script src="js/checkout.js"></script>
+</body>
+</html>

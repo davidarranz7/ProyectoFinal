@@ -59,4 +59,12 @@ public class CarritoController {
         carritoService.vaciarCarrito(usuarioId);
     }
 
+    @PutMapping("/cambiar-talla")
+    public ItemCarrito cambiarTalla(@RequestParam Long usuarioId,
+                                    @RequestParam Long productoId,
+                                    @RequestParam Talla tallaActual,
+                                    @RequestParam Talla nuevaTalla) {
+        return carritoService.cambiarTalla(usuarioId, productoId, tallaActual, nuevaTalla);
+    }
+
 }

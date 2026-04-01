@@ -16,4 +16,6 @@ public interface ItemCarritoRepository extends JpaRepository<ItemCarrito, Long> 
     void deleteByCarritoIdAndProductoIdAndTalla (Long carritoId, Long productoId, Talla talla);///elimina un producto concreto del carrito
 
     void deleteByCarritoId(Long carritoId);///elimina todos los items de un carrito
+
+    Optional<ItemCarrito> findByCarritoUsuarioIdAndProductoIdAndTalla(Long usuarioId, Long productoId, Talla talla);
 }

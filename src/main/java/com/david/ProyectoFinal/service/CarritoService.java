@@ -199,4 +199,39 @@ public class CarritoService {
         return itemCarritoRepository.save(item);
     }
 
+    public ItemCarrito cambiarTalla(Long usuarioId, Long productoId, Talla tallaActual, Talla nuevaTalla) {
+        ItemCarrito itemActual = itemCarritoRepository
+                .findByCarritoUsuarioIdAndProductoIdAndTalla(usuarioId, productoId, tallaActual)
+                .orElseThrow(() -> new RuntimeException("Item no encontrado en el carrito"));
+
+        if (tallaActual == nuevaTalla) {
+            return itemActual;
+        }
+
+        Producto producto = itemActual.getProducto();
+
+        ProductoTallaStock stockNuevaTalla = producto.getTallaStocks().stream()
+                .filter(ts -> ts.getTalla() == nuevaTalla)
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("La nueva talla no existe para este producto"));
+
+        if (stockNuevaTalla.getStock() < itemActual.getCantidad()) {
+            throw new RuntimeException("No hay stock suficiente para la nueva talla");
+        }
+
+        Optional<ItemCarrito> itemMismaNuevaTalla = itemCarritoRepository
+                .findByCarritoUsuarioIdAndProductoIdAndTalla(usuarioId, productoId, nuevaTalla);
+
+        if (itemMismaNuevaTalla.isPresent()) {
+            ItemCarrito itemExistente = itemMismaNuevaTalla.get();
+            itemExistente.setCantidad(itemExistente.getCantidad() + itemActual.getCantidad());
+            itemCarritoRepository.save(itemExistente);
+            itemCarritoRepository.delete(itemActual);
+            return itemExistente;
+        }
+
+        itemActual.setTalla(nuevaTalla);
+        return itemCarritoRepository.save(itemActual);
+    }
+
 }

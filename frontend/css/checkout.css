@@ -1,0 +1,254 @@
+/* RESET */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f5f5f5;
+    color: #333;
+}
+
+/* CABECERA */
+.cabecera-checkout {
+    background-color: white;
+    padding: 24px 40px;
+    border-bottom: 1px solid #ddd;
+}
+
+.cabecera-checkout h1 {
+    font-size: 28px;
+    margin-bottom: 6px;
+}
+
+.cabecera-checkout p {
+    color: #666;
+    font-size: 15px;
+}
+
+/* LAYOUT */
+.contenedor-checkout {
+    display: flex;
+    gap: 30px;
+    padding: 30px 40px;
+    align-items: flex-start;
+}
+
+.checkout-izquierda {
+    flex: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.checkout-derecha {
+    flex: 1;
+}
+
+/* BLOQUES */
+.bloque-checkout {
+    background-color: white;
+    padding: 22px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.bloque-checkout h2 {
+    font-size: 20px;
+    margin-bottom: 16px;
+    color: #222;
+}
+
+/* RADIOS */
+.opcion-radio {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+    cursor: pointer;
+    font-size: 15px;
+    color: #444;
+}
+
+.opcion-radio input[type="radio"] {
+    transform: scale(1.1);
+    cursor: pointer;
+}
+
+/* MENSAJES DE BLOQUE */
+.mensaje-checkout {
+    margin-top: 12px;
+    font-size: 14px;
+    color: #b00020;
+    background-color: #fff3f4;
+    border: 1px solid #f1c7cd;
+    padding: 10px 12px;
+    border-radius: 8px;
+}
+
+/* MENSAJE GENERAL */
+.mensaje-feedback {
+    padding: 12px;
+    border-radius: 8px;
+    font-weight: 500;
+}
+
+.mensaje-error {
+    background-color: #ffe5e5;
+    color: #b30000;
+    border: 1px solid #f1c7cd;
+}
+
+.mensaje-ok {
+    background-color: #e6ffe6;
+    color: #006600;
+    border: 1px solid #b9e2b9;
+}
+
+.oculto {
+    display: none;
+}
+
+.texto-ayuda {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 14px;
+    line-height: 1.4;
+}
+
+/* CAMPOS */
+.grupo-campos {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 14px;
+}
+
+.grupo-campos input,
+#select-tienda,
+#select-punto-recogida {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid #d8d8d8;
+    border-radius: 10px;
+    font-size: 14px;
+    background-color: #fafafa;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.grupo-campos input:focus,
+#select-tienda:focus,
+#select-punto-recogida:focus {
+    background-color: white;
+    border-color: black;
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.06);
+}
+
+.bloque-metodo-pago {
+    margin-top: 10px;
+}
+
+/* RESUMEN */
+.resumen-checkout h2 {
+    margin-bottom: 18px;
+}
+
+.lista-resumen-checkout {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 18px;
+}
+
+.item-resumen-checkout {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.item-resumen-checkout img {
+    width: 64px;
+    height: 78px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.item-resumen-info {
+    flex: 1;
+}
+
+.item-resumen-info h3 {
+    font-size: 15px;
+    margin-bottom: 4px;
+    color: #222;
+}
+
+.item-resumen-info p {
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 2px;
+}
+
+.resumen-linea {
+    display: flex;
+    justify-content: space-between;
+    margin: 12px 0;
+    font-size: 15px;
+}
+
+.resumen-linea.total {
+    font-weight: bold;
+    font-size: 18px;
+    color: #111;
+}
+
+/* BOTÓN */
+.btn-confirmar-pedido {
+    width: 100%;
+    margin-top: 20px;
+    padding: 14px;
+    background-color: black;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.btn-confirmar-pedido:hover {
+    background-color: #333;
+}
+
+/* HR */
+hr {
+    border: none;
+    border-top: 1px solid #e5e5e5;
+    margin: 16px 0;
+}
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+    .contenedor-checkout {
+        flex-direction: column;
+    }
+
+    .checkout-izquierda,
+    .checkout-derecha {
+        width: 100%;
+    }
+}
+
+@media (max-width: 600px) {
+    .cabecera-checkout,
+    .contenedor-checkout {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+
+    .grupo-campos {
+        flex-direction: column;
+    }
+}

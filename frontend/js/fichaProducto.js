@@ -2,6 +2,18 @@ const params = new URLSearchParams(window.location.search);
 const productoId = params.get("id");
 const usuarioId = sessionStorage.getItem("usuarioId");
 
+const btnVolver = document.getElementById("btn-volver");
+
+if (btnVolver) {
+    btnVolver.addEventListener("click", () => {
+        if (window.history.length > 1) {
+            window.history.back();
+        } else {
+            window.location.href = "zara.html";
+        }
+    });
+}
+
 let tallaSeleccionada = null;
 
 const mensajeTalla = document.createElement("p");
