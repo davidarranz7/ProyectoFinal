@@ -331,7 +331,7 @@ async function confirmarPedido() {
         mostrarMensaje(`Pedido confirmado. Referencia: ${data.referencia}`, "ok");
 
         setTimeout(() => {
-            window.location.href = "principal.html";
+            window.location.href = "index.html";
         }, 1500);
 
     } catch (error) {

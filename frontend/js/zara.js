@@ -3,6 +3,7 @@ function mezclarArray(array) {
 }
 
 let productosZara = [];
+let favoritosIds = new Set();
 
 let indiceActual = 0;
 const PRODUCTOS_POR_CARGA = 8;
@@ -14,6 +15,20 @@ const modalMensaje = document.getElementById("modal-mensaje");
 const abrirLoginModal = document.getElementById("abrir-login-modal");
 
 function mostrarToastCarrito(mensaje = "Añadido al carrito") {
+    const toast = document.getElementById("toast-carrito");
+    if (!toast) return;
+
+    toast.textContent = mensaje;
+    toast.classList.add("activo");
+
+    clearTimeout(toast._timeoutId);
+
+    toast._timeoutId = setTimeout(() => {
+        toast.classList.remove("activo");
+    }, 2200);
+}
+
+function mostrarToastFavorito(mensaje = "Favorito actualizado") {
     const toast = document.getElementById("toast-carrito");
     if (!toast) return;
 
@@ -65,6 +80,47 @@ function cerrarTodosLosMenusTalla() {
 document.addEventListener("click", () => {
     cerrarTodosLosMenusTalla();
 });
+
+async function cargarFavoritosUsuario() {
+    const usuarioLogueado = localStorage.getItem("usuarioLogueado");
+    const usuarioId = localStorage.getItem("usuarioId");
+
+    favoritosIds = new Set();
+
+    if (usuarioLogueado !== "true" || !usuarioId) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`http://localhost:8080/favoritos/usuario/${usuarioId}`);
+
+        if (!response.ok) {
+            throw new Error("No se pudieron cargar los favoritos");
+        }
+
+        const favoritos = await response.json();
+
+        if (Array.isArray(favoritos)) {
+            favoritos.forEach(favorito => {
+                if (favorito.producto && favorito.producto.id != null) {
+                    favoritosIds.add(Number(favorito.producto.id));
+                }
+            });
+        }
+    } catch (error) {
+        console.error("Error al cargar favoritos del usuario:", error);
+    }
+}
+
+function actualizarEstadoVisualFavorito(btnFav, productoId) {
+    if (favoritosIds.has(Number(productoId))) {
+        btnFav.classList.add("activo");
+        btnFav.style.color = "red";
+    } else {
+        btnFav.classList.remove("activo");
+        btnFav.style.color = "";
+    }
+}
 
 function renderizarProductos(productos, reiniciar = true) {
     const grid = document.getElementById("grid-productos");
@@ -125,6 +181,8 @@ function renderizarProductos(productos, reiniciar = true) {
         const btnConfirmarCarrito = card.querySelector(".btn-confirmar-carrito");
 
         let tallaSeleccionada = null;
+
+        actualizarEstadoVisualFavorito(btnFav, producto.id);
 
         if (producto.tallaStocks && producto.tallaStocks.length > 0) {
             producto.tallaStocks.forEach(tallaStock => {
@@ -204,14 +262,62 @@ function renderizarProductos(productos, reiniciar = true) {
             event.stopPropagation();
         });
 
-        btnFav.addEventListener("click", (event) => {
+        btnFav.addEventListener("click", async (event) => {
             event.preventDefault();
             event.stopPropagation();
 
-            if (sessionStorage.getItem("usuarioLogueado") !== "true") {
+            const usuarioLogueado = localStorage.getItem("usuarioLogueado");
+            const usuarioId = localStorage.getItem("usuarioId");
+
+            if (usuarioLogueado !== "true") {
                 modalMensaje.textContent = "Debes iniciar sesión para añadir productos a favoritos.";
                 modal.style.display = "flex";
                 return;
+            }
+
+            if (!usuarioId) {
+                modalMensaje.textContent = "No se encontró el usuario logueado.";
+                modal.style.display = "flex";
+                return;
+            }
+
+            try {
+                const yaEsFavorito = favoritosIds.has(Number(producto.id));
+
+                if (yaEsFavorito) {
+                    const response = await fetch(
+                        `http://localhost:8080/favoritos?usuarioId=${usuarioId}&productoId=${producto.id}`,
+                        {
+                            method: "DELETE"
+                        }
+                    );
+
+                    if (!response.ok) {
+                        throw new Error("No se pudo eliminar de favoritos");
+                    }
+
+                    favoritosIds.delete(Number(producto.id));
+                    actualizarEstadoVisualFavorito(btnFav, producto.id);
+                    mostrarToastFavorito("Eliminado de favoritos");
+                } else {
+                    const response = await fetch(
+                        `http://localhost:8080/favoritos?usuarioId=${usuarioId}&productoId=${producto.id}`,
+                        {
+                            method: "POST"
+                        }
+                    );
+
+                    if (!response.ok) {
+                        throw new Error("No se pudo añadir a favoritos");
+                    }
+
+                    favoritosIds.add(Number(producto.id));
+                    actualizarEstadoVisualFavorito(btnFav, producto.id);
+                    mostrarToastFavorito("Añadido a favoritos");
+                }
+
+            } catch (error) {
+                console.error("Error al actualizar favoritos:", error);
             }
         });
 
@@ -219,7 +325,7 @@ function renderizarProductos(productos, reiniciar = true) {
             event.preventDefault();
             event.stopPropagation();
 
-            if (sessionStorage.getItem("usuarioLogueado") !== "true") {
+            if (localStorage.getItem("usuarioLogueado") !== "true") {
                 modalMensaje.textContent = "Debes iniciar sesión para añadir productos al carrito.";
                 modal.style.display = "flex";
                 return;
@@ -238,7 +344,7 @@ function renderizarProductos(productos, reiniciar = true) {
             event.preventDefault();
             event.stopPropagation();
 
-            const usuarioId = sessionStorage.getItem("usuarioId");
+            const usuarioId = localStorage.getItem("usuarioId");
 
             if (!usuarioId) {
                 mensajeStock.textContent = "Debes iniciar sesión";
@@ -324,9 +430,19 @@ function aplicarFiltros() {
     renderizarProductos(filtrados, true);
 }
 
-fetch("http://localhost:8080/productos/tienda/Zara")
-    .then(res => res.json())
-    .then(productos => {
+async function iniciarZara() {
+    try {
+        const [productosResponse] = await Promise.all([
+            fetch("http://localhost:8080/productos/tienda/Zara"),
+            cargarFavoritosUsuario()
+        ]);
+
+        if (!productosResponse.ok) {
+            throw new Error("No se pudieron cargar los productos");
+        }
+
+        const productos = await productosResponse.json();
+
         productosZara = mezclarArray([...productos]);
         renderizarProductos(productosZara, true);
 
@@ -348,5 +464,10 @@ fetch("http://localhost:8080/productos/tienda/Zara")
                 renderizarProductos(filtrados, false);
             }
         });
-    })
-    .catch(err => console.error("Error:", err));
+
+    } catch (error) {
+        console.error("Error:", error);
+    }
+}
+
+iniciarZara();

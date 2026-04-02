@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi perfil | MODA</title>
+
+    <link rel="stylesheet" href="css/menu.css">
+    <link rel="stylesheet" href="css/perfil.css">
+</head>
+<body>
+
+<div id="menu-container"></div>
+
+<header class="cabecera-perfil">
+    <div class="cabecera-perfil-contenido">
+        <h1>Mi perfil</h1>
+        <p>Consulta y actualiza tus datos personales y tu contraseña</p>
+    </div>
+</header>
+
+<main class="perfil-layout">
+
+    <section class="perfil-columna">
+        <section class="perfil-card">
+            <div class="perfil-card-header">
+                <h2>Datos personales</h2>
+            </div>
+
+            <form id="formPerfil" class="perfil-form">
+                <div class="campo">
+                    <label for="nombre">Nombre</label>
+                    <input type="text" id="nombre" name="nombre" required>
+                </div>
+
+                <div class="campo">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+
+                <div class="campo">
+                    <label for="rol">Rol</label>
+                    <input type="text" id="rol" name="rol" disabled>
+                </div>
+
+                <button type="submit" class="btn-principal">Guardar cambios</button>
+            </form>
+        </section>
+    </section>
+
+    <aside class="perfil-columna">
+        <section class="perfil-card">
+            <div class="perfil-card-header">
+                <h2>Cambiar contraseña</h2>
+            </div>
+
+            <form id="formPassword" class="perfil-form">
+                <div class="campo">
+                    <label for="passwordActual">Contraseña actual</label>
+                    <input type="password" id="passwordActual" name="passwordActual" required>
+                </div>
+
+                <div class="campo">
+                    <label for="passwordNueva">Nueva contraseña</label>
+                    <input type="password" id="passwordNueva" name="passwordNueva" required>
+                </div>
+
+                <div class="campo">
+                    <label for="confirmarPassword">Confirmar nueva contraseña</label>
+                    <input type="password" id="confirmarPassword" name="confirmarPassword" required>
+                </div>
+
+                <button type="submit" class="btn-principal">Actualizar contraseña</button>
+            </form>
+        </section>
+
+        <div id="mensaje-perfil" class="mensaje-perfil" style="display: none;"></div>
+    </aside>
+
+</main>
+
+<script src="js/menu.js"></script>
+<script src="js/perfil.js"></script>
+</body>
+</html>

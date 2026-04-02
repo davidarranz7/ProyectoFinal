@@ -1,6 +1,9 @@
 package com.david.ProyectoFinal.controller;
 
 
+import com.david.ProyectoFinal.dto.ActualizarPerfilDTO;
+import com.david.ProyectoFinal.dto.CambiarPasswordDTO;
+import com.david.ProyectoFinal.dto.UsuarioPerfilDTO;
 import com.david.ProyectoFinal.model.Usuario;
 import com.david.ProyectoFinal.service.UsuarioService;
 import org.springframework.http.ResponseEntity;
@@ -48,6 +51,22 @@ public class UsuarioController {
         return usuarioService.actutualizar(id, usuarioActualizado);
     }
 
+    @GetMapping("/{id}/perfil")
+    public ResponseEntity<UsuarioPerfilDTO> obtenerPerfil(@PathVariable Long id) {
+        return ResponseEntity.ok(usuarioService.obtenerPerfil(id));
+    }
 
+    @PutMapping("/{id}/perfil")
+    public ResponseEntity<UsuarioPerfilDTO> actualizarPerfil(@PathVariable Long id,
+                                                             @RequestBody ActualizarPerfilDTO dto) {
+        return ResponseEntity.ok(usuarioService.actualizarPerfil(id, dto));
+    }
+
+    @PutMapping("/{id}/password")
+    public ResponseEntity<String> cambiarPassword(@PathVariable Long id,
+                                                  @RequestBody CambiarPasswordDTO dto) {
+        usuarioService.cambiarPassword(id, dto);
+        return ResponseEntity.ok("Contraseña actualizada correctamente");
+    }
 
 }

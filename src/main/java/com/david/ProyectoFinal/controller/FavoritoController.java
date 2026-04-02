@@ -18,8 +18,9 @@ public class FavoritoController {
     }
 
     @PostMapping
-    public Favorito agregarFavortio(Long usuarioId, Long productoId){
-        return favoritoService.agregarFavorito(usuarioId,productoId);/// Agrega un producto a favoritos de un usuario
+    public Favorito agregarFavortio(@RequestParam Long usuarioId,
+                                    @RequestParam Long productoId){
+        return favoritoService.agregarFavorito(usuarioId, productoId);
     }
 
     @GetMapping("/usuario/{usuarioId}")

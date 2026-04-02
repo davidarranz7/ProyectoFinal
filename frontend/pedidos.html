@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis pedidos | MODA</title>
+
+    <link rel="stylesheet" href="css/menu.css">
+    <link rel="stylesheet" href="css/pedidos.css">
+</head>
+<body>
+
+<div id="menu-container"></div>
+
+<header class="cabecera-pedidos">
+    <div class="cabecera-superior">
+        <div class="cabecera-pedidos-izquierda">
+            <h1>Mis pedidos</h1>
+            <p>Consulta el historial de tus compras y el estado de cada pedido</p>
+        </div>
+
+        <div class="cabecera-pedidos-derecha">
+            <label for="filtro-estado">Filtrar por estado</label>
+            <select id="filtro-estado">
+                <option value="TODOS">Todos</option>
+                <option value="CONFIRMADO">Confirmado</option>
+                <option value="ENVIADO">Enviado</option>
+                <option value="ENTREGADO">Entregado</option>
+                <option value="CANCELADO">Cancelado</option>
+            </select>
+        </div>
+    </div>
+</header>
+
+<main class="contenedor-pedidos">
+
+    <section class="zona-izquierda">
+        <section class="pedidos-panel">
+            <div id="mensaje-pedidos" class="mensaje-pedidos" style="display: none;"></div>
+            <div id="lista-pedidos" class="lista-pedidos"></div>
+        </section>
+    </section>
+
+    <aside class="zona-derecha">
+        <section id="detalle-pedido-section" class="detalle-pedido-section oculto">
+            <div class="detalle-header">
+                <h2>Detalle del pedido</h2>
+                <button id="cerrar-detalle" class="btn-cerrar-detalle" type="button">✕</button>
+            </div>
+
+            <div id="detalle-pedido" class="detalle-pedido"></div>
+        </section>
+    </aside>
+
+</main>
+
+<script src="js/menu.js"></script>
+<script src="js/pedidos.js"></script>
+</body>
+</html>
