@@ -2,19 +2,41 @@ document.addEventListener("DOMContentLoaded", () => {
     cargarFavoritos();
 });
 
+async function obtenerSesionActual() {
+    try {
+        const response = await fetch("http://localhost:8080/auth/session", {
+            method: "GET",
+            credentials: "include"
+        });
+
+        if (!response.ok) {
+            return null;
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error("Error al comprobar sesión:", error);
+        return null;
+    }
+}
+
 async function cargarFavoritos() {
-    const usuarioId = localStorage.getItem("usuarioId");
     const contenedor = document.getElementById("lista-favoritos");
 
     if (!contenedor) return;
 
-    if (!usuarioId) {
+    const sesion = await obtenerSesionActual();
+
+    if (!sesion || !sesion.id) {
         contenedor.innerHTML = "<p>Debes iniciar sesión para ver tus favoritos.</p>";
         return;
     }
 
     try {
-        const response = await fetch(`http://localhost:8080/favoritos/usuario/${usuarioId}`);
+        const response = await fetch(`http://localhost:8080/favoritos/usuario/${sesion.id}`, {
+            method: "GET",
+            credentials: "include"
+        });
 
         if (!response.ok) {
             throw new Error("No se pudieron cargar los favoritos");
@@ -55,9 +77,10 @@ async function cargarFavoritos() {
 
                 try {
                     const responseEliminar = await fetch(
-                        `http://localhost:8080/favoritos?usuarioId=${usuarioId}&productoId=${producto.id}`,
+                        `http://localhost:8080/favoritos?usuarioId=${sesion.id}&productoId=${producto.id}`,
                         {
-                            method: "DELETE"
+                            method: "DELETE",
+                            credentials: "include"
                         }
                     );
 

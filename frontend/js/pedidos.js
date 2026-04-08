@@ -2,17 +2,35 @@ document.addEventListener("DOMContentLoaded", () => {
     iniciarPaginaPedidos();
 });
 
-async function iniciarPaginaPedidos() {
-    const usuarioId = localStorage.getItem("usuarioId");
+async function obtenerSesionActual() {
+    try {
+        const response = await fetch("http://localhost:8080/auth/session", {
+            method: "GET",
+            credentials: "include"
+        });
 
-    if (!usuarioId) {
+        if (!response.ok) {
+            return null;
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error("Error al comprobar sesión:", error);
+        return null;
+    }
+}
+
+async function iniciarPaginaPedidos() {
+    const sesion = await obtenerSesionActual();
+
+    if (!sesion || !sesion.id) {
         mostrarMensaje("Debes iniciar sesión para ver tus pedidos.");
         return;
     }
 
-    configurarFiltroEstado(usuarioId);
+    configurarFiltroEstado(sesion.id);
     configurarCerrarDetalle();
-    await cargarPedidos(usuarioId);
+    await cargarPedidos(sesion.id);
 }
 
 function configurarFiltroEstado(usuarioId) {
@@ -43,7 +61,10 @@ async function cargarPedidos(usuarioId) {
     const listaPedidos = document.getElementById("lista-pedidos");
 
     try {
-        const response = await fetch(`http://localhost:8080/pedidos/usuario/${usuarioId}`);
+        const response = await fetch(`http://localhost:8080/pedidos/usuario/${usuarioId}`, {
+            method: "GET",
+            credentials: "include"
+        });
 
         if (!response.ok) {
             throw new Error("No se pudieron cargar los pedidos");
@@ -63,7 +84,10 @@ async function cargarPedidosPorEstado(usuarioId, estado) {
     const listaPedidos = document.getElementById("lista-pedidos");
 
     try {
-        const response = await fetch(`http://localhost:8080/pedidos/usuario/${usuarioId}/estado/${estado}`);
+        const response = await fetch(`http://localhost:8080/pedidos/usuario/${usuarioId}/estado/${estado}`, {
+            method: "GET",
+            credentials: "include"
+        });
 
         if (!response.ok) {
             throw new Error("No se pudieron cargar los pedidos filtrados");
@@ -143,7 +167,10 @@ async function cargarDetallePedido(pedidoId) {
     const detallePedido = document.getElementById("detalle-pedido");
 
     try {
-        const response = await fetch(`http://localhost:8080/pedidos/${pedidoId}/items`);
+        const response = await fetch(`http://localhost:8080/pedidos/${pedidoId}/items`, {
+            method: "GET",
+            credentials: "include"
+        });
 
         if (!response.ok) {
             throw new Error("No se pudo cargar el detalle del pedido");
@@ -196,12 +223,18 @@ function cerrarDetallePedido() {
 }
 
 async function cancelarPedido(pedidoId) {
-    const usuarioId = localStorage.getItem("usuarioId");
+    const sesion = await obtenerSesionActual();
     const filtroEstado = document.getElementById("filtro-estado").value;
+
+    if (!sesion || !sesion.id) {
+        mostrarMensaje("Debes iniciar sesión para gestionar tus pedidos.");
+        return;
+    }
 
     try {
         const response = await fetch(`http://localhost:8080/pedidos/cancelar/${pedidoId}`, {
-            method: "PUT"
+            method: "PUT",
+            credentials: "include"
         });
 
         if (!response.ok) {
@@ -211,9 +244,9 @@ async function cancelarPedido(pedidoId) {
         mostrarMensaje("Pedido cancelado correctamente.", "ok");
 
         if (filtroEstado === "TODOS") {
-            await cargarPedidos(usuarioId);
+            await cargarPedidos(sesion.id);
         } else {
-            await cargarPedidosPorEstado(usuarioId, filtroEstado);
+            await cargarPedidosPorEstado(sesion.id, filtroEstado);
         }
 
         cerrarDetallePedido();

@@ -4,6 +4,7 @@ function mezclarArray(array) {
 
 let productosZara = [];
 let favoritosIds = new Set();
+let sesionActual = null;
 
 let indiceActual = 0;
 const PRODUCTOS_POR_CARGA = 8;
@@ -81,18 +82,42 @@ document.addEventListener("click", () => {
     cerrarTodosLosMenusTalla();
 });
 
-async function cargarFavoritosUsuario() {
-    const usuarioLogueado = localStorage.getItem("usuarioLogueado");
-    const usuarioId = localStorage.getItem("usuarioId");
+async function obtenerSesionActual() {
+    try {
+        const response = await fetch("http://localhost:8080/auth/session", {
+            method: "GET",
+            credentials: "include"
+        });
 
+        if (!response.ok) {
+            sesionActual = null;
+            return null;
+        }
+
+        const data = await response.json();
+        sesionActual = data;
+        return data;
+    } catch (error) {
+        console.error("Error al comprobar sesión:", error);
+        sesionActual = null;
+        return null;
+    }
+}
+
+async function cargarFavoritosUsuario() {
     favoritosIds = new Set();
 
-    if (usuarioLogueado !== "true" || !usuarioId) {
+    const sesion = await obtenerSesionActual();
+
+    if (!sesion || !sesion.id) {
         return;
     }
 
     try {
-        const response = await fetch(`http://localhost:8080/favoritos/usuario/${usuarioId}`);
+        const response = await fetch(`http://localhost:8080/favoritos/usuario/${sesion.id}`, {
+            method: "GET",
+            credentials: "include"
+        });
 
         if (!response.ok) {
             throw new Error("No se pudieron cargar los favoritos");
@@ -266,17 +291,10 @@ function renderizarProductos(productos, reiniciar = true) {
             event.preventDefault();
             event.stopPropagation();
 
-            const usuarioLogueado = localStorage.getItem("usuarioLogueado");
-            const usuarioId = localStorage.getItem("usuarioId");
+            const sesion = await obtenerSesionActual();
 
-            if (usuarioLogueado !== "true") {
+            if (!sesion || !sesion.id) {
                 modalMensaje.textContent = "Debes iniciar sesión para añadir productos a favoritos.";
-                modal.style.display = "flex";
-                return;
-            }
-
-            if (!usuarioId) {
-                modalMensaje.textContent = "No se encontró el usuario logueado.";
                 modal.style.display = "flex";
                 return;
             }
@@ -286,9 +304,10 @@ function renderizarProductos(productos, reiniciar = true) {
 
                 if (yaEsFavorito) {
                     const response = await fetch(
-                        `http://localhost:8080/favoritos?usuarioId=${usuarioId}&productoId=${producto.id}`,
+                        `http://localhost:8080/favoritos?usuarioId=${sesion.id}&productoId=${producto.id}`,
                         {
-                            method: "DELETE"
+                            method: "DELETE",
+                            credentials: "include"
                         }
                     );
 
@@ -301,9 +320,10 @@ function renderizarProductos(productos, reiniciar = true) {
                     mostrarToastFavorito("Eliminado de favoritos");
                 } else {
                     const response = await fetch(
-                        `http://localhost:8080/favoritos?usuarioId=${usuarioId}&productoId=${producto.id}`,
+                        `http://localhost:8080/favoritos?usuarioId=${sesion.id}&productoId=${producto.id}`,
                         {
-                            method: "POST"
+                            method: "POST",
+                            credentials: "include"
                         }
                     );
 
@@ -321,11 +341,13 @@ function renderizarProductos(productos, reiniciar = true) {
             }
         });
 
-        btnCarrito.addEventListener("click", (event) => {
+        btnCarrito.addEventListener("click", async (event) => {
             event.preventDefault();
             event.stopPropagation();
 
-            if (localStorage.getItem("usuarioLogueado") !== "true") {
+            const sesion = await obtenerSesionActual();
+
+            if (!sesion || !sesion.id) {
                 modalMensaje.textContent = "Debes iniciar sesión para añadir productos al carrito.";
                 modal.style.display = "flex";
                 return;
@@ -344,9 +366,9 @@ function renderizarProductos(productos, reiniciar = true) {
             event.preventDefault();
             event.stopPropagation();
 
-            const usuarioId = localStorage.getItem("usuarioId");
+            const sesion = await obtenerSesionActual();
 
-            if (!usuarioId) {
+            if (!sesion || !sesion.id) {
                 mensajeStock.textContent = "Debes iniciar sesión";
                 return;
             }
@@ -358,9 +380,10 @@ function renderizarProductos(productos, reiniciar = true) {
 
             try {
                 const response = await fetch(
-                    `http://localhost:8080/carrito/agregar?usuarioId=${usuarioId}&productoId=${producto.id}&talla=${tallaSeleccionada}&cantidad=1`,
+                    `http://localhost:8080/carrito/agregar?usuarioId=${sesion.id}&productoId=${producto.id}&talla=${tallaSeleccionada}&cantidad=1`,
                     {
-                        method: "POST"
+                        method: "POST",
+                        credentials: "include"
                     }
                 );
 

@@ -10,22 +10,43 @@ document.addEventListener("DOMContentLoaded", () => {
     cargarCarrito();
 });
 
+async function obtenerSesionActual() {
+    try {
+        const response = await fetch("http://localhost:8080/auth/session", {
+            method: "GET",
+            credentials: "include"
+        });
+
+        if (!response.ok) {
+            return null;
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error("Error al comprobar sesión:", error);
+        return null;
+    }
+}
+
 async function cargarCarrito() {
-    const usuarioId = localStorage.getItem("usuarioId");
+    const sesion = await obtenerSesionActual();
 
     const listaCarrito = document.getElementById("lista-carrito");
     const carritoVacio = document.getElementById("carrito-vacio");
     const subtotal = document.getElementById("subtotal");
     const total = document.getElementById("total");
 
-    if (!usuarioId) {
+    if (!sesion || !sesion.id) {
         mostrarCarritoVacio();
         return;
     }
 
     try {
-        const url = `http://localhost:8080/carrito/usuario/${usuarioId}`;
-        const response = await fetch(url);
+        const url = `http://localhost:8080/carrito/usuario/${sesion.id}`;
+        const response = await fetch(url, {
+            method: "GET",
+            credentials: "include"
+        });
 
         if (!response.ok) {
             throw new Error("Error al obtener carrito");
@@ -92,16 +113,16 @@ async function cargarCarrito() {
 
             btnRestar.addEventListener("click", async () => {
                 if (cantidad > 1) {
-                    await actualizarCantidad(usuarioId, producto.id, talla, cantidad - 1);
+                    await actualizarCantidad(sesion.id, producto.id, talla, cantidad - 1);
                 }
             });
 
             btnSumar.addEventListener("click", async () => {
-                await actualizarCantidad(usuarioId, producto.id, talla, cantidad + 1);
+                await actualizarCantidad(sesion.id, producto.id, talla, cantidad + 1);
             });
 
             btnEliminar.addEventListener("click", async () => {
-                await eliminarProducto(usuarioId, producto.id, talla);
+                await eliminarProducto(sesion.id, producto.id, talla);
             });
 
             selectTalla.addEventListener("change", async (e) => {
@@ -111,7 +132,7 @@ async function cargarCarrito() {
                     return;
                 }
 
-                await cambiarTalla(usuarioId, producto.id, talla, nuevaTalla);
+                await cambiarTalla(sesion.id, producto.id, talla, nuevaTalla);
             });
 
             listaCarrito.appendChild(article);
@@ -131,7 +152,8 @@ async function actualizarCantidad(usuarioId, productoId, talla, nuevaCantidad) {
         const url = `http://localhost:8080/carrito/actualizar-cantidad?usuarioId=${usuarioId}&productoId=${productoId}&talla=${encodeURIComponent(talla)}&nuevaCantidad=${nuevaCantidad}`;
 
         const response = await fetch(url, {
-            method: "PUT"
+            method: "PUT",
+            credentials: "include"
         });
 
         if (!response.ok) {
@@ -151,7 +173,8 @@ async function eliminarProducto(usuarioId, productoId, talla) {
         const url = `http://localhost:8080/carrito/eliminar?usuarioId=${usuarioId}&productoId=${productoId}&talla=${encodeURIComponent(talla)}`;
 
         const response = await fetch(url, {
-            method: "DELETE"
+            method: "DELETE",
+            credentials: "include"
         });
 
         if (!response.ok) {
@@ -171,7 +194,8 @@ async function cambiarTalla(usuarioId, productoId, tallaActual, nuevaTalla) {
         const url = `http://localhost:8080/carrito/cambiar-talla?usuarioId=${usuarioId}&productoId=${productoId}&tallaActual=${encodeURIComponent(tallaActual)}&nuevaTalla=${encodeURIComponent(nuevaTalla)}`;
 
         const response = await fetch(url, {
-            method: "PUT"
+            method: "PUT",
+            credentials: "include"
         });
 
         if (!response.ok) {

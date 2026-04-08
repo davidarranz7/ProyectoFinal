@@ -51,14 +51,31 @@ function inicializarMenu() {
     const btnCerrarCarrito = document.getElementById("cerrar-carrito");
     const btnIrCarrito = document.getElementById("btn-ir-carrito");
 
-    function actualizarEstadoUsuario() {
-        const usuarioLogueado = sessionStorage.getItem("usuarioLogueado") === "true";
-        const nombreUsuario = sessionStorage.getItem("nombreUsuario");
+    async function obtenerSesionActual() {
+        try {
+            const response = await fetch("http://localhost:8080/auth/session", {
+                method: "GET",
+                credentials: "include"
+            });
 
-        if (usuarioLogueado && nombreUsuario) {
+            if (!response.ok) {
+                return null;
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error("Error al comprobar sesión:", error);
+            return null;
+        }
+    }
+
+    async function actualizarEstadoUsuario() {
+        const sesion = await obtenerSesionActual();
+
+        if (sesion && sesion.nombre) {
             if (loginLink) loginLink.style.display = "none";
             if (profileMenu) profileMenu.style.display = "block";
-            if (profileName) profileName.textContent = nombreUsuario;
+            if (profileName) profileName.textContent = sesion.nombre;
             if (btnAbrirCarritoMenu) btnAbrirCarritoMenu.style.display = "inline-flex";
         } else {
             if (loginLink) loginLink.style.display = "inline-flex";
@@ -86,19 +103,23 @@ function inicializarMenu() {
     }
 
     async function actualizarContadorCarrito() {
-        const usuarioId = sessionStorage.getItem("usuarioId");
         const contador = document.getElementById("contador-carrito");
 
         if (!contador) return;
 
-        if (!usuarioId) {
+        const sesion = await obtenerSesionActual();
+
+        if (!sesion || !sesion.id) {
             contador.style.display = "none";
             contador.textContent = "0";
             return;
         }
 
         try {
-            const response = await fetch(`http://localhost:8080/carrito/usuario/${usuarioId}`);
+            const response = await fetch(`http://localhost:8080/carrito/usuario/${sesion.id}`, {
+                method: "GET",
+                credentials: "include"
+            });
 
             if (!response.ok) {
                 throw new Error("No se pudo cargar el contador del carrito");
@@ -122,13 +143,14 @@ function inicializarMenu() {
     }
 
     async function cargarMiniCarrito() {
-        const usuarioId = sessionStorage.getItem("usuarioId");
         const contenedorItems = document.getElementById("carrito-items");
         const totalElemento = document.getElementById("carrito-total");
 
         if (!contenedorItems || !totalElemento) return;
 
-        if (!usuarioId) {
+        const sesion = await obtenerSesionActual();
+
+        if (!sesion || !sesion.id) {
             contenedorItems.innerHTML = `<p class="carrito-vacio">Inicia sesión para ver tu carrito.</p>`;
             totalElemento.textContent = "0 €";
             actualizarContadorCarrito();
@@ -137,8 +159,14 @@ function inicializarMenu() {
 
         try {
             const [itemsResponse, totalResponse] = await Promise.all([
-                fetch(`http://localhost:8080/carrito/usuario/${usuarioId}`),
-                fetch(`http://localhost:8080/carrito/total/${usuarioId}`)
+                fetch(`http://localhost:8080/carrito/usuario/${sesion.id}`, {
+                    method: "GET",
+                    credentials: "include"
+                }),
+                fetch(`http://localhost:8080/carrito/total/${sesion.id}`, {
+                    method: "GET",
+                    credentials: "include"
+                })
             ]);
 
             if (!itemsResponse.ok || !totalResponse.ok) {
@@ -196,9 +224,10 @@ function inicializarMenu() {
                 btnEliminar.addEventListener("click", async () => {
                     try {
                         const response = await fetch(
-                            `http://localhost:8080/carrito/eliminar?usuarioId=${usuarioId}&productoId=${producto.id}&talla=${item.talla}`,
+                            `http://localhost:8080/carrito/eliminar?usuarioId=${sesion.id}&productoId=${producto.id}&talla=${item.talla}`,
                             {
-                                method: "DELETE"
+                                method: "DELETE",
+                                credentials: "include"
                             }
                         );
 
@@ -216,9 +245,10 @@ function inicializarMenu() {
                 btnSumar.addEventListener("click", async () => {
                     try {
                         const response = await fetch(
-                            `http://localhost:8080/carrito/actualizar-cantidad?usuarioId=${usuarioId}&productoId=${producto.id}&talla=${item.talla}&nuevaCantidad=${item.cantidad + 1}`,
+                            `http://localhost:8080/carrito/actualizar-cantidad?usuarioId=${sesion.id}&productoId=${producto.id}&talla=${item.talla}&nuevaCantidad=${item.cantidad + 1}`,
                             {
-                                method: "PUT"
+                                method: "PUT",
+                                credentials: "include"
                             }
                         );
 
@@ -236,9 +266,10 @@ function inicializarMenu() {
                 btnRestar.addEventListener("click", async () => {
                     try {
                         const response = await fetch(
-                            `http://localhost:8080/carrito/actualizar-cantidad?usuarioId=${usuarioId}&productoId=${producto.id}&talla=${item.talla}&nuevaCantidad=${item.cantidad - 1}`,
+                            `http://localhost:8080/carrito/actualizar-cantidad?usuarioId=${sesion.id}&productoId=${producto.id}&talla=${item.talla}&nuevaCantidad=${item.cantidad - 1}`,
                             {
-                                method: "PUT"
+                                method: "PUT",
+                                credentials: "include"
                             }
                         );
 
@@ -286,6 +317,23 @@ function inicializarMenu() {
         if (!authAbierto) {
             document.body.style.overflow = "";
         }
+    }
+
+    async function cerrarSesion() {
+        try {
+            await fetch("http://localhost:8080/auth/logout", {
+                method: "POST",
+                credentials: "include"
+            });
+        } catch (error) {
+            console.error("Error al cerrar sesión:", error);
+        }
+
+        await actualizarEstadoUsuario();
+        await actualizarContadorCarrito();
+        cerrarOverlay();
+        cerrarCarrito();
+        window.location.href = "index.html";
     }
 
     actualizarEstadoUsuario();
@@ -339,15 +387,9 @@ function inicializarMenu() {
     });
 
     if (logoutBtn) {
-        logoutBtn.addEventListener("click", (e) => {
+        logoutBtn.addEventListener("click", async (e) => {
             e.preventDefault();
-            sessionStorage.removeItem("usuarioLogueado");
-            sessionStorage.removeItem("nombreUsuario");
-            sessionStorage.removeItem("usuarioId");
-            actualizarEstadoUsuario();
-            actualizarContadorCarrito();
-            cerrarOverlay();
-            cerrarCarrito();
+            await cerrarSesion();
         });
     }
 

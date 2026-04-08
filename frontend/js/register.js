@@ -66,6 +66,26 @@ function finalizarRegistro(nombreUsuario) {
     }, 1200);
 }
 
+async function iniciarSesionAutomatica(nombre, password) {
+    const response = await fetch("http://localhost:8080/auth/login", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        credentials: "include",
+        body: JSON.stringify({
+            nombre: nombre,
+            password: password
+        })
+    });
+
+    if (!response.ok) {
+        throw new Error("No se pudo iniciar sesión automáticamente tras el registro");
+    }
+
+    return await response.json();
+}
+
 form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
@@ -84,6 +104,7 @@ form.addEventListener("submit", async (e) => {
             headers: {
                 "Content-Type": "application/json"
             },
+            credentials: "include",
             body: JSON.stringify({
                 nombre: usuario,
                 email: email,
@@ -98,17 +119,15 @@ form.addEventListener("submit", async (e) => {
             return;
         }
 
-        const data = await response.json();
+        await response.json();
 
-        sessionStorage.setItem("usuarioLogueado", "true");
-        sessionStorage.setItem("nombreUsuario", data.nombre);
-        sessionStorage.setItem("usuarioId", data.id);
+        await iniciarSesionAutomatica(usuario, password);
 
         mostrarModal("CORRECTO", "Cuenta creada", "Tu cuenta se ha registrado correctamente.");
-        finalizarRegistro(data.nombre);
+        finalizarRegistro(usuario);
 
     } catch (error) {
         console.error("Error en registro:", error);
-        mostrarModal("ERROR", "Servidor", "No se pudo conectar con el backend.");
+        mostrarModal("ERROR", "Servidor", error.message || "No se pudo conectar con el backend.");
     }
 });

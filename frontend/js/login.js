@@ -83,6 +83,7 @@ form.addEventListener("submit", async (e) => {
             headers: {
                 "Content-Type": "application/json"
             },
+            credentials: "include",
             body: JSON.stringify({
                 nombre: usuario,
                 password: password
@@ -100,10 +101,6 @@ form.addEventListener("submit", async (e) => {
         }
 
         const data = await response.json();
-
-        sessionStorage.setItem("usuarioLogueado", "true");
-        sessionStorage.setItem("nombreUsuario", data.nombre);
-        sessionStorage.setItem("usuarioId", data.id);
 
         mostrarModal("CORRECTO", "Bienvenido", `Hola ${data.nombre}`);
         finalizarLogin(data.nombre);

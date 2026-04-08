@@ -66,6 +66,21 @@ public class UsuarioService {
         return null;
     }
 
+    /// por si falla en algun momento!
+    /*
+    public Usuario login(String nombre, String password) {
+    for (Usuario u : usuarioRepository.findAll()) {
+        if (u.getNombre() != null
+                && u.getPassword() != null
+                && u.getNombre().equals(nombre)
+                && u.getPassword().equals(password)) {
+            return u;
+        }
+    }
+    return null;
+}
+    */
+
     public UsuarioPerfilDTO obtenerPerfil(Long usuarioId) {
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));

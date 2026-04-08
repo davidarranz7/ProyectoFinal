@@ -5,15 +5,33 @@ document.addEventListener("DOMContentLoaded", () => {
 let itemsCarrito = [];
 let subtotalGlobal = 0;
 
-async function iniciarCheckout() {
-    const usuarioId = localStorage.getItem("usuarioId");
+async function obtenerSesionActual() {
+    try {
+        const response = await fetch("http://localhost:8080/auth/session", {
+            method: "GET",
+            credentials: "include"
+        });
 
-    if (!usuarioId) {
+        if (!response.ok) {
+            return null;
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error("Error al comprobar sesión:", error);
+        return null;
+    }
+}
+
+async function iniciarCheckout() {
+    const sesion = await obtenerSesionActual();
+
+    if (!sesion || !sesion.id) {
         mostrarMensaje("Debes iniciar sesión para continuar con la compra.");
         return;
     }
 
-    await cargarResumenCheckout(usuarioId);
+    await cargarResumenCheckout(sesion.id);
     configurarMetodoEnvio();
     configurarMetodoPago();
     configurarBotonConfirmar();
@@ -26,7 +44,10 @@ async function cargarResumenCheckout(usuarioId) {
     const totalCheckout = document.getElementById("total-checkout");
 
     try {
-        const response = await fetch(`http://localhost:8080/carrito/usuario/${usuarioId}`);
+        const response = await fetch(`http://localhost:8080/carrito/usuario/${usuarioId}`, {
+            method: "GET",
+            credentials: "include"
+        });
 
         if (!response.ok) {
             throw new Error("No se pudo cargar el carrito");
@@ -181,7 +202,11 @@ async function cargarTiendasRecogidaVigo(nombreTienda, selectTienda) {
 
     try {
         const response = await fetch(
-            `http://localhost:8080/establecimientos/tienda/${encodeURIComponent(nombreTienda)}/ciudad/Vigo`
+            `http://localhost:8080/establecimientos/tienda/${encodeURIComponent(nombreTienda)}/ciudad/Vigo`,
+            {
+                method: "GET",
+                credentials: "include"
+            }
         );
 
         if (!response.ok) {
@@ -251,10 +276,10 @@ function configurarBotonConfirmar() {
 }
 
 async function confirmarPedido() {
-    const usuarioId = Number(localStorage.getItem("usuarioId"));
+    const sesion = await obtenerSesionActual();
     const metodoPagoSeleccionado = document.querySelector('input[name="metodoPago"]:checked')?.value;
 
-    if (!usuarioId) {
+    if (!sesion || !sesion.id) {
         mostrarMensaje("No se ha encontrado el usuario");
         return;
     }
@@ -265,7 +290,7 @@ async function confirmarPedido() {
     }
 
     const body = {
-        usuarioId: usuarioId,
+        usuarioId: Number(sesion.id),
         metodoPago: convertirMetodoPagoBackend(metodoPagoSeleccionado)
     };
 
@@ -314,6 +339,7 @@ async function confirmarPedido() {
             headers: {
                 "Content-Type": "application/json"
             },
+            credentials: "include",
             body: JSON.stringify(body)
         });
 

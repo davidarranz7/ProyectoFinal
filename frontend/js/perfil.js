@@ -2,22 +2,43 @@ document.addEventListener("DOMContentLoaded", () => {
     iniciarPaginaPerfil();
 });
 
-async function iniciarPaginaPerfil() {
-    const usuarioId = localStorage.getItem("usuarioId");
+async function obtenerSesionActual() {
+    try {
+        const response = await fetch("http://localhost:8080/auth/session", {
+            method: "GET",
+            credentials: "include"
+        });
 
-    if (!usuarioId) {
+        if (!response.ok) {
+            return null;
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error("Error al comprobar sesión:", error);
+        return null;
+    }
+}
+
+async function iniciarPaginaPerfil() {
+    const sesion = await obtenerSesionActual();
+
+    if (!sesion || !sesion.id) {
         mostrarMensaje("Debes iniciar sesión para acceder a tu perfil.");
         return;
     }
 
-    configurarFormularioPerfil(usuarioId);
-    configurarFormularioPassword(usuarioId);
-    await cargarPerfil(usuarioId);
+    configurarFormularioPerfil(sesion.id);
+    configurarFormularioPassword(sesion.id);
+    await cargarPerfil(sesion.id);
 }
 
 async function cargarPerfil(usuarioId) {
     try {
-        const response = await fetch(`http://localhost:8080/usuarios/${usuarioId}/perfil`);
+        const response = await fetch(`http://localhost:8080/usuarios/${usuarioId}/perfil`, {
+            method: "GET",
+            credentials: "include"
+        });
 
         if (!response.ok) {
             throw new Error("No se pudo cargar el perfil");
@@ -60,6 +81,7 @@ function configurarFormularioPerfil(usuarioId) {
                 headers: {
                     "Content-Type": "application/json"
                 },
+                credentials: "include",
                 body: JSON.stringify(datos)
             });
 
@@ -70,7 +92,6 @@ function configurarFormularioPerfil(usuarioId) {
 
             const usuarioActualizado = await response.json();
 
-            actualizarDatosSesion(usuarioActualizado);
             actualizarNombreMenu(usuarioActualizado.nombre);
 
             mostrarMensaje("Perfil actualizado correctamente.", "ok");
@@ -109,6 +130,7 @@ function configurarFormularioPassword(usuarioId) {
                 headers: {
                     "Content-Type": "application/json"
                 },
+                credentials: "include",
                 body: JSON.stringify(datos)
             });
 
@@ -126,16 +148,6 @@ function configurarFormularioPassword(usuarioId) {
             mostrarMensaje(error.message || "No se pudo actualizar la contraseña.");
         }
     });
-}
-
-function actualizarDatosSesion(usuarioActualizado) {
-    const usuarioLogueado = JSON.parse(localStorage.getItem("usuarioLogueado"));
-
-    if (usuarioLogueado) {
-        usuarioLogueado.nombre = usuarioActualizado.nombre;
-        usuarioLogueado.email = usuarioActualizado.email;
-        localStorage.setItem("usuarioLogueado", JSON.stringify(usuarioLogueado));
-    }
 }
 
 function actualizarNombreMenu(nombreNuevo) {

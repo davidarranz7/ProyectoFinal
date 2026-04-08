@@ -1,6 +1,5 @@
 const params = new URLSearchParams(window.location.search);
 const productoId = params.get("id");
-const usuarioId = localStorage.getItem("usuarioId");
 
 const btnVolver = document.getElementById("btn-volver");
 const btnCarrito = document.getElementById("btn-carrito");
@@ -10,6 +9,7 @@ const tallasLista = document.getElementById("tallas-lista");
 let tallaSeleccionada = null;
 let productoActual = null;
 let esFavorito = false;
+let sesionActual = null;
 
 if (btnVolver) {
     btnVolver.addEventListener("click", () => {
@@ -81,15 +81,42 @@ function actualizarBotonFavorito() {
     }
 }
 
+async function obtenerSesionActual() {
+    try {
+        const response = await fetch("http://localhost:8080/auth/session", {
+            method: "GET",
+            credentials: "include"
+        });
+
+        if (!response.ok) {
+            sesionActual = null;
+            return null;
+        }
+
+        const data = await response.json();
+        sesionActual = data;
+        return data;
+    } catch (error) {
+        console.error("Error al comprobar sesión:", error);
+        sesionActual = null;
+        return null;
+    }
+}
+
 async function comprobarSiEsFavorito() {
-    if (!usuarioId || !productoId) {
+    const sesion = await obtenerSesionActual();
+
+    if (!sesion || !sesion.id || !productoId) {
         esFavorito = false;
         actualizarBotonFavorito();
         return;
     }
 
     try {
-        const response = await fetch(`http://localhost:8080/favoritos/usuario/${usuarioId}`);
+        const response = await fetch(`http://localhost:8080/favoritos/usuario/${sesion.id}`, {
+            method: "GET",
+            credentials: "include"
+        });
 
         if (!response.ok) {
             throw new Error("No se pudieron cargar favoritos");
@@ -212,7 +239,9 @@ async function cargarTallas() {
 function configurarEventosProducto() {
     if (btnCarrito) {
         btnCarrito.onclick = async () => {
-            if (!usuarioId) {
+            const sesion = await obtenerSesionActual();
+
+            if (!sesion || !sesion.id) {
                 mostrarMensajeError("Debes iniciar sesión para añadir productos al carrito.");
                 return;
             }
@@ -224,9 +253,10 @@ function configurarEventosProducto() {
 
             try {
                 const response = await fetch(
-                    `http://localhost:8080/carrito/agregar?usuarioId=${usuarioId}&productoId=${productoId}&talla=${tallaSeleccionada}&cantidad=1`,
+                    `http://localhost:8080/carrito/agregar?usuarioId=${sesion.id}&productoId=${productoId}&talla=${tallaSeleccionada}&cantidad=1`,
                     {
-                        method: "POST"
+                        method: "POST",
+                        credentials: "include"
                     }
                 );
 
@@ -249,7 +279,9 @@ function configurarEventosProducto() {
 
     if (btnFavorito) {
         btnFavorito.onclick = async () => {
-            if (!usuarioId) {
+            const sesion = await obtenerSesionActual();
+
+            if (!sesion || !sesion.id) {
                 mostrarMensajeError("Debes iniciar sesión para gestionar favoritos.");
                 return;
             }
@@ -257,9 +289,10 @@ function configurarEventosProducto() {
             try {
                 if (esFavorito) {
                     const response = await fetch(
-                        `http://localhost:8080/favoritos?usuarioId=${usuarioId}&productoId=${productoId}`,
+                        `http://localhost:8080/favoritos?usuarioId=${sesion.id}&productoId=${productoId}`,
                         {
-                            method: "DELETE"
+                            method: "DELETE",
+                            credentials: "include"
                         }
                     );
 
@@ -273,9 +306,10 @@ function configurarEventosProducto() {
                     mostrarToast("Eliminado de favoritos");
                 } else {
                     const response = await fetch(
-                        `http://localhost:8080/favoritos?usuarioId=${usuarioId}&productoId=${productoId}`,
+                        `http://localhost:8080/favoritos?usuarioId=${sesion.id}&productoId=${productoId}`,
                         {
-                            method: "POST"
+                            method: "POST",
+                            credentials: "include"
                         }
                     );
 
