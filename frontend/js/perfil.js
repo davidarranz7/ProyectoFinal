@@ -2,6 +2,8 @@ document.addEventListener("DOMContentLoaded", () => {
     iniciarPaginaPerfil();
 });
 
+let tarjetaIdPendienteEliminar = null;
+
 async function obtenerSesionActual() {
     try {
         const response = await fetch("http://localhost:8080/auth/session", {
@@ -31,6 +33,7 @@ async function iniciarPaginaPerfil() {
     configurarFormularioPerfil(sesion.id);
     configurarFormularioPassword(sesion.id);
     configurarTarjetas(sesion.id);
+    configurarModalEliminarTarjeta(sesion.id);
 
     await cargarPerfil(sesion.id);
     await cargarTarjetas(sesion.id);
@@ -91,6 +94,9 @@ function actualizarPanelLateral(usuario) {
 
 function configurarFormularioPerfil(usuarioId) {
     const formPerfil = document.getElementById("formPerfil");
+    const btnGuardarPerfil = document.getElementById("btn-guardar-perfil");
+
+    if (!formPerfil) return;
 
     formPerfil.addEventListener("submit", async (e) => {
         e.preventDefault();
@@ -98,8 +104,9 @@ function configurarFormularioPerfil(usuarioId) {
         const nombre = document.getElementById("nombre").value.trim();
         const email = document.getElementById("email").value.trim();
 
-        if (!nombre || !email) {
-            mostrarMensaje("Nombre y email son obligatorios.");
+        const errorValidacion = validarDatosPerfil(nombre, email);
+        if (errorValidacion) {
+            mostrarMensaje(errorValidacion);
             return;
         }
 
@@ -109,6 +116,11 @@ function configurarFormularioPerfil(usuarioId) {
         };
 
         try {
+            if (btnGuardarPerfil) {
+                btnGuardarPerfil.disabled = true;
+                btnGuardarPerfil.textContent = "Guardando...";
+            }
+
             const response = await fetch(`http://localhost:8080/usuarios/${usuarioId}/perfil`, {
                 method: "PUT",
                 headers: {
@@ -118,27 +130,75 @@ function configurarFormularioPerfil(usuarioId) {
                 body: JSON.stringify(datos)
             });
 
+            const textoRespuesta = await response.text();
+
             if (!response.ok) {
-                const textoError = await response.text();
-                throw new Error(textoError || "No se pudo actualizar el perfil");
+                throw new Error(textoRespuesta || "No se pudo actualizar el perfil");
             }
 
-            const usuarioActualizado = await response.json();
+            const usuarioActualizado = textoRespuesta ? JSON.parse(textoRespuesta) : null;
 
-            actualizarPanelLateral(usuarioActualizado);
-            actualizarNombreMenu(usuarioActualizado.nombre);
+            if (usuarioActualizado) {
+                document.getElementById("nombre").value = usuarioActualizado.nombre || "";
+                document.getElementById("email").value = usuarioActualizado.email || "";
+                document.getElementById("rol").value = usuarioActualizado.rol || "";
+
+                actualizarPanelLateral(usuarioActualizado);
+                actualizarNombreMenu(usuarioActualizado.nombre);
+            }
 
             mostrarMensaje("Perfil actualizado correctamente.", "ok");
 
         } catch (error) {
             console.error("Error al actualizar perfil:", error);
             mostrarMensaje(error.message || "No se pudo actualizar el perfil.");
+        } finally {
+            if (btnGuardarPerfil) {
+                btnGuardarPerfil.disabled = false;
+                btnGuardarPerfil.textContent = "Guardar cambios";
+            }
         }
     });
 }
 
+function validarDatosPerfil(nombre, email) {
+    if (!nombre || !email) {
+        return "Nombre y email son obligatorios.";
+    }
+
+    if (nombre.length < 3) {
+        return "El nombre debe tener al menos 3 caracteres.";
+    }
+
+    if (nombre.length > 30) {
+        return "El nombre no puede superar los 30 caracteres.";
+    }
+
+    const regexNombre = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ0-9._\-\s]+$/;
+    if (!regexNombre.test(nombre)) {
+        return "El nombre contiene caracteres no permitidos.";
+    }
+
+    if (!esEmailValido(email)) {
+        return "Introduce un email válido.";
+    }
+
+    if (email.length > 100) {
+        return "El email es demasiado largo.";
+    }
+
+    return null;
+}
+
+function esEmailValido(email) {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email);
+}
+
 function configurarFormularioPassword(usuarioId) {
     const formPassword = document.getElementById("formPassword");
+
+    if (!formPassword) return;
 
     formPassword.addEventListener("submit", async (e) => {
         e.preventDefault();
@@ -149,6 +209,16 @@ function configurarFormularioPassword(usuarioId) {
 
         if (!passwordActual || !passwordNueva || !confirmarPassword) {
             mostrarMensaje("Debes completar todos los campos de contraseña.");
+            return;
+        }
+
+        if (passwordNueva.length < 6) {
+            mostrarMensaje("La nueva contraseña debe tener al menos 6 caracteres.");
+            return;
+        }
+
+        if (passwordNueva !== confirmarPassword) {
+            mostrarMensaje("La nueva contraseña y su confirmación no coinciden.");
             return;
         }
 
@@ -194,12 +264,18 @@ function configurarTarjetas(usuarioId) {
     const btnCambiarFoto = document.getElementById("btn-cambiar-foto");
 
     function abrirModalTarjeta() {
-        modalTarjeta.style.display = "flex";
+        if (modalTarjeta) {
+            modalTarjeta.style.display = "flex";
+        }
     }
 
     function cerrarModal() {
-        modalTarjeta.style.display = "none";
-        formTarjeta.reset();
+        if (modalTarjeta) {
+            modalTarjeta.style.display = "none";
+        }
+        if (formTarjeta) {
+            formTarjeta.reset();
+        }
     }
 
     if (btnAnadirTarjeta) {
@@ -229,7 +305,7 @@ function configurarTarjetas(usuarioId) {
     }
 
     if (contenedorTarjetas) {
-        contenedorTarjetas.addEventListener("click", async (e) => {
+        contenedorTarjetas.addEventListener("click", (e) => {
             const bloqueAnadir = e.target.closest(".add-card");
             const btnEliminar = e.target.closest(".btn-eliminar-tarjeta");
 
@@ -243,27 +319,7 @@ function configurarTarjetas(usuarioId) {
 
                 if (!tarjetaId) return;
 
-                const confirmar = window.confirm("¿Seguro que quieres eliminar esta tarjeta?");
-                if (!confirmar) return;
-
-                try {
-                    const response = await fetch(`http://localhost:8080/tarjetas/${tarjetaId}`, {
-                        method: "DELETE",
-                        credentials: "include"
-                    });
-
-                    if (!response.ok) {
-                        const textoError = await response.text();
-                        throw new Error(textoError || "No se pudo eliminar la tarjeta");
-                    }
-
-                    mostrarMensaje("Tarjeta eliminada correctamente.", "ok");
-                    await cargarTarjetas(usuarioId);
-
-                } catch (error) {
-                    console.error("Error al eliminar tarjeta:", error);
-                    mostrarMensaje(error.message || "No se pudo eliminar la tarjeta.");
-                }
+                abrirModalEliminarTarjeta(tarjetaId);
             }
         });
     }
@@ -277,14 +333,15 @@ function configurarTarjetas(usuarioId) {
             const fechaExpiracion = document.getElementById("fechaExpiracionTarjeta").value.trim();
             const tipo = document.getElementById("tipoTarjeta").value;
 
-            if (!titular || !numeroTarjeta || !fechaExpiracion || !tipo) {
-                mostrarMensaje("Debes completar todos los datos de la tarjeta.");
+            const errorTarjeta = validarDatosTarjeta(titular, numeroTarjeta, fechaExpiracion, tipo);
+            if (errorTarjeta) {
+                mostrarMensaje(errorTarjeta);
                 return;
             }
 
             const datos = {
                 titular: titular,
-                numeroTarjeta: numeroTarjeta,
+                numeroTarjeta: numeroTarjeta.replace(/\s+/g, ""),
                 fechaExpiracion: fechaExpiracion,
                 tipo: tipo
             };
@@ -299,8 +356,9 @@ function configurarTarjetas(usuarioId) {
                     body: JSON.stringify(datos)
                 });
 
+                const textoError = await response.text();
+
                 if (!response.ok) {
-                    const textoError = await response.text();
                     throw new Error(textoError || "No se pudo guardar la tarjeta");
                 }
 
@@ -313,6 +371,138 @@ function configurarTarjetas(usuarioId) {
                 mostrarMensaje(error.message || "No se pudo guardar la tarjeta.");
             }
         });
+    }
+
+    const numeroTarjetaInput = document.getElementById("numeroTarjeta");
+    const fechaExpiracionInput = document.getElementById("fechaExpiracionTarjeta");
+
+    if (numeroTarjetaInput) {
+        numeroTarjetaInput.addEventListener("input", () => {
+            numeroTarjetaInput.value = formatearNumeroTarjetaInput(numeroTarjetaInput.value);
+        });
+    }
+
+    if (fechaExpiracionInput) {
+        fechaExpiracionInput.addEventListener("input", () => {
+            fechaExpiracionInput.value = formatearFechaExpiracionInput(fechaExpiracionInput.value);
+        });
+    }
+}
+
+function validarDatosTarjeta(titular, numeroTarjeta, fechaExpiracion, tipo) {
+    if (!titular || !numeroTarjeta || !fechaExpiracion || !tipo) {
+        return "Debes completar todos los datos de la tarjeta.";
+    }
+
+    if (titular.length < 3) {
+        return "El nombre del titular es demasiado corto.";
+    }
+
+    const numeroLimpio = numeroTarjeta.replace(/\s+/g, "");
+
+    if (!/^\d{16}$/.test(numeroLimpio)) {
+        return "El número de tarjeta debe tener 16 dígitos.";
+    }
+
+    if (!/^\d{2}\/\d{2}$/.test(fechaExpiracion)) {
+        return "La fecha de expiración debe tener formato MM/AA.";
+    }
+
+    const [mesTexto] = fechaExpiracion.split("/");
+    const mes = parseInt(mesTexto, 10);
+
+    if (mes < 1 || mes > 12) {
+        return "El mes de expiración no es válido.";
+    }
+
+    return null;
+}
+
+function formatearNumeroTarjetaInput(valor) {
+    const soloNumeros = valor.replace(/\D/g, "").slice(0, 16);
+    return soloNumeros.replace(/(\d{4})(?=\d)/g, "$1 ");
+}
+
+function formatearFechaExpiracionInput(valor) {
+    const soloNumeros = valor.replace(/\D/g, "").slice(0, 4);
+
+    if (soloNumeros.length <= 2) {
+        return soloNumeros;
+    }
+
+    return `${soloNumeros.slice(0, 2)}/${soloNumeros.slice(2)}`;
+}
+
+function configurarModalEliminarTarjeta(usuarioId) {
+    const modalEliminar = document.getElementById("modal-confirmar-eliminar");
+    const cerrarModalEliminar = document.getElementById("cerrar-modal-eliminar");
+    const cancelarEliminar = document.getElementById("cancelar-eliminar-tarjeta");
+    const confirmarEliminar = document.getElementById("confirmar-eliminar-tarjeta");
+
+    function cerrarModal() {
+        if (modalEliminar) {
+            modalEliminar.style.display = "none";
+        }
+        tarjetaIdPendienteEliminar = null;
+    }
+
+    if (cerrarModalEliminar) {
+        cerrarModalEliminar.addEventListener("click", cerrarModal);
+    }
+
+    if (cancelarEliminar) {
+        cancelarEliminar.addEventListener("click", cerrarModal);
+    }
+
+    if (modalEliminar) {
+        modalEliminar.addEventListener("click", (e) => {
+            if (e.target === modalEliminar) {
+                cerrarModal();
+            }
+        });
+    }
+
+    if (confirmarEliminar) {
+        confirmarEliminar.addEventListener("click", async () => {
+            if (!tarjetaIdPendienteEliminar) return;
+
+            try {
+                confirmarEliminar.disabled = true;
+                confirmarEliminar.textContent = "Eliminando...";
+
+                const response = await fetch(`http://localhost:8080/tarjetas/${tarjetaIdPendienteEliminar}`, {
+                    method: "DELETE",
+                    credentials: "include"
+                });
+
+                const textoError = await response.text();
+
+                if (!response.ok) {
+                    throw new Error(textoError || "No se pudo eliminar la tarjeta");
+                }
+
+                cerrarModal();
+                mostrarMensaje("Tarjeta eliminada correctamente.", "ok");
+                await cargarTarjetas(usuarioId);
+
+            } catch (error) {
+                console.error("Error al eliminar tarjeta:", error);
+                mostrarMensaje(error.message || "No se pudo eliminar la tarjeta.");
+            } finally {
+                confirmarEliminar.disabled = false;
+                confirmarEliminar.textContent = "Eliminar";
+            }
+        });
+    }
+}
+
+function abrirModalEliminarTarjeta(tarjetaId) {
+    const modalEliminar = document.getElementById("modal-confirmar-eliminar");
+
+    tarjetaIdPendienteEliminar = tarjetaId;
+
+    if (modalEliminar) {
+        modalEliminar.style.display = "flex";
     }
 }
 
@@ -351,7 +541,7 @@ function renderizarTarjetas(tarjetas) {
 
     if (!Array.isArray(tarjetas) || tarjetas.length === 0) {
         contenedorTarjetas.innerHTML = `
-            <div class="add-card" style="cursor:pointer; border:2px dashed #ddd; border-radius:18px; padding:28px; text-align:center; color:#666;">
+            <div class="add-card">
                 Añadir nueva tarjeta de pago
             </div>
         `;
@@ -364,12 +554,6 @@ function renderizarTarjetas(tarjetas) {
 
     const bloqueAnadir = document.createElement("div");
     bloqueAnadir.className = "add-card";
-    bloqueAnadir.style.cursor = "pointer";
-    bloqueAnadir.style.border = "2px dashed #ddd";
-    bloqueAnadir.style.borderRadius = "18px";
-    bloqueAnadir.style.padding = "28px";
-    bloqueAnadir.style.textAlign = "center";
-    bloqueAnadir.style.color = "#666";
     bloqueAnadir.textContent = "Añadir nueva tarjeta de pago";
 
     contenedorTarjetas.appendChild(bloqueAnadir);

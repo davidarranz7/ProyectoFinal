@@ -5,7 +5,8 @@ import com.david.ProyectoFinal.dto.ActualizarPerfilDTO;
 import com.david.ProyectoFinal.dto.CambiarPasswordDTO;
 import com.david.ProyectoFinal.dto.UsuarioPerfilDTO;
 import com.david.ProyectoFinal.model.Usuario;
-import com.david.ProyectoFinal.repository.UsuarioRepository;
+import com.david.ProyectoFinal.repository.*;
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -14,9 +15,23 @@ import java.util.List;
 public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
+    private final TarjetaRepository tarjetaRepository;
+    private final CarritoRepository carritoRepository;
+    private final ItemCarritoRepository itemCarritoRepository;
+    private final PagoRepository pagoRepository;
+    private final PedidoRepository pedidoRepository;
+    private final ItemPedidoRepository itemPedidoRepository;
+    private final FavoritoRepository favoritoRepository;
 
-    public UsuarioService(UsuarioRepository usuarioRepository) {
+    public UsuarioService(UsuarioRepository usuarioRepository, TarjetaRepository tarjetaRepository, CarritoRepository carritoRepository, ItemCarritoRepository itemCarritoRepository, PagoRepository pagoRepository, PedidoRepository pedidoRepository, ItemPedidoRepository itemPedidoRepository, FavoritoRepository favoritoRepository) {
         this.usuarioRepository = usuarioRepository;
+        this.tarjetaRepository = tarjetaRepository;
+        this.carritoRepository = carritoRepository;
+        this.itemCarritoRepository = itemCarritoRepository;
+        this.pagoRepository = pagoRepository;
+        this.pedidoRepository = pedidoRepository;
+        this.itemPedidoRepository = itemPedidoRepository;
+        this.favoritoRepository = favoritoRepository;
     }
 
     public List<Usuario> obtenerTodos(){
@@ -39,8 +54,21 @@ public class UsuarioService {
         return usuarioRepository.findById(id).orElse(null);
     }
 
-    public void eliminar(Long id){
-        usuarioRepository.deleteById(id);
+    @Transactional
+    public void eliminar(Long id) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        tarjetaRepository.deleteByUsuarioId(id);
+        itemCarritoRepository.deleteByCarritoUsuarioId(id);
+        carritoRepository.deleteByUsuarioId(id);
+        pagoRepository.deleteByUsuarioId(id);
+
+        itemPedidoRepository.deleteByPedidoUsuarioId(id);
+        pedidoRepository.deleteByUsuarioId(id);
+        favoritoRepository.deleteByUsuarioId(id);
+
+        usuarioRepository.delete(usuario);
     }
 
     public Usuario actutualizar(Long id, Usuario usuarioActualizado){
@@ -97,16 +125,31 @@ public class UsuarioService {
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        if (dto.getNombre() == null || dto.getNombre().isBlank()) {
+        String nombreLimpio = dto.getNombre() != null ? dto.getNombre().trim() : "";
+        String emailLimpio = dto.getEmail() != null ? dto.getEmail().trim() : "";
+
+        if (nombreLimpio.isBlank()) {
             throw new RuntimeException("El nombre no puede estar vacío");
         }
 
-        if (dto.getEmail() == null || dto.getEmail().isBlank()) {
+        if (emailLimpio.isBlank()) {
             throw new RuntimeException("El email no puede estar vacío");
         }
 
-        usuario.setNombre(dto.getNombre());
-        usuario.setEmail(dto.getEmail());
+        for (Usuario otroUsuario : usuarioRepository.findAll()) {
+            if (!otroUsuario.getId().equals(usuarioId)) {
+                if (otroUsuario.getNombre() != null && otroUsuario.getNombre().equalsIgnoreCase(nombreLimpio)) {
+                    throw new RuntimeException("Ese nombre de usuario ya está en uso");
+                }
+
+                if (otroUsuario.getEmail() != null && otroUsuario.getEmail().equalsIgnoreCase(emailLimpio)) {
+                    throw new RuntimeException("Ese email ya está en uso");
+                }
+            }
+        }
+
+        usuario.setNombre(nombreLimpio);
+        usuario.setEmail(emailLimpio);
 
         Usuario usuarioActualizado = usuarioRepository.save(usuario);
 

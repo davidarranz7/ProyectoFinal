@@ -14,4 +14,5 @@ public interface FavoritoRepository extends JpaRepository<Favorito, Long> {
 
     void deleteByUsuarioIdAndProductoId(Long usuarioId, Long productoId);///Borra el favorito exacto de ese usuario con ese producto.
 
+    void deleteByUsuarioId(Long usuarioId);
 }
