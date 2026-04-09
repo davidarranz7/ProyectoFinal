@@ -74,4 +74,24 @@ public class UsuarioController {
         return ResponseEntity.ok("Contraseña actualizada correctamente");
     }
 
+    @GetMapping("/{id}/validar-nombre")
+    public ResponseEntity<?> validarNombrePerfil(@PathVariable Long id,
+                                                 @RequestParam String nombre) {
+        try {
+            return ResponseEntity.ok(usuarioService.validarNombrePerfil(id, nombre));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/{id}/validar-email")
+    public ResponseEntity<?> validarEmailPerfil(@PathVariable Long id,
+                                                @RequestParam String email) {
+        try {
+            return ResponseEntity.ok(usuarioService.validarEmailPerfil(id, email));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
 }

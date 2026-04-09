@@ -4,6 +4,7 @@ package com.david.ProyectoFinal.service;
 import com.david.ProyectoFinal.dto.ActualizarPerfilDTO;
 import com.david.ProyectoFinal.dto.CambiarPasswordDTO;
 import com.david.ProyectoFinal.dto.UsuarioPerfilDTO;
+import com.david.ProyectoFinal.dto.ValidacionCampoDTO;
 import com.david.ProyectoFinal.model.Usuario;
 import com.david.ProyectoFinal.repository.*;
 import jakarta.transaction.Transactional;
@@ -183,6 +184,60 @@ public class UsuarioService {
 
         usuario.setPassword(dto.getPasswordNueva());
         usuarioRepository.save(usuario);
+    }
+
+    public ValidacionCampoDTO validarNombrePerfil(Long usuarioId, String nombre) {
+        Usuario usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        String nombreLimpio = nombre != null ? nombre.trim() : "";
+
+        if (nombreLimpio.isBlank()) {
+            return new ValidacionCampoDTO(false, "El nombre no puede estar vacío");
+        }
+
+        if (nombreLimpio.length() < 3) {
+            return new ValidacionCampoDTO(false, "Debe tener al menos 3 caracteres");
+        }
+
+        if (usuario.getNombre() != null && usuario.getNombre().equalsIgnoreCase(nombreLimpio)) {
+            return new ValidacionCampoDTO(true, "Es tu nombre actual");
+        }
+
+        boolean existe = usuarioRepository.existsByNombreIgnoreCase(nombreLimpio);
+
+        if (existe) {
+            return new ValidacionCampoDTO(false, "Ese nombre ya está en uso");
+        }
+
+        return new ValidacionCampoDTO(true, "Nombre disponible");
+    }
+
+    public ValidacionCampoDTO validarEmailPerfil(Long usuarioId, String email) {
+        Usuario usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        String emailLimpio = email != null ? email.trim() : "";
+
+        if (emailLimpio.isBlank()) {
+            return new ValidacionCampoDTO(false, "El email no puede estar vacío");
+        }
+
+        if (!emailLimpio.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")) {
+            return new ValidacionCampoDTO(false, "Formato de email no válido");
+        }
+
+        if (usuario.getEmail() != null && usuario.getEmail().equalsIgnoreCase(emailLimpio)) {
+            return new ValidacionCampoDTO(true, "Es tu email actual");
+        }
+
+        boolean existe = usuarioRepository.existsByEmailIgnoreCase(emailLimpio);
+
+        if (existe) {
+            return new ValidacionCampoDTO(false, "Ese email ya está en uso");
+        }
+
+        return new ValidacionCampoDTO(true, "Email disponible");
     }
 
 }

@@ -14,97 +14,176 @@
     <aside class="card perfil-lateral">
         <div class="avatar" id="avatar-inicial">D</div>
         <h2 id="perfil-nombre-lateral">Usuario</h2>
-        <p>Mi cuenta personal</p>
-        <button class="btn btn-principal" type="button" id="btn-cambiar-foto">Cambiar foto</button>
+        <p id="mini-email">usuario@email.com</p>
+
+        <button class="btn btn-principal" type="button" id="btn-cambiar-foto">
+            Cambiar foto
+        </button>
+
+        <div class="menu-lateral">
+            <button id="btn-menu-perfil" class="menu-lateral-btn menu-lateral-activo" type="button">
+                Mi perfil
+            </button>
+            <button id="btn-menu-password" class="menu-lateral-btn" type="button">
+                Cambiar contraseña
+            </button>
+            <button id="btn-menu-tarjetas" class="menu-lateral-btn" type="button">
+                Métodos de pago
+            </button>
+        </div>
 
         <div class="mini-datos">
             <div class="mini-dato">
-                <span>Correo</span>
-                <span id="mini-email">usuario@email.com</span>
-            </div>
-            <div class="mini-dato">
-                <span>Rol</span>
-                <span id="mini-rol">CLIENTE</span>
-            </div>
-            <div class="mini-dato">
-                <span>Seguridad</span>
-                <span>Contraseña y acceso</span>
+                <span>Tipo de cuenta</span>
+                <span id="mini-rol">Cuenta estándar</span>
             </div>
         </div>
     </aside>
 
     <main class="contenido">
-        <div id="mensaje-perfil" class="mensaje-perfil" style="display: none;"></div>
+        <div id="mensaje-perfil" class="mensaje-perfil" style="display:none;"></div>
 
-        <section class="card">
-            <h1 class="titulo-seccion">Mi perfil</h1>
+        <!-- SECCIÓN PERFIL -->
+        <section class="card seccion-contenido" id="seccion-perfil">
+            <div class="cabecera-seccion">
+                <div>
+                    <h1 class="titulo-seccion">Mi perfil</h1>
+                    <p class="subtitulo-seccion">
+                        Consulta tus datos y actualiza tu información personal cuando lo necesites.
+                    </p>
+                </div>
+
+                <div class="acciones-cabecera">
+                    <button class="btn btn-secundario btn-auto" type="button" id="btn-editar-perfil">
+                        Editar perfil
+                    </button>
+                </div>
+            </div>
 
             <form id="formPerfil">
-                <div class="form-grid">
-                    <div class="campo">
-                        <label for="nombre">Nombre de usuario</label>
-                        <input type="text" id="nombre" value="" />
-                    </div>
+                <div class="bloque-perfil">
+                    <h2 class="titulo-bloque">Datos principales</h2>
 
-                    <div class="campo">
-                        <label for="email">Correo electrónico</label>
-                        <input type="email" id="email" value="" />
-                    </div>
+                    <div class="form-grid">
+                        <div class="campo">
+                            <label for="nombre">Nombre de usuario</label>
+                            <input type="text" id="nombre" readonly />
+                            <small id="validacion-nombre" class="texto-validacion"></small>
+                        </div>
 
-                    <div class="campo campo-completo">
-                        <label for="rol">Rol</label>
-                        <input type="text" id="rol" value="" readonly />
+                        <div class="campo">
+                            <label for="email">Correo electrónico</label>
+                            <input type="email" id="email" readonly />
+                            <small id="validacion-email" class="texto-validacion"></small>
+                        </div>
+
+                        <div class="campo">
+                            <label for="rol">Rol</label>
+                            <input type="text" id="rol" readonly />
+                        </div>
+
+                        <div class="campo">
+                            <label for="tipoCuenta">Tipo de cuenta</label>
+                            <input type="text" id="tipoCuenta" readonly />
+                        </div>
                     </div>
                 </div>
 
-                <div class="acciones">
-                    <button class="btn btn-principal" type="submit" id="btn-guardar-perfil">Guardar cambios</button>
+                <div class="bloque-perfil">
+                    <h2 class="titulo-bloque">Ubicación</h2>
+
+                    <div class="form-grid">
+                        <div class="campo">
+                            <label for="provincia">Provincia</label>
+                            <input type="text" id="provincia" value="Pontevedra" readonly />
+                        </div>
+
+                        <div class="campo">
+                            <label for="ciudad">Ciudad / Municipio</label>
+                            <input type="text" id="ciudad" value="Gondomar" readonly />
+                        </div>
+
+                        <div class="campo">
+                            <label for="calle">Calle</label>
+                            <input type="text" id="calle" value="Peitieiros" readonly />
+                        </div>
+
+                        <div class="campo">
+                            <label for="numeroDireccion">Número / Piso / Portal</label>
+                            <input type="text" id="numeroDireccion" value="-" readonly />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="acciones" id="acciones-edicion-perfil">
+                    <button class="btn btn-secundario btn-auto" type="button" id="btn-cancelar-edicion-perfil" style="display:none;">
+                        Cancelar
+                    </button>
+                    <button class="btn btn-principal btn-auto" type="submit" id="btn-guardar-perfil" style="display:none;">
+                        Guardar cambios
+                    </button>
                 </div>
             </form>
         </section>
 
-        <section class="card">
-            <h2 class="titulo-seccion">Cambiar contraseña</h2>
+        <!-- SECCIÓN PASSWORD -->
+        <section class="card seccion-contenido" id="seccion-password" style="display:none;">
+            <div class="cabecera-seccion">
+                <div>
+                    <h1 class="titulo-seccion">Cambiar contraseña</h1>
+                    <p class="subtitulo-seccion">
+                        Actualiza tu contraseña para mantener tu cuenta protegida.
+                    </p>
+                </div>
+            </div>
 
             <form id="formPassword">
-                <div class="form-grid">
-                    <div class="campo campo-completo">
-                        <label for="passwordActual">Contraseña actual</label>
-                        <input type="password" id="passwordActual" />
-                    </div>
+                <div class="bloque-perfil">
+                    <div class="form-grid">
+                        <div class="campo campo-completo">
+                            <label for="passwordActual">Contraseña actual</label>
+                            <input type="password" id="passwordActual" />
+                        </div>
 
-                    <div class="campo">
-                        <label for="passwordNueva">Nueva contraseña</label>
-                        <input type="password" id="passwordNueva" />
-                    </div>
+                        <div class="campo">
+                            <label for="passwordNueva">Nueva contraseña</label>
+                            <input type="password" id="passwordNueva" />
+                        </div>
 
-                    <div class="campo">
-                        <label for="confirmarPassword">Confirmar nueva contraseña</label>
-                        <input type="password" id="confirmarPassword" />
+                        <div class="campo">
+                            <label for="confirmarPassword">Confirmar nueva contraseña</label>
+                            <input type="password" id="confirmarPassword" />
+                        </div>
                     </div>
                 </div>
 
                 <div class="acciones">
-                    <button class="btn btn-principal" type="submit">Actualizar contraseña</button>
+                    <button class="btn btn-principal btn-auto" type="submit">
+                        Actualizar contraseña
+                    </button>
                 </div>
             </form>
         </section>
 
-        <section class="card">
+        <!-- SECCIÓN TARJETAS -->
+        <section class="card seccion-contenido" id="seccion-tarjetas" style="display:none;">
             <div class="tarjetas-header">
-                <h2 class="titulo-seccion titulo-sin-margen">Métodos de pago</h2>
+                <div>
+                    <h1 class="titulo-seccion titulo-sin-margen">Métodos de pago</h1>
+                    <p class="subtitulo-seccion">Gestiona tus tarjetas guardadas</p>
+                </div>
+
                 <button class="btn btn-principal btn-auto" id="btn-anadir-tarjeta" type="button">
                     + Añadir tarjeta
                 </button>
             </div>
 
-            <div class="tarjetas" id="contenedor-tarjetas">
-                <!-- JS pinta aquí las tarjetas -->
-            </div>
+            <div class="tarjetas" id="contenedor-tarjetas"></div>
         </section>
     </main>
 </div>
 
+<!-- MODAL AÑADIR TARJETA -->
 <div id="modal-tarjeta" class="modal-overlay" style="display:none;">
     <div class="modal-contenido modal-mediano">
         <button id="cerrar-modal-tarjeta" type="button" class="modal-cerrar">×</button>
@@ -112,6 +191,8 @@
         <h2 class="modal-titulo">Añadir tarjeta</h2>
 
         <form id="formTarjeta">
+            <div id="mensaje-modal-tarjeta" class="mensaje-modal" style="display:none;"></div>
+
             <div class="modal-grid">
                 <div>
                     <label for="titularTarjeta" class="modal-label">Titular</label>
@@ -120,7 +201,7 @@
 
                 <div>
                     <label for="numeroTarjeta" class="modal-label">Número de tarjeta</label>
-                    <input type="text" id="numeroTarjeta" class="modal-input" placeholder="1234123412341234" />
+                    <input type="text" id="numeroTarjeta" class="modal-input" placeholder="1234 1234 1234 1234" />
                 </div>
 
                 <div class="modal-doble">
@@ -141,7 +222,7 @@
             </div>
 
             <div class="modal-acciones">
-                <button id="cancelar-modal-tarjeta" type="button" class="btn btn-secundario">
+                <button id="cancelar-modal-tarjeta" type="button" class="btn btn-secundario btn-auto">
                     Cancelar
                 </button>
                 <button type="submit" class="btn btn-principal">
@@ -152,6 +233,7 @@
     </div>
 </div>
 
+<!-- MODAL ELIMINAR TARJETA -->
 <div id="modal-confirmar-eliminar" class="modal-overlay" style="display:none;">
     <div class="modal-contenido modal-pequeno">
         <button id="cerrar-modal-eliminar" type="button" class="modal-cerrar">×</button>
@@ -160,10 +242,10 @@
         <p class="modal-texto">¿Seguro que quieres eliminar esta tarjeta?</p>
 
         <div class="modal-acciones">
-            <button id="cancelar-eliminar-tarjeta" type="button" class="btn btn-secundario">
+            <button id="cancelar-eliminar-tarjeta" type="button" class="btn btn-secundario btn-auto">
                 Cancelar
             </button>
-            <button id="confirmar-eliminar-tarjeta" type="button" class="btn btn-peligro">
+            <button id="confirmar-eliminar-tarjeta" type="button" class="btn btn-peligro btn-auto">
                 Eliminar
             </button>
         </div>

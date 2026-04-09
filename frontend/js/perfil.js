@@ -3,6 +3,43 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 let tarjetaIdPendienteEliminar = null;
+let timeoutValidacionNombre = null;
+let timeoutValidacionEmail = null;
+let timeoutMensajePerfil = null;
+let modoEdicionPerfil = false;
+
+let estadoValidacionPerfil = {
+    nombreValido: true,
+    emailValido: true
+};
+
+let valoresOriginalesPerfil = {
+    nombre: "",
+    email: "",
+    rol: ""
+};
+
+async function iniciarPaginaPerfil() {
+    const sesion = await obtenerSesionActual();
+
+    if (!sesion || !sesion.id) {
+        mostrarMensaje("Debes iniciar sesión para acceder a tu perfil.");
+        return;
+    }
+
+    configurarNavegacionSecciones();
+    configurarFormularioPerfil(sesion.id);
+    configurarFormularioPassword(sesion.id);
+    configurarTarjetas(sesion.id);
+    configurarModalEliminarTarjeta(sesion.id);
+    configurarValidacionEnVivoPerfil(sesion.id);
+
+    await cargarPerfil(sesion.id);
+    await cargarTarjetas(sesion.id);
+
+    activarSeccion("perfil");
+    desactivarModoEdicionPerfil();
+}
 
 async function obtenerSesionActual() {
     try {
@@ -22,21 +59,56 @@ async function obtenerSesionActual() {
     }
 }
 
-async function iniciarPaginaPerfil() {
-    const sesion = await obtenerSesionActual();
+function configurarNavegacionSecciones() {
+    const btnPerfil = document.getElementById("btn-menu-perfil");
+    const btnPassword = document.getElementById("btn-menu-password");
+    const btnTarjetas = document.getElementById("btn-menu-tarjetas");
 
-    if (!sesion || !sesion.id) {
-        mostrarMensaje("Debes iniciar sesión para acceder a tu perfil.");
-        return;
+    if (btnPerfil) {
+        btnPerfil.addEventListener("click", () => activarSeccion("perfil"));
     }
 
-    configurarFormularioPerfil(sesion.id);
-    configurarFormularioPassword(sesion.id);
-    configurarTarjetas(sesion.id);
-    configurarModalEliminarTarjeta(sesion.id);
+    if (btnPassword) {
+        btnPassword.addEventListener("click", () => activarSeccion("password"));
+    }
 
-    await cargarPerfil(sesion.id);
-    await cargarTarjetas(sesion.id);
+    if (btnTarjetas) {
+        btnTarjetas.addEventListener("click", () => activarSeccion("tarjetas"));
+    }
+}
+
+function activarSeccion(nombreSeccion) {
+    const secciones = {
+        perfil: document.getElementById("seccion-perfil"),
+        password: document.getElementById("seccion-password"),
+        tarjetas: document.getElementById("seccion-tarjetas")
+    };
+
+    const botones = {
+        perfil: document.getElementById("btn-menu-perfil"),
+        password: document.getElementById("btn-menu-password"),
+        tarjetas: document.getElementById("btn-menu-tarjetas")
+    };
+
+    Object.values(secciones).forEach(seccion => {
+        if (seccion) {
+            seccion.style.display = "none";
+        }
+    });
+
+    Object.values(botones).forEach(boton => {
+        if (boton) {
+            boton.classList.remove("menu-lateral-activo");
+        }
+    });
+
+    if (secciones[nombreSeccion]) {
+        secciones[nombreSeccion].style.display = "block";
+    }
+
+    if (botones[nombreSeccion]) {
+        botones[nombreSeccion].classList.add("menu-lateral-activo");
+    }
 }
 
 async function cargarPerfil(usuarioId) {
@@ -52,9 +124,28 @@ async function cargarPerfil(usuarioId) {
 
         const usuario = await response.json();
 
-        document.getElementById("nombre").value = usuario.nombre || "";
-        document.getElementById("email").value = usuario.email || "";
-        document.getElementById("rol").value = usuario.rol || "";
+        const inputNombre = document.getElementById("nombre");
+        const inputEmail = document.getElementById("email");
+        const inputRol = document.getElementById("rol");
+        const inputTipoCuenta = document.getElementById("tipoCuenta");
+        const inputUbicacion = document.getElementById("ubicacion");
+
+        if (inputNombre) inputNombre.value = usuario.nombre || "";
+        if (inputEmail) inputEmail.value = usuario.email || "";
+        if (inputRol) inputRol.value = usuario.rol || "";
+        if (inputTipoCuenta) inputTipoCuenta.value = formatearTipoCuenta(usuario.rol);
+        if (inputUbicacion) inputUbicacion.value = usuario.ubicacion || "Sin configurar";
+
+        valoresOriginalesPerfil.nombre = usuario.nombre || "";
+        valoresOriginalesPerfil.email = usuario.email || "";
+        valoresOriginalesPerfil.rol = usuario.rol || "";
+
+        estadoValidacionPerfil.nombreValido = true;
+        estadoValidacionPerfil.emailValido = true;
+
+        limpiarTextoValidacion("nombre");
+        limpiarTextoValidacion("email");
+        actualizarEstadoBotonGuardarPerfil();
 
         actualizarPanelLateral(usuario);
         actualizarNombreMenu(usuario.nombre);
@@ -80,7 +171,7 @@ function actualizarPanelLateral(usuario) {
     }
 
     if (miniRol) {
-        miniRol.textContent = usuario.rol || "";
+        miniRol.textContent = formatearTipoCuenta(usuario.rol);
     }
 
     if (avatarInicial) {
@@ -92,14 +183,56 @@ function actualizarPanelLateral(usuario) {
     }
 }
 
+function actualizarNombreMenu(nombreNuevo) {
+    const profileNameMenu = document.querySelector("#menu-container #profile-name");
+
+    if (profileNameMenu) {
+        profileNameMenu.textContent = nombreNuevo;
+    }
+}
+
+function formatearTipoCuenta(rol) {
+    if (!rol) return "Cuenta estándar";
+
+    if (rol.toUpperCase() === "ADMIN") {
+        return "Cuenta administrador";
+    }
+
+    return "Cuenta estándar";
+}
+
 function configurarFormularioPerfil(usuarioId) {
     const formPerfil = document.getElementById("formPerfil");
-    const btnGuardarPerfil = document.getElementById("btn-guardar-perfil");
+    const btnEditar = document.getElementById("btn-editar-perfil");
+    const btnCancelar = document.getElementById("btn-cancelar-edicion-perfil");
+    const btnGuardar = document.getElementById("btn-guardar-perfil");
+
+    if (btnEditar) {
+        btnEditar.addEventListener("click", () => {
+            activarModoEdicionPerfil();
+        });
+    }
+
+    if (btnCancelar) {
+        btnCancelar.addEventListener("click", () => {
+            restaurarValoresOriginalesPerfil();
+            desactivarModoEdicionPerfil();
+            limpiarTextoValidacion("nombre");
+            limpiarTextoValidacion("email");
+            estadoValidacionPerfil.nombreValido = true;
+            estadoValidacionPerfil.emailValido = true;
+            actualizarEstadoBotonGuardarPerfil();
+        });
+    }
 
     if (!formPerfil) return;
 
     formPerfil.addEventListener("submit", async (e) => {
         e.preventDefault();
+
+        if (!modoEdicionPerfil) {
+            return;
+        }
 
         const nombre = document.getElementById("nombre").value.trim();
         const email = document.getElementById("email").value.trim();
@@ -110,15 +243,20 @@ function configurarFormularioPerfil(usuarioId) {
             return;
         }
 
+        if (!estadoValidacionPerfil.nombreValido || !estadoValidacionPerfil.emailValido) {
+            mostrarMensaje("Corrige los campos antes de guardar.");
+            return;
+        }
+
         const datos = {
             nombre: nombre,
             email: email
         };
 
         try {
-            if (btnGuardarPerfil) {
-                btnGuardarPerfil.disabled = true;
-                btnGuardarPerfil.textContent = "Guardando...";
+            if (btnGuardar) {
+                btnGuardar.disabled = true;
+                btnGuardar.textContent = "Guardando...";
             }
 
             const response = await fetch(`http://localhost:8080/usuarios/${usuarioId}/perfil`, {
@@ -133,32 +271,244 @@ function configurarFormularioPerfil(usuarioId) {
             const textoRespuesta = await response.text();
 
             if (!response.ok) {
-                throw new Error(textoRespuesta || "No se pudo actualizar el perfil");
+                throw new Error(obtenerMensajeErrorAmigable(textoRespuesta, "perfil"));
             }
 
             const usuarioActualizado = textoRespuesta ? JSON.parse(textoRespuesta) : null;
 
             if (usuarioActualizado) {
-                document.getElementById("nombre").value = usuarioActualizado.nombre || "";
-                document.getElementById("email").value = usuarioActualizado.email || "";
-                document.getElementById("rol").value = usuarioActualizado.rol || "";
+                const inputNombre = document.getElementById("nombre");
+                const inputEmail = document.getElementById("email");
+                const inputRol = document.getElementById("rol");
+                const inputTipoCuenta = document.getElementById("tipoCuenta");
+
+                if (inputNombre) inputNombre.value = usuarioActualizado.nombre || "";
+                if (inputEmail) inputEmail.value = usuarioActualizado.email || "";
+                if (inputRol) inputRol.value = usuarioActualizado.rol || "";
+                if (inputTipoCuenta) inputTipoCuenta.value = formatearTipoCuenta(usuarioActualizado.rol);
+
+                valoresOriginalesPerfil.nombre = usuarioActualizado.nombre || "";
+                valoresOriginalesPerfil.email = usuarioActualizado.email || "";
+                valoresOriginalesPerfil.rol = usuarioActualizado.rol || "";
 
                 actualizarPanelLateral(usuarioActualizado);
                 actualizarNombreMenu(usuarioActualizado.nombre);
             }
 
             mostrarMensaje("Perfil actualizado correctamente.", "ok");
+            mostrarValidacionCampo("nombre", "Nombre guardado correctamente", true);
+            mostrarValidacionCampo("email", "Email guardado correctamente", true);
+
+            estadoValidacionPerfil.nombreValido = true;
+            estadoValidacionPerfil.emailValido = true;
+
+            desactivarModoEdicionPerfil();
 
         } catch (error) {
             console.error("Error al actualizar perfil:", error);
             mostrarMensaje(error.message || "No se pudo actualizar el perfil.");
         } finally {
-            if (btnGuardarPerfil) {
-                btnGuardarPerfil.disabled = false;
-                btnGuardarPerfil.textContent = "Guardar cambios";
+            if (btnGuardar) {
+                btnGuardar.textContent = "Guardar cambios";
+                actualizarEstadoBotonGuardarPerfil();
             }
         }
     });
+}
+
+function activarModoEdicionPerfil() {
+    modoEdicionPerfil = true;
+
+    const inputNombre = document.getElementById("nombre");
+    const inputEmail = document.getElementById("email");
+    const btnEditar = document.getElementById("btn-editar-perfil");
+    const btnGuardar = document.getElementById("btn-guardar-perfil");
+    const btnCancelar = document.getElementById("btn-cancelar-edicion-perfil");
+
+    if (inputNombre) inputNombre.removeAttribute("readonly");
+    if (inputEmail) inputEmail.removeAttribute("readonly");
+
+    if (btnEditar) btnEditar.style.display = "none";
+    if (btnGuardar) btnGuardar.style.display = "inline-flex";
+    if (btnCancelar) btnCancelar.style.display = "inline-flex";
+
+    actualizarEstadoBotonGuardarPerfil();
+}
+
+function desactivarModoEdicionPerfil() {
+    modoEdicionPerfil = false;
+
+    const inputNombre = document.getElementById("nombre");
+    const inputEmail = document.getElementById("email");
+    const btnEditar = document.getElementById("btn-editar-perfil");
+    const btnGuardar = document.getElementById("btn-guardar-perfil");
+    const btnCancelar = document.getElementById("btn-cancelar-edicion-perfil");
+
+    if (inputNombre) inputNombre.setAttribute("readonly", true);
+    if (inputEmail) inputEmail.setAttribute("readonly", true);
+
+    if (btnEditar) btnEditar.style.display = "inline-flex";
+    if (btnGuardar) btnGuardar.style.display = "none";
+    if (btnCancelar) btnCancelar.style.display = "none";
+}
+
+function restaurarValoresOriginalesPerfil() {
+    const inputNombre = document.getElementById("nombre");
+    const inputEmail = document.getElementById("email");
+    const inputRol = document.getElementById("rol");
+    const inputTipoCuenta = document.getElementById("tipoCuenta");
+
+    if (inputNombre) inputNombre.value = valoresOriginalesPerfil.nombre;
+    if (inputEmail) inputEmail.value = valoresOriginalesPerfil.email;
+    if (inputRol) inputRol.value = valoresOriginalesPerfil.rol;
+    if (inputTipoCuenta) inputTipoCuenta.value = formatearTipoCuenta(valoresOriginalesPerfil.rol);
+}
+
+function configurarValidacionEnVivoPerfil(usuarioId) {
+    const inputNombre = document.getElementById("nombre");
+    const inputEmail = document.getElementById("email");
+
+    if (inputNombre) {
+        inputNombre.addEventListener("input", () => {
+            if (!modoEdicionPerfil) return;
+
+            clearTimeout(timeoutValidacionNombre);
+
+            const nombre = inputNombre.value.trim();
+            const errorLocal = validarNombreLocal(nombre);
+
+            if (errorLocal) {
+                mostrarValidacionCampo("nombre", errorLocal, false);
+                estadoValidacionPerfil.nombreValido = false;
+                actualizarEstadoBotonGuardarPerfil();
+                return;
+            }
+
+            mostrarValidacionCampo("nombre", "Comprobando disponibilidad...", true);
+
+            timeoutValidacionNombre = setTimeout(async () => {
+                await validarNombreEnVivo(usuarioId);
+            }, 1000);
+        });
+    }
+
+    if (inputEmail) {
+        inputEmail.addEventListener("input", () => {
+            if (!modoEdicionPerfil) return;
+
+            clearTimeout(timeoutValidacionEmail);
+
+            const email = inputEmail.value.trim();
+            const errorLocal = validarEmailLocal(email);
+
+            if (errorLocal) {
+                mostrarValidacionCampo("email", errorLocal, false);
+                estadoValidacionPerfil.emailValido = false;
+                actualizarEstadoBotonGuardarPerfil();
+                return;
+            }
+
+            mostrarValidacionCampo("email", "Comprobando disponibilidad...", true);
+
+            timeoutValidacionEmail = setTimeout(async () => {
+                await validarEmailEnVivo(usuarioId);
+            }, 1000);
+        });
+    }
+}
+
+async function validarNombreEnVivo(usuarioId) {
+    const inputNombre = document.getElementById("nombre");
+    if (!inputNombre) return;
+
+    const nombre = inputNombre.value.trim();
+
+    if (nombre.toLowerCase() === valoresOriginalesPerfil.nombre.trim().toLowerCase()) {
+        mostrarValidacionCampo("nombre", "Es tu nombre actual", true);
+        estadoValidacionPerfil.nombreValido = true;
+        actualizarEstadoBotonGuardarPerfil();
+        return;
+    }
+
+    try {
+        const response = await fetch(`http://localhost:8080/usuarios/${usuarioId}/validar-nombre?nombre=${encodeURIComponent(nombre)}`, {
+            method: "GET",
+            credentials: "include"
+        });
+
+        const texto = await response.text();
+        let data = null;
+
+        try {
+            data = texto ? JSON.parse(texto) : null;
+        } catch (e) {
+            data = null;
+        }
+
+        if (!response.ok) {
+            throw new Error(obtenerMensajeErrorAmigable(texto, "perfil"));
+        }
+
+        const mensaje = data?.mensaje || "Nombre validado";
+        const disponible = !!data?.disponible;
+
+        mostrarValidacionCampo("nombre", mensaje, disponible);
+        estadoValidacionPerfil.nombreValido = disponible;
+        actualizarEstadoBotonGuardarPerfil();
+
+    } catch (error) {
+        console.error("Error validando nombre:", error);
+        mostrarValidacionCampo("nombre", error.message || "No se pudo validar el nombre", false);
+        estadoValidacionPerfil.nombreValido = false;
+        actualizarEstadoBotonGuardarPerfil();
+    }
+}
+
+async function validarEmailEnVivo(usuarioId) {
+    const inputEmail = document.getElementById("email");
+    if (!inputEmail) return;
+
+    const email = inputEmail.value.trim();
+
+    if (email.toLowerCase() === valoresOriginalesPerfil.email.trim().toLowerCase()) {
+        mostrarValidacionCampo("email", "Es tu email actual", true);
+        estadoValidacionPerfil.emailValido = true;
+        actualizarEstadoBotonGuardarPerfil();
+        return;
+    }
+
+    try {
+        const response = await fetch(`http://localhost:8080/usuarios/${usuarioId}/validar-email?email=${encodeURIComponent(email)}`, {
+            method: "GET",
+            credentials: "include"
+        });
+
+        const texto = await response.text();
+        let data = null;
+
+        try {
+            data = texto ? JSON.parse(texto) : null;
+        } catch (e) {
+            data = null;
+        }
+
+        if (!response.ok) {
+            throw new Error(obtenerMensajeErrorAmigable(texto, "perfil"));
+        }
+
+        const mensaje = data?.mensaje || "Email validado";
+        const disponible = !!data?.disponible;
+
+        mostrarValidacionCampo("email", mensaje, disponible);
+        estadoValidacionPerfil.emailValido = disponible;
+        actualizarEstadoBotonGuardarPerfil();
+
+    } catch (error) {
+        console.error("Error validando email:", error);
+        mostrarValidacionCampo("email", error.message || "No se pudo validar el email", false);
+        estadoValidacionPerfil.emailValido = false;
+        actualizarEstadoBotonGuardarPerfil();
+    }
 }
 
 function validarDatosPerfil(nombre, email) {
@@ -190,9 +540,84 @@ function validarDatosPerfil(nombre, email) {
     return null;
 }
 
+function validarNombreLocal(nombre) {
+    if (!nombre) {
+        return "El nombre no puede estar vacío.";
+    }
+
+    if (nombre.length < 3) {
+        return "Debe tener al menos 3 caracteres.";
+    }
+
+    if (nombre.length > 30) {
+        return "No puede superar los 30 caracteres.";
+    }
+
+    const regexNombre = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ0-9._\-\s]+$/;
+    if (!regexNombre.test(nombre)) {
+        return "Contiene caracteres no permitidos.";
+    }
+
+    return null;
+}
+
+function validarEmailLocal(email) {
+    if (!email) {
+        return "El email no puede estar vacío.";
+    }
+
+    if (email.length > 100) {
+        return "El email es demasiado largo.";
+    }
+
+    if (!esEmailValido(email)) {
+        return "Formato de email no válido.";
+    }
+
+    return null;
+}
+
 function esEmailValido(email) {
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return regex.test(email);
+}
+
+function mostrarValidacionCampo(campo, mensaje, esValido) {
+    const elemento = document.getElementById(`validacion-${campo}`);
+    if (!elemento) return;
+
+    elemento.textContent = mensaje;
+    elemento.classList.remove("ok", "error");
+    elemento.classList.add(esValido ? "ok" : "error");
+}
+
+function limpiarTextoValidacion(campo) {
+    const elemento = document.getElementById(`validacion-${campo}`);
+    if (!elemento) return;
+
+    elemento.textContent = "";
+    elemento.classList.remove("ok", "error");
+}
+
+function actualizarEstadoBotonGuardarPerfil() {
+    const btnGuardarPerfil = document.getElementById("btn-guardar-perfil");
+    const inputNombre = document.getElementById("nombre");
+    const inputEmail = document.getElementById("email");
+
+    if (!btnGuardarPerfil || !inputNombre || !inputEmail) return;
+
+    if (!modoEdicionPerfil) {
+        btnGuardarPerfil.disabled = true;
+        return;
+    }
+
+    const nombre = inputNombre.value.trim();
+    const email = inputEmail.value.trim();
+
+    const datosMinimosOk = !validarDatosPerfil(nombre, email);
+    const validacionRemotaOk = estadoValidacionPerfil.nombreValido && estadoValidacionPerfil.emailValido;
+
+    btnGuardarPerfil.disabled = !(datosMinimosOk && validacionRemotaOk);
 }
 
 function configurarFormularioPassword(usuarioId) {
@@ -218,7 +643,7 @@ function configurarFormularioPassword(usuarioId) {
         }
 
         if (passwordNueva !== confirmarPassword) {
-            mostrarMensaje("La nueva contraseña y su confirmación no coinciden.");
+            mostrarMensaje("La nueva contraseña y la confirmación no coinciden.");
             return;
         }
 
@@ -241,7 +666,7 @@ function configurarFormularioPassword(usuarioId) {
             const texto = await response.text();
 
             if (!response.ok) {
-                throw new Error(texto || "No se pudo actualizar la contraseña");
+                throw new Error(obtenerMensajeErrorAmigable(texto, "password"));
             }
 
             document.getElementById("formPassword").reset();
@@ -265,6 +690,7 @@ function configurarTarjetas(usuarioId) {
 
     function abrirModalTarjeta() {
         if (modalTarjeta) {
+            ocultarMensajeModalTarjeta();
             modalTarjeta.style.display = "flex";
         }
     }
@@ -273,9 +699,12 @@ function configurarTarjetas(usuarioId) {
         if (modalTarjeta) {
             modalTarjeta.style.display = "none";
         }
+
         if (formTarjeta) {
             formTarjeta.reset();
         }
+
+        ocultarMensajeModalTarjeta();
     }
 
     if (btnAnadirTarjeta) {
@@ -328,14 +757,17 @@ function configurarTarjetas(usuarioId) {
         formTarjeta.addEventListener("submit", async (e) => {
             e.preventDefault();
 
+            ocultarMensajeModalTarjeta();
+
             const titular = document.getElementById("titularTarjeta").value.trim();
             const numeroTarjeta = document.getElementById("numeroTarjeta").value.trim();
             const fechaExpiracion = document.getElementById("fechaExpiracionTarjeta").value.trim();
             const tipo = document.getElementById("tipoTarjeta").value;
 
             const errorTarjeta = validarDatosTarjeta(titular, numeroTarjeta, fechaExpiracion, tipo);
+
             if (errorTarjeta) {
-                mostrarMensaje(errorTarjeta);
+                mostrarMensajeModalTarjeta(errorTarjeta, "error");
                 return;
             }
 
@@ -356,19 +788,25 @@ function configurarTarjetas(usuarioId) {
                     body: JSON.stringify(datos)
                 });
 
-                const textoError = await response.text();
+                const textoRespuesta = await response.text();
 
                 if (!response.ok) {
-                    throw new Error(textoError || "No se pudo guardar la tarjeta");
+                    throw new Error(obtenerMensajeErrorAmigable(textoRespuesta, "tarjeta"));
                 }
 
-                cerrarModal();
+                formTarjeta.reset();
+                ocultarMensajeModalTarjeta();
+
+                if (modalTarjeta) {
+                    modalTarjeta.style.display = "none";
+                }
+
                 mostrarMensaje("Tarjeta guardada correctamente.", "ok");
                 await cargarTarjetas(usuarioId);
 
             } catch (error) {
                 console.error("Error al guardar tarjeta:", error);
-                mostrarMensaje(error.message || "No se pudo guardar la tarjeta.");
+                mostrarMensajeModalTarjeta(error.message || "No se pudo guardar la tarjeta.", "error");
             }
         });
     }
@@ -408,11 +846,28 @@ function validarDatosTarjeta(titular, numeroTarjeta, fechaExpiracion, tipo) {
         return "La fecha de expiración debe tener formato MM/AA.";
     }
 
-    const [mesTexto] = fechaExpiracion.split("/");
-    const mes = parseInt(mesTexto, 10);
+    const partesFecha = fechaExpiracion.split("/");
+    const mes = parseInt(partesFecha[0], 10);
+    const anio = parseInt(partesFecha[1], 10);
+
+    if (Number.isNaN(mes) || Number.isNaN(anio)) {
+        return "La fecha de expiración no es válida.";
+    }
 
     if (mes < 1 || mes > 12) {
         return "El mes de expiración no es válido.";
+    }
+
+    const hoy = new Date();
+    const anioActual2Digitos = hoy.getFullYear() % 100;
+    const mesActual = hoy.getMonth() + 1;
+
+    if (anio < anioActual2Digitos) {
+        return "La tarjeta está caducada.";
+    }
+
+    if (anio === anioActual2Digitos && mes < mesActual) {
+        return "La tarjeta está caducada.";
     }
 
     return null;
@@ -478,7 +933,7 @@ function configurarModalEliminarTarjeta(usuarioId) {
                 const textoError = await response.text();
 
                 if (!response.ok) {
-                    throw new Error(textoError || "No se pudo eliminar la tarjeta");
+                    throw new Error(obtenerMensajeErrorAmigable(textoError, "tarjeta"));
                 }
 
                 cerrarModal();
@@ -517,11 +972,13 @@ async function cargarTarjetas(usuarioId) {
             credentials: "include"
         });
 
+        const textoRespuesta = await response.text();
+
         if (!response.ok) {
-            throw new Error("No se pudieron cargar las tarjetas");
+            throw new Error(obtenerMensajeErrorAmigable(textoRespuesta, "tarjeta"));
         }
 
-        const tarjetas = await response.json();
+        const tarjetas = textoRespuesta ? JSON.parse(textoRespuesta) : [];
         renderizarTarjetas(tarjetas);
 
     } catch (error) {
@@ -555,7 +1012,6 @@ function renderizarTarjetas(tarjetas) {
     const bloqueAnadir = document.createElement("div");
     bloqueAnadir.className = "add-card";
     bloqueAnadir.textContent = "Añadir nueva tarjeta de pago";
-
     contenedorTarjetas.appendChild(bloqueAnadir);
 }
 
@@ -624,14 +1080,6 @@ function formatearTipoTarjeta(tipo) {
     return tipo;
 }
 
-function actualizarNombreMenu(nombreNuevo) {
-    const profileNameMenu = document.querySelector("#menu-container #profile-name");
-
-    if (profileNameMenu) {
-        profileNameMenu.textContent = nombreNuevo;
-    }
-}
-
 function mostrarMensaje(texto, tipo = "error") {
     const mensaje = document.getElementById("mensaje-perfil");
 
@@ -641,16 +1089,105 @@ function mostrarMensaje(texto, tipo = "error") {
     mensaje.style.display = "block";
 
     if (tipo === "ok") {
-        mensaje.style.backgroundColor = "#e6ffe6";
-        mensaje.style.color = "#006600";
-        mensaje.style.border = "1px solid #b9e2b9";
+        mensaje.style.backgroundColor = "#ecfdf3";
+        mensaje.style.color = "#166534";
+        mensaje.style.border = "1px solid #a7f3c0";
     } else {
-        mensaje.style.backgroundColor = "#fff3f4";
-        mensaje.style.color = "#b00020";
-        mensaje.style.border = "1px solid #f1c7cd";
+        mensaje.style.backgroundColor = "#fff1f2";
+        mensaje.style.color = "#b42318";
+        mensaje.style.border = "1px solid #fecdd3";
     }
 
-    setTimeout(() => {
+    clearTimeout(timeoutMensajePerfil);
+
+    timeoutMensajePerfil = setTimeout(() => {
         mensaje.style.display = "none";
     }, 4000);
+}
+
+function mostrarMensajeModalTarjeta(texto, tipo = "error") {
+    const mensaje = document.getElementById("mensaje-modal-tarjeta");
+    if (!mensaje) return;
+
+    mensaje.textContent = texto;
+    mensaje.style.display = "block";
+    mensaje.classList.remove("ok", "error");
+    mensaje.classList.add(tipo);
+}
+
+function ocultarMensajeModalTarjeta() {
+    const mensaje = document.getElementById("mensaje-modal-tarjeta");
+    if (!mensaje) return;
+
+    mensaje.textContent = "";
+    mensaje.style.display = "none";
+    mensaje.classList.remove("ok", "error");
+}
+
+function obtenerMensajeErrorAmigable(textoError, contexto = "") {
+    if (!textoError) {
+        return "No se pudo completar la operación.";
+    }
+
+    let json = null;
+
+    try {
+        json = JSON.parse(textoError);
+    } catch (e) {
+        json = null;
+    }
+
+    const texto = json
+        ? `${json.error || ""} ${json.message || ""} ${json.path || ""}`.toLowerCase()
+        : textoError.toLowerCase();
+
+    if (contexto === "tarjeta") {
+        if (texto.includes("mes")) {
+            return "El mes de expiración no es válido.";
+        }
+
+        if (texto.includes("caduc")) {
+            return "La tarjeta está caducada.";
+        }
+
+        if (texto.includes("fecha")) {
+            return "La fecha de expiración no es válida.";
+        }
+
+        if (texto.includes("titular")) {
+            return "El titular de la tarjeta no es válido.";
+        }
+
+        if (texto.includes("número") || texto.includes("numero")) {
+            return "El número de tarjeta no es válido.";
+        }
+
+        return "No se pudo guardar la tarjeta.";
+    }
+
+    if (contexto === "perfil") {
+        if (texto.includes("nombre de usuario ya está en uso") || texto.includes("nombre ya está en uso")) {
+            return "Ese nombre de usuario ya está en uso.";
+        }
+
+        if (texto.includes("email ya está en uso")) {
+            return "Ese correo electrónico ya está en uso.";
+        }
+
+        return "No se pudo actualizar el perfil.";
+    }
+
+    if (contexto === "password") {
+        if (texto.includes("contraseña actual no es correcta")) {
+            return "La contraseña actual no es correcta.";
+        }
+
+        if (texto.includes("no coinciden")) {
+            return "La nueva contraseña y la confirmación no coinciden.";
+        }
+
+        return "No se pudo actualizar la contraseña.";
+    }
+
+    return "Ha ocurrido un error inesperado.";
 }
