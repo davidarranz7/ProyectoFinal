@@ -57,9 +57,14 @@ public class UsuarioController {
     }
 
     @PutMapping("/{id}/perfil")
-    public ResponseEntity<UsuarioPerfilDTO> actualizarPerfil(@PathVariable Long id,
-                                                             @RequestBody ActualizarPerfilDTO dto) {
-        return ResponseEntity.ok(usuarioService.actualizarPerfil(id, dto));
+    public ResponseEntity<?> actualizarPerfil(@PathVariable Long id,
+                                              @RequestBody ActualizarPerfilDTO dto) {
+        try {
+            UsuarioPerfilDTO usuarioActualizado = usuarioService.actualizarPerfil(id, dto);
+            return ResponseEntity.ok(usuarioActualizado);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @PutMapping("/{id}/password")
