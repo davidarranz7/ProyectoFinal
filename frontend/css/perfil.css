@@ -228,6 +228,16 @@ body {
   margin-bottom: 0;
 }
 
+.titulo-bloque {
+  font-size: 18px;
+  margin-bottom: 18px;
+  color: #2d1b4e;
+}
+
+.titulo-bloque-sin-margen {
+  margin-bottom: 0;
+}
+
 .bloque-perfil {
   background: #fcfbff;
   border: 1px solid #f0ebfa;
@@ -236,10 +246,12 @@ body {
   margin-bottom: 20px;
 }
 
-.titulo-bloque {
-  font-size: 18px;
+.bloque-direcciones-perfil {
+  margin-top: 22px;
+}
+
+.bloque-direcciones-perfil .direcciones-header {
   margin-bottom: 18px;
-  color: #2d1b4e;
 }
 
 .form-grid {
@@ -325,7 +337,6 @@ body {
   justify-content: space-between;
   align-items: flex-start;
   gap: 15px;
-  margin-bottom: 20px;
   flex-wrap: wrap;
 }
 
@@ -467,15 +478,18 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-top: 8px;
+  margin-top: 2px;
   font-size: 14px;
   color: #444;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .check-principal input {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   accent-color: #7c3aed;
+  flex-shrink: 0;
 }
 
 .mensaje-perfil {
@@ -519,14 +533,14 @@ body {
 .modal-contenido {
   background: #fff;
   width: 100%;
-  border-radius: 18px;
-  padding: 24px;
+  border-radius: 20px;
+  padding: 26px;
   box-shadow: 0 20px 45px rgba(0, 0, 0, 0.18);
   position: relative;
 }
 
 .modal-mediano {
-  max-width: 520px;
+  max-width: 620px;
 }
 
 .modal-grande {
@@ -537,13 +551,18 @@ body {
   max-width: 420px;
 }
 
+.modal-direccion-contenido {
+  max-width: 620px;
+}
+
 .modal-cerrar {
   position: absolute;
   top: 12px;
   right: 14px;
   border: none;
   background: transparent;
-  font-size: 24px;
+  font-size: 28px;
+  line-height: 1;
   cursor: pointer;
   color: #666;
 }
@@ -554,7 +573,9 @@ body {
 
 .modal-titulo {
   margin-bottom: 18px;
-  font-size: 24px;
+  font-size: 22px;
+  font-weight: 700;
+  color: #222;
 }
 
 .modal-texto {
@@ -567,6 +588,12 @@ body {
 .modal-grid {
   display: grid;
   gap: 14px;
+}
+
+.modal-grid-direccion {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
 }
 
 .modal-doble {
@@ -591,9 +618,10 @@ body {
 
 .modal-input {
   width: 100%;
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 10px;
+  height: 46px;
+  padding: 0 14px;
+  border: 1px solid #d8d8de;
+  border-radius: 12px;
   outline: none;
   font-size: 14px;
   transition: 0.2s;
@@ -606,6 +634,16 @@ body {
   justify-content: flex-end;
   margin-top: 22px;
   flex-wrap: wrap;
+}
+
+.modal-acciones .btn-principal {
+  width: auto;
+  min-width: 170px;
+}
+
+.modal-acciones .btn-secundario {
+  width: auto;
+  min-width: 120px;
 }
 
 .mensaje-modal {
@@ -656,7 +694,8 @@ body {
   }
 
   .modal-doble,
-  .modal-triple {
+  .modal-triple,
+  .modal-grid-direccion {
     grid-template-columns: 1fr;
   }
 
@@ -665,9 +704,18 @@ body {
   }
 
   .acciones .btn,
-  .modal-acciones .btn,
   .btn-auto {
     width: 100%;
+  }
+
+  .modal-acciones {
+    flex-direction: column;
+  }
+
+  .modal-acciones .btn-principal,
+  .modal-acciones .btn-secundario {
+    width: 100%;
+    min-width: auto;
   }
 
   .cabecera-seccion,
@@ -688,5 +736,9 @@ body {
     left: 14px;
     min-width: auto;
     max-width: none;
+  }
+
+  .modal-contenido {
+    padding: 20px;
   }
 }
