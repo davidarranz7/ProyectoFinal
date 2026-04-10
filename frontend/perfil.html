@@ -24,6 +24,9 @@
             <button id="btn-menu-perfil" class="menu-lateral-btn menu-lateral-activo" type="button">
                 Mi perfil
             </button>
+            <button id="btn-menu-direcciones" class="menu-lateral-btn" type="button">
+                Direcciones
+            </button>
             <button id="btn-menu-password" class="menu-lateral-btn" type="button">
                 Cambiar contraseña
             </button>
@@ -89,32 +92,6 @@
                     </div>
                 </div>
 
-                <div class="bloque-perfil">
-                    <h2 class="titulo-bloque">Ubicación</h2>
-
-                    <div class="form-grid">
-                        <div class="campo">
-                            <label for="provincia">Provincia</label>
-                            <input type="text" id="provincia" value="Pontevedra" readonly />
-                        </div>
-
-                        <div class="campo">
-                            <label for="ciudad">Ciudad / Municipio</label>
-                            <input type="text" id="ciudad" value="Gondomar" readonly />
-                        </div>
-
-                        <div class="campo">
-                            <label for="calle">Calle</label>
-                            <input type="text" id="calle" value="Peitieiros" readonly />
-                        </div>
-
-                        <div class="campo">
-                            <label for="numeroDireccion">Número / Piso / Portal</label>
-                            <input type="text" id="numeroDireccion" value="-" readonly />
-                        </div>
-                    </div>
-                </div>
-
                 <div class="acciones" id="acciones-edicion-perfil">
                     <button class="btn btn-secundario btn-auto" type="button" id="btn-cancelar-edicion-perfil" style="display:none;">
                         Cancelar
@@ -124,6 +101,26 @@
                     </button>
                 </div>
             </form>
+        </section>
+
+        <!-- SECCIÓN DIRECCIONES -->
+        <section class="card seccion-contenido" id="seccion-direcciones" style="display:none;">
+            <div class="direcciones-header">
+                <div>
+                    <h1 class="titulo-seccion titulo-sin-margen">Direcciones</h1>
+                    <p class="subtitulo-seccion">
+                        Gestiona tus direcciones de envío y marca una como principal.
+                    </p>
+                </div>
+
+                <button class="btn btn-principal btn-auto" id="btn-anadir-direccion" type="button">
+                    + Añadir dirección
+                </button>
+            </div>
+
+            <div class="direcciones-grid" id="contenedor-direcciones">
+                <!-- JS pinta aquí las direcciones -->
+            </div>
         </section>
 
         <!-- SECCIÓN PASSWORD -->
@@ -178,9 +175,103 @@
                 </button>
             </div>
 
-            <div class="tarjetas" id="contenedor-tarjetas"></div>
+            <div class="tarjetas" id="contenedor-tarjetas">
+                <!-- JS pinta aquí las tarjetas -->
+            </div>
         </section>
     </main>
+</div>
+
+<!-- MODAL AÑADIR / EDITAR DIRECCIÓN -->
+<div id="modal-direccion" class="modal-overlay" style="display:none;">
+    <div class="modal-contenido modal-grande">
+        <button id="cerrar-modal-direccion" type="button" class="modal-cerrar">×</button>
+
+        <h2 class="modal-titulo" id="titulo-modal-direccion">Añadir dirección</h2>
+
+        <form id="formDireccion">
+            <div id="mensaje-modal-direccion" class="mensaje-modal" style="display:none;"></div>
+
+            <input type="hidden" id="direccionId" />
+
+            <div class="modal-grid">
+                <div class="campo">
+                    <label for="aliasDireccion" class="modal-label">Alias</label>
+                    <input type="text" id="aliasDireccion" class="modal-input" placeholder="Casa, trabajo, piso..." />
+                </div>
+
+                <div class="campo">
+                    <label for="provinciaDireccion" class="modal-label">Provincia</label>
+                    <input type="text" id="provinciaDireccion" class="modal-input" placeholder="Pontevedra" />
+                </div>
+
+                <div class="campo">
+                    <label for="municipioDireccion" class="modal-label">Municipio</label>
+                    <input type="text" id="municipioDireccion" class="modal-input" placeholder="Gondomar" />
+                </div>
+
+                <div class="campo">
+                    <label for="calleDireccion" class="modal-label">Calle</label>
+                    <input type="text" id="calleDireccion" class="modal-input" placeholder="Peitieiros" />
+                </div>
+
+                <div class="modal-triple">
+                    <div class="campo">
+                        <label for="numeroDireccionModal" class="modal-label">Número</label>
+                        <input type="text" id="numeroDireccionModal" class="modal-input" placeholder="12" />
+                    </div>
+
+                    <div class="campo">
+                        <label for="pisoDireccion" class="modal-label">Piso</label>
+                        <input type="text" id="pisoDireccion" class="modal-input" placeholder="2º" />
+                    </div>
+
+                    <div class="campo">
+                        <label for="puertaDireccion" class="modal-label">Puerta</label>
+                        <input type="text" id="puertaDireccion" class="modal-input" placeholder="B" />
+                    </div>
+                </div>
+
+                <div class="campo">
+                    <label for="codigoPostalDireccion" class="modal-label">Código postal</label>
+                    <input type="text" id="codigoPostalDireccion" class="modal-input" placeholder="36316" />
+                </div>
+
+                <label class="check-principal" for="principalDireccion">
+                    <input type="checkbox" id="principalDireccion" />
+                    <span>Marcar como dirección principal</span>
+                </label>
+            </div>
+
+            <div class="modal-acciones">
+                <button id="cancelar-modal-direccion" type="button" class="btn btn-secundario btn-auto">
+                    Cancelar
+                </button>
+                <button type="submit" class="btn btn-principal btn-auto" id="btn-guardar-direccion">
+                    Guardar dirección
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL ELIMINAR DIRECCIÓN -->
+<div id="modal-confirmar-eliminar-direccion" class="modal-overlay" style="display:none;">
+    <div class="modal-contenido modal-pequeno">
+        <button id="cerrar-modal-eliminar-direccion" type="button" class="modal-cerrar">×</button>
+
+        <h2 class="modal-titulo">Eliminar dirección</h2>
+        <p class="modal-texto">¿Seguro que quieres eliminar esta dirección?</p>
+
+        <div class="modal-acciones">
+            <button id="cancelar-eliminar-direccion" type="button" class="btn btn-secundario btn-auto">
+                Cancelar
+            </button>
+            <button id="confirmar-eliminar-direccion" type="button" class="btn btn-peligro btn-auto">
+                Eliminar
+            </button>
+        </div>
+    </div>
 </div>
 
 <!-- MODAL AÑADIR TARJETA -->

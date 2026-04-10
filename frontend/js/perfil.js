@@ -3,9 +3,13 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 let tarjetaIdPendienteEliminar = null;
+let direccionIdPendienteEliminar = null;
+let direccionIdEnEdicion = null;
+
 let timeoutValidacionNombre = null;
 let timeoutValidacionEmail = null;
 let timeoutMensajePerfil = null;
+
 let modoEdicionPerfil = false;
 
 let estadoValidacionPerfil = {
@@ -34,8 +38,12 @@ async function iniciarPaginaPerfil() {
     configurarModalEliminarTarjeta(sesion.id);
     configurarValidacionEnVivoPerfil(sesion.id);
 
+    configurarDirecciones(sesion.id);
+    configurarModalEliminarDireccion(sesion.id);
+
     await cargarPerfil(sesion.id);
     await cargarTarjetas(sesion.id);
+    await cargarDirecciones(sesion.id);
 
     activarSeccion("perfil");
     desactivarModoEdicionPerfil();
@@ -63,6 +71,7 @@ function configurarNavegacionSecciones() {
     const btnPerfil = document.getElementById("btn-menu-perfil");
     const btnPassword = document.getElementById("btn-menu-password");
     const btnTarjetas = document.getElementById("btn-menu-tarjetas");
+    const btnDirecciones = document.getElementById("btn-menu-direcciones");
 
     if (btnPerfil) {
         btnPerfil.addEventListener("click", () => activarSeccion("perfil"));
@@ -75,19 +84,25 @@ function configurarNavegacionSecciones() {
     if (btnTarjetas) {
         btnTarjetas.addEventListener("click", () => activarSeccion("tarjetas"));
     }
+
+    if (btnDirecciones) {
+        btnDirecciones.addEventListener("click", () => activarSeccion("direcciones"));
+    }
 }
 
 function activarSeccion(nombreSeccion) {
     const secciones = {
         perfil: document.getElementById("seccion-perfil"),
         password: document.getElementById("seccion-password"),
-        tarjetas: document.getElementById("seccion-tarjetas")
+        tarjetas: document.getElementById("seccion-tarjetas"),
+        direcciones: document.getElementById("seccion-direcciones")
     };
 
     const botones = {
         perfil: document.getElementById("btn-menu-perfil"),
         password: document.getElementById("btn-menu-password"),
-        tarjetas: document.getElementById("btn-menu-tarjetas")
+        tarjetas: document.getElementById("btn-menu-tarjetas"),
+        direcciones: document.getElementById("btn-menu-direcciones")
     };
 
     Object.values(secciones).forEach(seccion => {
@@ -128,13 +143,11 @@ async function cargarPerfil(usuarioId) {
         const inputEmail = document.getElementById("email");
         const inputRol = document.getElementById("rol");
         const inputTipoCuenta = document.getElementById("tipoCuenta");
-        const inputUbicacion = document.getElementById("ubicacion");
 
         if (inputNombre) inputNombre.value = usuario.nombre || "";
         if (inputEmail) inputEmail.value = usuario.email || "";
         if (inputRol) inputRol.value = usuario.rol || "";
         if (inputTipoCuenta) inputTipoCuenta.value = formatearTipoCuenta(usuario.rol);
-        if (inputUbicacion) inputUbicacion.value = usuario.ubicacion || "Sin configurar";
 
         valoresOriginalesPerfil.nombre = usuario.nombre || "";
         valoresOriginalesPerfil.email = usuario.email || "";
@@ -230,12 +243,10 @@ function configurarFormularioPerfil(usuarioId) {
     formPerfil.addEventListener("submit", async (e) => {
         e.preventDefault();
 
-        if (!modoEdicionPerfil) {
-            return;
-        }
+        if (!modoEdicionPerfil) return;
 
-        const nombre = document.getElementById("nombre").value.trim();
-        const email = document.getElementById("email").value.trim();
+        const nombre = document.getElementById("nombre")?.value.trim() || "";
+        const email = document.getElementById("email")?.value.trim() || "";
 
         const errorValidacion = validarDatosPerfil(nombre, email);
         if (errorValidacion) {
@@ -248,10 +259,7 @@ function configurarFormularioPerfil(usuarioId) {
             return;
         }
 
-        const datos = {
-            nombre: nombre,
-            email: email
-        };
+        const datos = { nombre, email };
 
         try {
             if (btnGuardar) {
@@ -441,7 +449,7 @@ async function validarNombreEnVivo(usuarioId) {
 
         try {
             data = texto ? JSON.parse(texto) : null;
-        } catch (e) {
+        } catch (_) {
             data = null;
         }
 
@@ -488,7 +496,7 @@ async function validarEmailEnVivo(usuarioId) {
 
         try {
             data = texto ? JSON.parse(texto) : null;
-        } catch (e) {
+        } catch (_) {
             data = null;
         }
 
@@ -541,17 +549,9 @@ function validarDatosPerfil(nombre, email) {
 }
 
 function validarNombreLocal(nombre) {
-    if (!nombre) {
-        return "El nombre no puede estar vacío.";
-    }
-
-    if (nombre.length < 3) {
-        return "Debe tener al menos 3 caracteres.";
-    }
-
-    if (nombre.length > 30) {
-        return "No puede superar los 30 caracteres.";
-    }
+    if (!nombre) return "El nombre no puede estar vacío.";
+    if (nombre.length < 3) return "Debe tener al menos 3 caracteres.";
+    if (nombre.length > 30) return "No puede superar los 30 caracteres.";
 
     const regexNombre = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ0-9._\-\s]+$/;
     if (!regexNombre.test(nombre)) {
@@ -562,18 +562,9 @@ function validarNombreLocal(nombre) {
 }
 
 function validarEmailLocal(email) {
-    if (!email) {
-        return "El email no puede estar vacío.";
-    }
-
-    if (email.length > 100) {
-        return "El email es demasiado largo.";
-    }
-
-    if (!esEmailValido(email)) {
-        return "Formato de email no válido.";
-    }
-
+    if (!email) return "El email no puede estar vacío.";
+    if (email.length > 100) return "El email es demasiado largo.";
+    if (!esEmailValido(email)) return "Formato de email no válido.";
     return null;
 }
 
@@ -628,9 +619,9 @@ function configurarFormularioPassword(usuarioId) {
     formPassword.addEventListener("submit", async (e) => {
         e.preventDefault();
 
-        const passwordActual = document.getElementById("passwordActual").value.trim();
-        const passwordNueva = document.getElementById("passwordNueva").value.trim();
-        const confirmarPassword = document.getElementById("confirmarPassword").value.trim();
+        const passwordActual = document.getElementById("passwordActual")?.value.trim() || "";
+        const passwordNueva = document.getElementById("passwordNueva")?.value.trim() || "";
+        const confirmarPassword = document.getElementById("confirmarPassword")?.value.trim() || "";
 
         if (!passwordActual || !passwordNueva || !confirmarPassword) {
             mostrarMensaje("Debes completar todos los campos de contraseña.");
@@ -648,9 +639,9 @@ function configurarFormularioPassword(usuarioId) {
         }
 
         const datos = {
-            passwordActual: passwordActual,
-            passwordNueva: passwordNueva,
-            confirmarPassword: confirmarPassword
+            passwordActual,
+            passwordNueva,
+            confirmarPassword
         };
 
         try {
@@ -669,7 +660,7 @@ function configurarFormularioPassword(usuarioId) {
                 throw new Error(obtenerMensajeErrorAmigable(texto, "password"));
             }
 
-            document.getElementById("formPassword").reset();
+            formPassword.reset();
             mostrarMensaje("Contraseña actualizada correctamente.", "ok");
 
         } catch (error) {
@@ -678,6 +669,10 @@ function configurarFormularioPassword(usuarioId) {
         }
     });
 }
+
+/* =========================
+   TARJETAS
+========================= */
 
 function configurarTarjetas(usuarioId) {
     const btnAnadirTarjeta = document.getElementById("btn-anadir-tarjeta");
@@ -695,7 +690,7 @@ function configurarTarjetas(usuarioId) {
         }
     }
 
-    function cerrarModal() {
+    function cerrarModalTarjetaLocal() {
         if (modalTarjeta) {
             modalTarjeta.style.display = "none";
         }
@@ -712,17 +707,17 @@ function configurarTarjetas(usuarioId) {
     }
 
     if (cerrarModalTarjeta) {
-        cerrarModalTarjeta.addEventListener("click", cerrarModal);
+        cerrarModalTarjeta.addEventListener("click", cerrarModalTarjetaLocal);
     }
 
     if (cancelarModalTarjeta) {
-        cancelarModalTarjeta.addEventListener("click", cerrarModal);
+        cancelarModalTarjeta.addEventListener("click", cerrarModalTarjetaLocal);
     }
 
     if (modalTarjeta) {
         modalTarjeta.addEventListener("click", (e) => {
             if (e.target === modalTarjeta) {
-                cerrarModal();
+                cerrarModalTarjetaLocal();
             }
         });
     }
@@ -745,9 +740,7 @@ function configurarTarjetas(usuarioId) {
 
             if (btnEliminar) {
                 const tarjetaId = btnEliminar.dataset.id;
-
                 if (!tarjetaId) return;
-
                 abrirModalEliminarTarjeta(tarjetaId);
             }
         });
@@ -759,10 +752,10 @@ function configurarTarjetas(usuarioId) {
 
             ocultarMensajeModalTarjeta();
 
-            const titular = document.getElementById("titularTarjeta").value.trim();
-            const numeroTarjeta = document.getElementById("numeroTarjeta").value.trim();
-            const fechaExpiracion = document.getElementById("fechaExpiracionTarjeta").value.trim();
-            const tipo = document.getElementById("tipoTarjeta").value;
+            const titular = document.getElementById("titularTarjeta")?.value.trim() || "";
+            const numeroTarjeta = document.getElementById("numeroTarjeta")?.value.trim() || "";
+            const fechaExpiracion = document.getElementById("fechaExpiracionTarjeta")?.value.trim() || "";
+            const tipo = document.getElementById("tipoTarjeta")?.value || "";
 
             const errorTarjeta = validarDatosTarjeta(titular, numeroTarjeta, fechaExpiracion, tipo);
 
@@ -772,10 +765,10 @@ function configurarTarjetas(usuarioId) {
             }
 
             const datos = {
-                titular: titular,
+                titular,
                 numeroTarjeta: numeroTarjeta.replace(/\s+/g, ""),
-                fechaExpiracion: fechaExpiracion,
-                tipo: tipo
+                fechaExpiracion,
+                tipo
             };
 
             try {
@@ -953,7 +946,6 @@ function configurarModalEliminarTarjeta(usuarioId) {
 
 function abrirModalEliminarTarjeta(tarjetaId) {
     const modalEliminar = document.getElementById("modal-confirmar-eliminar");
-
     tarjetaIdPendienteEliminar = tarjetaId;
 
     if (modalEliminar) {
@@ -963,7 +955,6 @@ function abrirModalEliminarTarjeta(tarjetaId) {
 
 async function cargarTarjetas(usuarioId) {
     const contenedorTarjetas = document.getElementById("contenedor-tarjetas");
-
     if (!contenedorTarjetas) return;
 
     try {
@@ -983,25 +974,18 @@ async function cargarTarjetas(usuarioId) {
 
     } catch (error) {
         console.error("Error al cargar tarjetas:", error);
-        contenedorTarjetas.innerHTML = `
-            <div class="add-card">No se pudieron cargar las tarjetas</div>
-        `;
+        contenedorTarjetas.innerHTML = `<div class="add-card">No se pudieron cargar las tarjetas</div>`;
     }
 }
 
 function renderizarTarjetas(tarjetas) {
     const contenedorTarjetas = document.getElementById("contenedor-tarjetas");
-
     if (!contenedorTarjetas) return;
 
     contenedorTarjetas.innerHTML = "";
 
     if (!Array.isArray(tarjetas) || tarjetas.length === 0) {
-        contenedorTarjetas.innerHTML = `
-            <div class="add-card">
-                Añadir nueva tarjeta de pago
-            </div>
-        `;
+        contenedorTarjetas.innerHTML = `<div class="add-card">Añadir nueva tarjeta de pago</div>`;
         return;
     }
 
@@ -1080,9 +1064,483 @@ function formatearTipoTarjeta(tipo) {
     return tipo;
 }
 
+/* =========================
+   DIRECCIONES
+========================= */
+
+function configurarDirecciones(usuarioId) {
+    const btnAnadirDireccion = document.getElementById("btn-anadir-direccion");
+    const contenedorDirecciones = document.getElementById("contenedor-direcciones");
+    const modalDireccion = document.getElementById("modal-direccion");
+    const cerrarModalDireccion = document.getElementById("cerrar-modal-direccion");
+    const cancelarModalDireccion = document.getElementById("cancelar-modal-direccion");
+    const formDireccion = document.getElementById("formDireccion");
+
+    function abrirModalDireccionNueva() {
+        direccionIdEnEdicion = null;
+        if (formDireccion) formDireccion.reset();
+
+        const titulo = document.getElementById("modal-direccion-titulo");
+        if (titulo) titulo.textContent = "Añadir dirección";
+
+        const checkPrincipal = document.getElementById("principalDireccion");
+        if (checkPrincipal) checkPrincipal.checked = false;
+
+        ocultarMensajeModalDireccion();
+
+        if (modalDireccion) {
+            modalDireccion.style.display = "flex";
+        }
+    }
+
+    function cerrarModalDireccionLocal() {
+        direccionIdEnEdicion = null;
+        if (formDireccion) formDireccion.reset();
+        ocultarMensajeModalDireccion();
+
+        const titulo = document.getElementById("modal-direccion-titulo");
+        if (titulo) titulo.textContent = "Añadir dirección";
+
+        if (modalDireccion) {
+            modalDireccion.style.display = "none";
+        }
+    }
+
+    if (btnAnadirDireccion) {
+        btnAnadirDireccion.addEventListener("click", abrirModalDireccionNueva);
+    }
+
+    if (cerrarModalDireccion) {
+        cerrarModalDireccion.addEventListener("click", cerrarModalDireccionLocal);
+    }
+
+    if (cancelarModalDireccion) {
+        cancelarModalDireccion.addEventListener("click", cerrarModalDireccionLocal);
+    }
+
+    if (modalDireccion) {
+        modalDireccion.addEventListener("click", (e) => {
+            if (e.target === modalDireccion) {
+                cerrarModalDireccionLocal();
+            }
+        });
+    }
+
+    if (contenedorDirecciones) {
+        contenedorDirecciones.addEventListener("click", async (e) => {
+            const btnEditar = e.target.closest(".btn-editar-direccion");
+            const btnEliminar = e.target.closest(".btn-eliminar-direccion");
+            const btnPrincipal = e.target.closest(".btn-principal-direccion");
+            const bloqueAnadir = e.target.closest(".add-card-direccion");
+
+            if (bloqueAnadir) {
+                abrirModalDireccionNueva();
+                return;
+            }
+
+            if (btnEditar) {
+                const direccionId = btnEditar.dataset.id;
+                if (!direccionId) return;
+
+                await abrirModalEditarDireccion(usuarioId, direccionId);
+                return;
+            }
+
+            if (btnEliminar) {
+                const direccionId = btnEliminar.dataset.id;
+                if (!direccionId) return;
+
+                abrirModalEliminarDireccion(direccionId);
+                return;
+            }
+
+            if (btnPrincipal) {
+                const direccionId = btnPrincipal.dataset.id;
+                if (!direccionId) return;
+
+                await marcarDireccionComoPrincipal(usuarioId, direccionId);
+            }
+        });
+    }
+
+    if (formDireccion) {
+        formDireccion.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            ocultarMensajeModalDireccion();
+
+            const datos = obtenerDatosFormularioDireccion();
+            const error = validarDatosDireccion(datos);
+
+            if (error) {
+                mostrarMensajeModalDireccion(error, "error");
+                return;
+            }
+
+            try {
+                let response;
+
+                if (direccionIdEnEdicion) {
+                    response = await fetch(`http://localhost:8080/direcciones/usuario/${usuarioId}/${direccionIdEnEdicion}`, {
+                        method: "PUT",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        credentials: "include",
+                        body: JSON.stringify(datos)
+                    });
+                } else {
+                    response = await fetch(`http://localhost:8080/direcciones/usuario/${usuarioId}`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        credentials: "include",
+                        body: JSON.stringify(datos)
+                    });
+                }
+
+                const texto = await response.text();
+
+                if (!response.ok) {
+                    throw new Error(obtenerMensajeErrorAmigable(texto, "direccion"));
+                }
+
+                cerrarModalDireccionLocal();
+                mostrarMensaje(
+                    direccionIdEnEdicion ? "Dirección actualizada correctamente." : "Dirección añadida correctamente.",
+                    "ok"
+                );
+                await cargarDirecciones(usuarioId);
+
+            } catch (error) {
+                console.error("Error guardando dirección:", error);
+                mostrarMensajeModalDireccion(error.message || "No se pudo guardar la dirección.", "error");
+            }
+        });
+    }
+}
+
+function obtenerDatosFormularioDireccion() {
+    return {
+        alias: document.getElementById("aliasDireccion")?.value.trim() || "",
+        provincia: document.getElementById("provinciaDireccion")?.value.trim() || "",
+        municipio: document.getElementById("municipioDireccion")?.value.trim() || "",
+        calle: document.getElementById("calleDireccion")?.value.trim() || "",
+        numero: document.getElementById("numeroDireccionModal")?.value.trim() || "",
+        piso: document.getElementById("pisoDireccion")?.value.trim() || "",
+        puerta: document.getElementById("puertaDireccion")?.value.trim() || "",
+        codigoPostal: document.getElementById("codigoPostalDireccion")?.value.trim() || "",
+        principal: document.getElementById("principalDireccion")?.checked || false
+    };
+}
+
+function validarDatosDireccion(datos) {
+    if (!datos.alias) return "El alias de la dirección es obligatorio.";
+    if (!datos.provincia) return "La provincia es obligatoria.";
+    if (!datos.municipio) return "El municipio es obligatorio.";
+    if (!datos.calle) return "La calle es obligatoria.";
+    if (!datos.numero) return "El número es obligatorio.";
+    if (!datos.codigoPostal) return "El código postal es obligatorio.";
+
+    if (datos.alias.length < 2) return "El alias es demasiado corto.";
+    if (datos.codigoPostal.length !== 5 || !/^\d{5}$/.test(datos.codigoPostal)) {
+        return "El código postal debe tener 5 dígitos.";
+    }
+
+    return null;
+}
+
+async function cargarDirecciones(usuarioId) {
+    const contenedorDirecciones = document.getElementById("contenedor-direcciones");
+    const provincia = document.getElementById("provincia");
+    const ciudad = document.getElementById("ciudad");
+    const calle = document.getElementById("calle");
+    const numeroDireccion = document.getElementById("numeroDireccion");
+
+    if (!contenedorDirecciones) return;
+
+    try {
+        const response = await fetch(`http://localhost:8080/direcciones/usuario/${usuarioId}`, {
+            method: "GET",
+            credentials: "include"
+        });
+
+        const texto = await response.text();
+
+        if (!response.ok) {
+            throw new Error(obtenerMensajeErrorAmigable(texto, "direccion"));
+        }
+
+        const direcciones = texto ? JSON.parse(texto) : [];
+
+        renderizarDirecciones(direcciones);
+
+        const principalDireccion = Array.isArray(direcciones)
+            ? direcciones.find(d => d.principal) || direcciones[0]
+            : null;
+
+        if (principalDireccion) {
+            if (provincia) provincia.value = principalDireccion.provincia || "";
+            if (ciudad) ciudad.value = principalDireccion.municipio || "";
+            if (calle) calle.value = principalDireccion.calle || "";
+
+            const numeroTexto = construirLineaNumeroDireccion(principalDireccion);
+            if (numeroDireccion) numeroDireccion.value = numeroTexto || "-";
+        } else {
+            if (provincia) provincia.value = "";
+            if (ciudad) ciudad.value = "";
+            if (calle) calle.value = "";
+            if (numeroDireccion) numeroDireccion.value = "-";
+        }
+
+    } catch (error) {
+        console.error("Error al cargar direcciones:", error);
+        contenedorDirecciones.innerHTML = `<div class="add-card-direccion">No se pudieron cargar las direcciones</div>`;
+    }
+}
+
+function renderizarDirecciones(direcciones) {
+    const contenedorDirecciones = document.getElementById("contenedor-direcciones");
+    if (!contenedorDirecciones) return;
+
+    contenedorDirecciones.innerHTML = "";
+
+    if (!Array.isArray(direcciones) || direcciones.length === 0) {
+        contenedorDirecciones.innerHTML = `<div class="add-card-direccion">Añadir nueva dirección</div>`;
+        return;
+    }
+
+    direcciones.forEach(direccion => {
+        contenedorDirecciones.appendChild(crearDireccionHTML(direccion));
+    });
+
+    const bloqueAnadir = document.createElement("div");
+    bloqueAnadir.className = "add-card-direccion";
+    bloqueAnadir.textContent = "Añadir nueva dirección";
+    contenedorDirecciones.appendChild(bloqueAnadir);
+}
+
+function crearDireccionHTML(direccion) {
+    const card = document.createElement("div");
+    card.className = "direccion-card";
+
+    const lineaNumero = construirLineaNumeroDireccion(direccion);
+    const lineaCompleta = [
+        direccion.calle || "",
+        lineaNumero ? `, ${lineaNumero}` : ""
+    ].join("");
+
+    card.innerHTML = `
+        <div class="direccion-card-top">
+            <div>
+                <h3 class="direccion-alias">${escaparHTML(direccion.alias || "Dirección")}</h3>
+                ${direccion.principal ? `<span class="badge-principal">Principal</span>` : ""}
+            </div>
+
+            <div class="direccion-acciones">
+                <button type="button" class="btn-editar-direccion btn-mini" data-id="${direccion.id}">
+                    Editar
+                </button>
+                <button type="button" class="btn-eliminar-direccion btn-mini btn-mini-peligro" data-id="${direccion.id}">
+                    Eliminar
+                </button>
+            </div>
+        </div>
+
+        <div class="direccion-lineas">
+            <p>${escaparHTML(lineaCompleta)}</p>
+            <p>${escaparHTML((direccion.codigoPostal || "") + " " + (direccion.municipio || "") + ", " + (direccion.provincia || ""))}</p>
+            ${direccion.puerta ? `<p>Puerta: ${escaparHTML(direccion.puerta)}</p>` : ""}
+        </div>
+
+        <div class="direccion-footer">
+            ${
+                direccion.principal
+                    ? `<span class="texto-principal-actual">Dirección principal actual</span>`
+                    : `<button type="button" class="btn-principal-direccion btn-mini" data-id="${direccion.id}">Marcar como principal</button>`
+            }
+        </div>
+    `;
+
+    return card;
+}
+
+function construirLineaNumeroDireccion(direccion) {
+    const partes = [];
+
+    if (direccion.numero) partes.push(`Nº ${direccion.numero}`);
+    if (direccion.piso) partes.push(`Piso ${direccion.piso}`);
+    if (direccion.puerta) partes.push(`Puerta ${direccion.puerta}`);
+
+    return partes.join(" · ");
+}
+
+async function abrirModalEditarDireccion(usuarioId, direccionId) {
+    const modal = document.getElementById("modal-direccion");
+    const titulo = document.getElementById("modal-direccion-titulo");
+    const form = document.getElementById("formDireccion");
+
+    if (!modal || !form) return;
+
+    try {
+        const response = await fetch(`http://localhost:8080/direcciones/usuario/${usuarioId}`, {
+            method: "GET",
+            credentials: "include"
+        });
+
+        const texto = await response.text();
+
+        if (!response.ok) {
+            throw new Error(obtenerMensajeErrorAmigable(texto, "direccion"));
+        }
+
+        const direcciones = texto ? JSON.parse(texto) : [];
+        const direccion = direcciones.find(d => String(d.id) === String(direccionId));
+
+        if (!direccion) {
+            throw new Error("No se encontró la dirección seleccionada.");
+        }
+
+        direccionIdEnEdicion = direccion.id;
+
+        if (titulo) {
+            titulo.textContent = "Editar dirección";
+        }
+
+        document.getElementById("aliasDireccion").value = direccion.alias || "";
+        document.getElementById("provinciaDireccion").value = direccion.provincia || "";
+        document.getElementById("municipioDireccion").value = direccion.municipio || "";
+        document.getElementById("calleDireccion").value = direccion.calle || "";
+        document.getElementById("numeroDireccionModal").value = direccion.numero || "";
+        document.getElementById("pisoDireccion").value = direccion.piso || "";
+        document.getElementById("puertaDireccion").value = direccion.puerta || "";
+        document.getElementById("codigoPostalDireccion").value = direccion.codigoPostal || "";
+        document.getElementById("principalDireccion").checked = !!direccion.principal;
+
+        ocultarMensajeModalDireccion();
+        modal.style.display = "flex";
+
+    } catch (error) {
+        console.error("Error al abrir edición de dirección:", error);
+        mostrarMensaje(error.message || "No se pudo cargar la dirección.");
+    }
+}
+
+async function marcarDireccionComoPrincipal(usuarioId, direccionId) {
+    try {
+        const response = await fetch(`http://localhost:8080/direcciones/usuario/${usuarioId}/${direccionId}/principal`, {
+            method: "PUT",
+            credentials: "include"
+        });
+
+        const texto = await response.text();
+
+        if (!response.ok) {
+            throw new Error(obtenerMensajeErrorAmigable(texto, "direccion"));
+        }
+
+        mostrarMensaje("Dirección principal actualizada.", "ok");
+        await cargarDirecciones(usuarioId);
+
+    } catch (error) {
+        console.error("Error marcando dirección principal:", error);
+        mostrarMensaje(error.message || "No se pudo marcar la dirección como principal.");
+    }
+}
+
+function configurarModalEliminarDireccion(usuarioId) {
+    const modal = document.getElementById("modal-confirmar-eliminar-direccion");
+    const btnCerrar = document.getElementById("cerrar-modal-eliminar-direccion");
+    const btnCancelar = document.getElementById("cancelar-eliminar-direccion");
+    const btnConfirmar = document.getElementById("confirmar-eliminar-direccion");
+
+    function cerrarModal() {
+        if (modal) {
+            modal.style.display = "none";
+        }
+        direccionIdPendienteEliminar = null;
+    }
+
+    if (btnCerrar) btnCerrar.addEventListener("click", cerrarModal);
+    if (btnCancelar) btnCancelar.addEventListener("click", cerrarModal);
+
+    if (modal) {
+        modal.addEventListener("click", (e) => {
+            if (e.target === modal) {
+                cerrarModal();
+            }
+        });
+    }
+
+    if (btnConfirmar) {
+        btnConfirmar.addEventListener("click", async () => {
+            if (!direccionIdPendienteEliminar) return;
+
+            try {
+                btnConfirmar.disabled = true;
+                btnConfirmar.textContent = "Eliminando...";
+
+                const response = await fetch(`http://localhost:8080/direcciones/usuario/${usuarioId}/${direccionIdPendienteEliminar}`, {
+                    method: "DELETE",
+                    credentials: "include"
+                });
+
+                const texto = await response.text();
+
+                if (!response.ok) {
+                    throw new Error(obtenerMensajeErrorAmigable(texto, "direccion"));
+                }
+
+                cerrarModal();
+                mostrarMensaje("Dirección eliminada correctamente.", "ok");
+                await cargarDirecciones(usuarioId);
+
+            } catch (error) {
+                console.error("Error al eliminar dirección:", error);
+                mostrarMensaje(error.message || "No se pudo eliminar la dirección.");
+            } finally {
+                btnConfirmar.disabled = false;
+                btnConfirmar.textContent = "Eliminar";
+            }
+        });
+    }
+}
+
+function abrirModalEliminarDireccion(direccionId) {
+    const modal = document.getElementById("modal-confirmar-eliminar-direccion");
+    direccionIdPendienteEliminar = direccionId;
+
+    if (modal) {
+        modal.style.display = "flex";
+    }
+}
+
+function mostrarMensajeModalDireccion(texto, tipo = "error") {
+    const mensaje = document.getElementById("mensaje-modal-direccion");
+    if (!mensaje) return;
+
+    mensaje.textContent = texto;
+    mensaje.style.display = "block";
+    mensaje.classList.remove("ok", "error");
+    mensaje.classList.add(tipo);
+}
+
+function ocultarMensajeModalDireccion() {
+    const mensaje = document.getElementById("mensaje-modal-direccion");
+    if (!mensaje) return;
+
+    mensaje.textContent = "";
+    mensaje.style.display = "none";
+    mensaje.classList.remove("ok", "error");
+}
+
+/* =========================
+   MENSAJES
+========================= */
+
 function mostrarMensaje(texto, tipo = "error") {
     const mensaje = document.getElementById("mensaje-perfil");
-
     if (!mensaje) return;
 
     mensaje.textContent = texto;
@@ -1124,6 +1582,10 @@ function ocultarMensajeModalTarjeta() {
     mensaje.classList.remove("ok", "error");
 }
 
+/* =========================
+   ERRORES AMIGABLES
+========================= */
+
 function obtenerMensajeErrorAmigable(textoError, contexto = "") {
     if (!textoError) {
         return "No se pudo completar la operación.";
@@ -1133,7 +1595,7 @@ function obtenerMensajeErrorAmigable(textoError, contexto = "") {
 
     try {
         json = JSON.parse(textoError);
-    } catch (e) {
+    } catch (_) {
         json = null;
     }
 
@@ -1142,26 +1604,11 @@ function obtenerMensajeErrorAmigable(textoError, contexto = "") {
         : textoError.toLowerCase();
 
     if (contexto === "tarjeta") {
-        if (texto.includes("mes")) {
-            return "El mes de expiración no es válido.";
-        }
-
-        if (texto.includes("caduc")) {
-            return "La tarjeta está caducada.";
-        }
-
-        if (texto.includes("fecha")) {
-            return "La fecha de expiración no es válida.";
-        }
-
-        if (texto.includes("titular")) {
-            return "El titular de la tarjeta no es válido.";
-        }
-
-        if (texto.includes("número") || texto.includes("numero")) {
-            return "El número de tarjeta no es válido.";
-        }
-
+        if (texto.includes("mes")) return "El mes de expiración no es válido.";
+        if (texto.includes("caduc")) return "La tarjeta está caducada.";
+        if (texto.includes("fecha")) return "La fecha de expiración no es válida.";
+        if (texto.includes("titular")) return "El titular de la tarjeta no es válido.";
+        if (texto.includes("número") || texto.includes("numero")) return "El número de tarjeta no es válido.";
         return "No se pudo guardar la tarjeta.";
     }
 
@@ -1189,5 +1636,30 @@ function obtenerMensajeErrorAmigable(textoError, contexto = "") {
         return "No se pudo actualizar la contraseña.";
     }
 
+    if (contexto === "direccion") {
+        if (texto.includes("alias")) return "El alias de la dirección no es válido.";
+        if (texto.includes("provincia")) return "La provincia no es válida.";
+        if (texto.includes("municipio")) return "El municipio no es válido.";
+        if (texto.includes("calle")) return "La calle no es válida.";
+        if (texto.includes("codigo postal") || texto.includes("código postal")) return "El código postal no es válido.";
+        if (texto.includes("principal")) return "No se pudo cambiar la dirección principal.";
+        return "No se pudo guardar la dirección.";
+    }
+
     return "Ha ocurrido un error inesperado.";
+}
+
+/* =========================
+   UTILS
+========================= */
+
+function escaparHTML(texto) {
+    if (texto === null || texto === undefined) return "";
+
+    return String(texto)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
 }
