@@ -15,7 +15,7 @@ public class GestorScraping {
 
     private List<ScraperTienda> scrapers;
 
-    public GestorScraping(){
+    public GestorScraping() {
         this.scrapers = new ArrayList<>();
 
         scrapers.add(new ZaraScraper());
@@ -27,14 +27,49 @@ public class GestorScraping {
         scrapers.add(scraper);
     }
 
-    public List<Producto> scrapearTodo(){
+    public List<Producto> scrapearTodo() {
         List<Producto> productos = new ArrayList<>();
 
-        for(ScraperTienda scraper : scrapers){
+        for (ScraperTienda scraper : scrapers) {
             productos.addAll(scraper.scrapearProductos());
         }
+
         return productos;
     }
 
+    public List<Producto> scrapearZara() {
+        List<Producto> productos = new ArrayList<>();
 
+        for (ScraperTienda scraper : scrapers) {
+            if (scraper instanceof ZaraScraper) {
+                productos.addAll(scraper.scrapearProductos());
+            }
+        }
+
+        return productos;
+    }
+
+    public List<Producto> scrapearBershka() {
+        List<Producto> productos = new ArrayList<>();
+
+        for (ScraperTienda scraper : scrapers) {
+            if (scraper instanceof BershkaScraper) {
+                productos.addAll(scraper.scrapearProductos());
+            }
+        }
+
+        return productos;
+    }
+
+    public List<Producto> scrapearPullAndBear() {
+        List<Producto> productos = new ArrayList<>();
+
+        for (ScraperTienda scraper : scrapers) {
+            if (scraper instanceof PullAndBearScraper) {
+                productos.addAll(scraper.scrapearProductos());
+            }
+        }
+
+        return productos;
+    }
 }

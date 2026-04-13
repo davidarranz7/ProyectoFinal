@@ -10,6 +10,7 @@ import com.david.ProyectoFinal.repository.TiendaRepository;
 import com.david.ProyectoFinal.scraper.gestor.GestorScraping;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -17,17 +18,17 @@ import java.util.Optional;
 @Service
 public class ProductoService {
 
-
-    /// instanciamos las dependecias
     private final ProductoRepository productoRepository;
     private final GestorScraping gestorScraping;
     private final TiendaRepository tiendaRepository;
     private final CategoriaRepository categoriaRepository;
     private final ProductoTallaStockRepository productoTallaStockRepository;
 
-
-    /// creamos el constructor para inyectar las dependencias
-    public ProductoService(ProductoRepository productoRepository, GestorScraping gestorScraping, TiendaRepository tiendaRepository, CategoriaRepository categoriaRepository, ProductoTallaStockRepository productoTallaStockRepository) {
+    public ProductoService(ProductoRepository productoRepository,
+                           GestorScraping gestorScraping,
+                           TiendaRepository tiendaRepository,
+                           CategoriaRepository categoriaRepository,
+                           ProductoTallaStockRepository productoTallaStockRepository) {
         this.productoRepository = productoRepository;
         this.gestorScraping = gestorScraping;
         this.tiendaRepository = tiendaRepository;
@@ -35,19 +36,19 @@ public class ProductoService {
         this.productoTallaStockRepository = productoTallaStockRepository;
     }
 
-    public List<Producto> obtenerTodos(){
+    public List<Producto> obtenerTodos() {
         return productoRepository.findAll();
     }
 
-    public Producto guardar(Producto producto){
+    public Producto guardar(Producto producto) {
         return productoRepository.save(producto);
     }
 
-    public Producto obtenerPorId(Long id){
+    public Producto obtenerPorId(Long id) {
         return productoRepository.findById(id).orElse(null);
     }
 
-    public void eliminar(Long id){
+    public void eliminar(Long id) {
         productoRepository.deleteById(id);
     }
 
@@ -66,20 +67,39 @@ public class ProductoService {
 
             return productoRepository.save(producto);
         }
+
         return null;
     }
 
     public List<Producto> scrapearYGuardar() {
         List<Producto> productosScrapeados = gestorScraping.scrapearTodo();
-        List<Producto> productosGuardados = new java.util.ArrayList<>();
+        return guardarProductosScrapeados(productosScrapeados);
+    }
+
+    public List<Producto> scrapearZaraYGuardar() {
+        List<Producto> productosScrapeados = gestorScraping.scrapearZara();
+        return guardarProductosScrapeados(productosScrapeados);
+    }
+
+    public List<Producto> scrapearBershkaYGuardar() {
+        List<Producto> productosScrapeados = gestorScraping.scrapearBershka();
+        return guardarProductosScrapeados(productosScrapeados);
+    }
+
+    public List<Producto> scrapearPullAndBearYGuardar() {
+        List<Producto> productosScrapeados = gestorScraping.scrapearPullAndBear();
+        return guardarProductosScrapeados(productosScrapeados);
+    }
+
+    private List<Producto> guardarProductosScrapeados(List<Producto> productosScrapeados) {
+        List<Producto> productosGuardados = new ArrayList<>();
 
         for (Producto producto : productosScrapeados) {
 
             Tienda tiendaScrapeada = producto.getTienda();
 
             if (tiendaScrapeada != null) {
-                Optional<Tienda> tiendaExistente =
-                        tiendaRepository.findByNombre(tiendaScrapeada.getNombre());
+                Optional<Tienda> tiendaExistente = tiendaRepository.findByNombre(tiendaScrapeada.getNombre());
 
                 if (tiendaExistente.isPresent()) {
                     producto.setTienda(tiendaExistente.get());
@@ -91,8 +111,7 @@ public class ProductoService {
             Categoria categoriaScrapeada = producto.getCategoria();
 
             if (categoriaScrapeada != null) {
-                Optional<Categoria> categoriaExistente =
-                        categoriaRepository.findByNombre(categoriaScrapeada.getNombre());
+                Optional<Categoria> categoriaExistente = categoriaRepository.findByNombre(categoriaScrapeada.getNombre());
 
                 if (categoriaExistente.isPresent()) {
                     producto.setCategoria(categoriaExistente.get());
@@ -101,9 +120,7 @@ public class ProductoService {
                 }
             }
 
-
-                Optional<Producto> existente =
-                    productoRepository.findByUrlProducto(producto.getUrlProducto());
+            Optional<Producto> existente = productoRepository.findByUrlProducto(producto.getUrlProducto());
 
             if (existente.isPresent()) {
                 Producto productoExistente = existente.get();
@@ -118,7 +135,6 @@ public class ProductoService {
                 productoExistente.setTienda(producto.getTienda());
 
                 productosGuardados.add(productoRepository.save(productoExistente));
-
             } else {
                 productosGuardados.add(productoRepository.save(producto));
             }
@@ -159,21 +175,19 @@ public class ProductoService {
         return productos;
     }
 
-    public void asignarTallaStock(ProductoTallaStockDTO dto){
-        Producto producto = productoRepository.findById(dto.getProductoId()).orElseThrow(() -> new RuntimeException("producto no encontrado"));
+    public void asignarTallaStock(ProductoTallaStockDTO dto) {
+        Producto producto = productoRepository.findById(dto.getProductoId())
+                .orElseThrow(() -> new RuntimeException("producto no encontrado"));
 
         ProductoTallaStock productoTallaStock = new ProductoTallaStock();
-
         productoTallaStock.setProducto(producto);
         productoTallaStock.setTalla(dto.getTalla());
         productoTallaStock.setStock(dto.getStock());
 
         productoTallaStockRepository.save(productoTallaStock);
-
     }
 
     public List<ProductoTallaStockResponseDTO> obtenerTallasStockPorProducto(Long productoId) {
-
         List<ProductoTallaStock> lista = productoTallaStockRepository.findByProductoId(productoId);
 
         return Arrays.stream(Talla.values())

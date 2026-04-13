@@ -45,9 +45,27 @@ public class ProductoController {
         return productoService.actualizar(id, producto);
     }
 
-    @PostMapping("/scrapear")
+    @PostMapping("/scrapear/total")
     public ResponseEntity<List<Producto>> scrapearProductos(){
         List<Producto> productos = productoService.scrapearYGuardar();
+        return ResponseEntity.ok(productos);
+    }
+
+    @PostMapping("/scrapear/zara")
+    public ResponseEntity<List<Producto>> scrapearProductosZara() {
+        List<Producto> productos = productoService.scrapearZaraYGuardar();
+        return ResponseEntity.ok(productos);
+    }
+
+    @PostMapping("/scrapear/bershka")
+    public ResponseEntity<List<Producto>> scrapearProductosBershka() {
+        List<Producto> productos = productoService.scrapearBershkaYGuardar();
+        return ResponseEntity.ok(productos);
+    }
+
+    @PostMapping("/scrapear/pullandbear")
+    public ResponseEntity<List<Producto>> scrapearProductosPullAndBear() {
+        List<Producto> productos = productoService.scrapearPullAndBearYGuardar();
         return ResponseEntity.ok(productos);
     }
 

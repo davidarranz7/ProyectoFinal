@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Panel de administración</title>
+    <link rel="stylesheet" href="css/admin.css" />
+    <link rel="stylesheet" href="css/menu.css" />
+</head>
+<body>
+<div id="menu-container"></div>
+
+<div class="admin-container">
+    <aside class="card admin-lateral">
+        <div class="admin-icono">A</div>
+        <h2>Administrador</h2>
+        <p id="admin-bienvenida">Panel de control</p>
+
+        <div class="menu-lateral-admin">
+            <button class="menu-lateral-btn-admin menu-lateral-btn-admin-activo" type="button" data-seccion="panel-principal">
+                Panel principal
+            </button>
+            <button class="menu-lateral-btn-admin" type="button" data-seccion="scraping">
+                Scraping
+            </button>
+            <button class="menu-lateral-btn-admin" type="button" data-seccion="productos">
+                Productos
+            </button>
+            <button class="menu-lateral-btn-admin" type="button" data-seccion="usuarios">
+                Usuarios
+            </button>
+            <button class="menu-lateral-btn-admin" type="button" data-seccion="pedidos">
+                Pedidos
+            </button>
+        </div>
+
+        <div class="mini-datos-admin">
+            <div class="mini-dato-admin">
+                <span>Acceso</span>
+                <strong>Administrador</strong>
+            </div>
+            <div class="mini-dato-admin">
+                <span>Estado</span>
+                <strong>Panel activo</strong>
+            </div>
+        </div>
+    </aside>
+
+    <main class="admin-contenido">
+        <div id="mensaje-admin" class="mensaje-admin"></div>
+
+        <section class="card seccion-admin" id="panel-principal">
+            <div class="cabecera-seccion-admin">
+                <div>
+                    <h1 class="titulo-seccion-admin">Panel de administración</h1>
+                    <p class="subtitulo-seccion-admin">
+                        Gestiona scraping, productos, usuarios y pedidos desde un único lugar.
+                    </p>
+                </div>
+            </div>
+
+            <div class="resumen-grid">
+                <article class="resumen-card">
+                    <span class="resumen-etiqueta">Productos</span>
+                    <h3 id="total-productos">--</h3>
+                    <p>Total de productos registrados</p>
+                </article>
+
+                <article class="resumen-card">
+                    <span class="resumen-etiqueta">Usuarios</span>
+                    <h3 id="total-usuarios">--</h3>
+                    <p>Total de usuarios de la plataforma</p>
+                </article>
+
+                <article class="resumen-card">
+                    <span class="resumen-etiqueta">Pedidos</span>
+                    <h3 id="total-pedidos">--</h3>
+                    <p>Pedidos realizados</p>
+                </article>
+
+                <article class="resumen-card">
+                    <span class="resumen-etiqueta">Scraping</span>
+                    <h3 id="estado-scraping">Listo</h3>
+                    <p>Estado del sistema de scraping</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="card seccion-admin" id="scraping">
+            <div class="cabecera-bloque-admin">
+                <div>
+                    <h2 class="titulo-bloque-admin">Centro de scraping</h2>
+                    <p class="subtitulo-seccion-admin">
+                        Ejecuta procesos de scraping manualmente desde el panel.
+                    </p>
+                </div>
+            </div>
+
+            <div class="acciones-scraping-grid">
+                <div class="accion-admin-card">
+                    <div>
+                        <h3>Zara</h3>
+                        <p>Obtén productos actualizados de Zara.</p>
+                    </div>
+                    <button class="btn btn-principal btn-auto" type="button" id="btn-scraping-zara">
+                        Ejecutar scraping
+                    </button>
+                </div>
+
+                <div class="accion-admin-card">
+                    <div>
+                        <h3>Bershka</h3>
+                        <p>Lanza el scraping de productos de Bershka.</p>
+                    </div>
+                    <button class="btn btn-principal btn-auto" type="button" id="btn-scraping-bershka">
+                        Ejecutar scraping
+                    </button>
+                </div>
+
+                <div class="accion-admin-card">
+                    <div>
+                        <h3>Pull&amp;Bear</h3>
+                        <p>Actualiza el catálogo con scraping manual.</p>
+                    </div>
+                    <button class="btn btn-principal btn-auto" type="button" id="btn-scraping-pull">
+                        Ejecutar scraping
+                    </button>
+                </div>
+
+                <div class="accion-admin-card accion-admin-card-destacada">
+                    <div>
+                        <h3>Scraping completo</h3>
+                        <p>Ejecuta todos los scrapers disponibles de una sola vez.</p>
+                    </div>
+                    <button class="btn btn-principal btn-auto" type="button" id="btn-scraping-todo">
+                        Ejecutar todo
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <section class="card seccion-admin" id="productos">
+            <div class="cabecera-bloque-admin">
+                <div>
+                    <h2 class="titulo-bloque-admin">Productos</h2>
+                    <p class="subtitulo-seccion-admin">
+                        Consulta y gestión del catálogo de productos.
+                    </p>
+                </div>
+            </div>
+
+            <div class="accesos-grid">
+                <div class="acceso-card">
+                    <h3>Gestión de productos</h3>
+                    <p>Zona preparada para listar, editar o eliminar productos del catálogo.</p>
+                    <button class="btn btn-secundario btn-auto" type="button" id="btn-gestionar-productos">
+                        Gestionar productos
+                    </button>
+                </div>
+
+                <div class="acceso-card">
+                    <h3>Estado del catálogo</h3>
+                    <p>Revisa la cantidad total de productos y el estado general del inventario.</p>
+                    <button class="btn btn-secundario btn-auto" type="button">
+                        Próximamente
+                    </button>
+                </div>
+
+                <div class="acceso-card">
+                    <h3>Operaciones rápidas</h3>
+                    <p>Espacio preparado para futuras acciones administrativas sobre productos.</p>
+                    <button class="btn btn-secundario btn-auto" type="button">
+                        Próximamente
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <section class="card seccion-admin" id="usuarios">
+            <div class="cabecera-bloque-admin">
+                <div>
+                    <h2 class="titulo-bloque-admin">Usuarios</h2>
+                    <p class="subtitulo-seccion-admin">
+                        Consulta de usuarios registrados y su información general.
+                    </p>
+                </div>
+            </div>
+
+            <div class="accesos-grid">
+                <div class="acceso-card">
+                    <h3>Gestión de usuarios</h3>
+                    <p>Zona preparada para mostrar el listado de usuarios y sus datos.</p>
+                    <button class="btn btn-secundario btn-auto" type="button" id="btn-gestionar-usuarios">
+                        Gestionar usuarios
+                    </button>
+                </div>
+
+                <div class="acceso-card">
+                    <h3>Roles y permisos</h3>
+                    <p>Aquí podrás controlar administradores, usuarios normales y permisos especiales.</p>
+                    <button class="btn btn-secundario btn-auto" type="button">
+                        Próximamente
+                    </button>
+                </div>
+
+                <div class="acceso-card">
+                    <h3>Actividad</h3>
+                    <p>Espacio preparado para futuras estadísticas o actividad reciente de usuarios.</p>
+                    <button class="btn btn-secundario btn-auto" type="button">
+                        Próximamente
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <section class="card seccion-admin" id="pedidos">
+            <div class="cabecera-bloque-admin">
+                <div>
+                    <h2 class="titulo-bloque-admin">Pedidos</h2>
+                    <p class="subtitulo-seccion-admin">
+                        Revisión de pedidos, estados y flujo de compra.
+                    </p>
+                </div>
+            </div>
+
+            <div class="accesos-grid">
+                <div class="acceso-card">
+                    <h3>Gestión de pedidos</h3>
+                    <p>Zona preparada para listar pedidos y controlar su estado.</p>
+                    <button class="btn btn-secundario btn-auto" type="button" id="btn-gestionar-pedidos">
+                        Gestionar pedidos
+                    </button>
+                </div>
+
+                <div class="acceso-card">
+                    <h3>Seguimiento</h3>
+                    <p>Podrás consultar pedidos pendientes, completados o cancelados.</p>
+                    <button class="btn btn-secundario btn-auto" type="button">
+                        Próximamente
+                    </button>
+                </div>
+
+                <div class="acceso-card">
+                    <h3>Operaciones administrativas</h3>
+                    <p>Espacio pensado para futuras acciones sobre pedidos y devoluciones.</p>
+                    <button class="btn btn-secundario btn-auto" type="button">
+                        Próximamente
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+</div>
+
+<script src="js/admin.js"></script>
+<script src="js/menu.js"></script>
+</body>
+</html>

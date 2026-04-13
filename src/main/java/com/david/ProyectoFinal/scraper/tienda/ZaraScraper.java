@@ -69,9 +69,9 @@ public class ZaraScraper implements ScraperTienda {
             tienda.setUrl("https://www.zara.com");
 
             List<ConfigScrapingTienda> configuraciones = List.of(
-                    new ConfigScrapingTienda("https://www.zara.com/es/es/hombre-camisetas-l855.html", Seccion.HOMBRE, "Camisetas"),
-                    new ConfigScrapingTienda("https://www.zara.com/es/es/hombre-pantalones-l838.html", Seccion.HOMBRE, "Pantalones"),
-                    new ConfigScrapingTienda("https://www.zara.com/es/es/mujer-pantalones-l1335.html", Seccion.MUJER, "Pantalones")
+                    new ConfigScrapingTienda("https://www.zara.com/es/es/hombre-camisetas-l855.html", Seccion.HOMBRE, "Camisetas")
+                    //new ConfigScrapingTienda("https://www.zara.com/es/es/hombre-pantalones-l838.html", Seccion.HOMBRE, "Pantalones"),
+                    //new ConfigScrapingTienda("https://www.zara.com/es/es/mujer-pantalones-l1335.html", Seccion.MUJER, "Pantalones")
             );
 
             boolean cookiesAceptadas = false;
