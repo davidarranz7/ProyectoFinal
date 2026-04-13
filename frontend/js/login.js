@@ -46,8 +46,17 @@ function estaEnIframe() {
     return window.self !== window.top;
 }
 
-function finalizarLogin(nombreUsuario) {
+function redirigirDespuesLogin(rol) {
+    const esAdmin = rol === "ADMIN";
+
     if (estaEnIframe()) {
+        if (esAdmin) {
+            setTimeout(() => {
+                window.top.location.href = "/admin.html";
+            }, 1200);
+            return;
+        }
+
         if (window.parent && typeof window.parent.actualizarMenuUsuario === "function") {
             window.parent.actualizarMenuUsuario();
         }
@@ -55,6 +64,8 @@ function finalizarLogin(nombreUsuario) {
         setTimeout(() => {
             if (window.parent && typeof window.parent.cerrarAuthOverlay === "function") {
                 window.parent.cerrarAuthOverlay();
+            } else {
+                window.top.location.href = "/index.html";
             }
         }, 1200);
 
@@ -62,7 +73,7 @@ function finalizarLogin(nombreUsuario) {
     }
 
     setTimeout(() => {
-        window.location.href = "index.html";
+        window.location.href = esAdmin ? "/admin.html" : "/index.html";
     }, 1200);
 }
 
@@ -102,8 +113,10 @@ form.addEventListener("submit", async (e) => {
 
         const data = await response.json();
 
+        console.log("Respuesta login:", data);
+
         mostrarModal("CORRECTO", "Bienvenido", `Hola ${data.nombre}`);
-        finalizarLogin(data.nombre);
+        redirigirDespuesLogin(data.rol);
 
     } catch (error) {
         console.error("Error real:", error);

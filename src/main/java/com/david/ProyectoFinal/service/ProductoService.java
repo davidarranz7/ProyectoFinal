@@ -175,16 +175,25 @@ public class ProductoService {
         return productos;
     }
 
-    public void asignarTallaStock(ProductoTallaStockDTO dto) {
+    public void asignarTallaStock(ProductoTallaStockDTO dto){
         Producto producto = productoRepository.findById(dto.getProductoId())
                 .orElseThrow(() -> new RuntimeException("producto no encontrado"));
 
-        ProductoTallaStock productoTallaStock = new ProductoTallaStock();
-        productoTallaStock.setProducto(producto);
-        productoTallaStock.setTalla(dto.getTalla());
-        productoTallaStock.setStock(dto.getStock());
+        Optional<ProductoTallaStock> existente =
+                productoTallaStockRepository.findByProductoIdAndTalla(dto.getProductoId(), dto.getTalla());
 
-        productoTallaStockRepository.save(productoTallaStock);
+        if (existente.isPresent()) {
+            ProductoTallaStock productoTallaStockExistente = existente.get();
+            productoTallaStockExistente.setStock(dto.getStock());
+            productoTallaStockRepository.save(productoTallaStockExistente);
+        } else {
+            ProductoTallaStock productoTallaStock = new ProductoTallaStock();
+            productoTallaStock.setProducto(producto);
+            productoTallaStock.setTalla(dto.getTalla());
+            productoTallaStock.setStock(dto.getStock());
+
+            productoTallaStockRepository.save(productoTallaStock);
+        }
     }
 
     public List<ProductoTallaStockResponseDTO> obtenerTallasStockPorProducto(Long productoId) {

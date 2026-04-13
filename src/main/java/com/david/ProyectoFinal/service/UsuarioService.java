@@ -78,8 +78,7 @@ public class UsuarioService {
         if(usuario != null){
             usuario.setNombre(usuarioActualizado.getNombre());
             usuario.setEmail(usuarioActualizado.getEmail());
-            usuario.setPassword(usuarioActualizado.getPassword());
-            usuario.setRol(usuarioActualizado.getRol());;
+            usuario.setRol(usuarioActualizado.getRol());
 
             return usuarioRepository.save(usuario);
         }
