@@ -84,7 +84,7 @@ document.addEventListener("click", () => {
 
 async function obtenerSesionActual() {
     try {
-        const response = await fetch("http://localhost:8080/auth/session", {
+        const response = await fetch(`${BASE_URL}/auth/session`, {
             method: "GET",
             credentials: "include"
         });
@@ -114,7 +114,7 @@ async function cargarFavoritosUsuario() {
     }
 
     try {
-        const response = await fetch(`http://localhost:8080/favoritos/usuario/${sesion.id}`, {
+        const response = await fetch(`${BASE_URL}/favoritos/usuario/${sesion.id}`, {
             method: "GET",
             credentials: "include"
         });
@@ -304,7 +304,7 @@ function renderizarProductos(productos, reiniciar = true) {
 
                 if (yaEsFavorito) {
                     const response = await fetch(
-                        `http://localhost:8080/favoritos?usuarioId=${sesion.id}&productoId=${producto.id}`,
+                        `${BASE_URL}/favoritos?usuarioId=${sesion.id}&productoId=${producto.id}`,
                         {
                             method: "DELETE",
                             credentials: "include"
@@ -320,7 +320,7 @@ function renderizarProductos(productos, reiniciar = true) {
                     mostrarToastFavorito("Eliminado de favoritos");
                 } else {
                     const response = await fetch(
-                        `http://localhost:8080/favoritos?usuarioId=${sesion.id}&productoId=${producto.id}`,
+                        `${BASE_URL}/favoritos?usuarioId=${sesion.id}&productoId=${producto.id}`,
                         {
                             method: "POST",
                             credentials: "include"
@@ -380,7 +380,7 @@ function renderizarProductos(productos, reiniciar = true) {
 
             try {
                 const response = await fetch(
-                    `http://localhost:8080/carrito/agregar?usuarioId=${sesion.id}&productoId=${producto.id}&talla=${tallaSeleccionada}&cantidad=1`,
+                    `${BASE_URL}/carrito/agregar?usuarioId=${sesion.id}&productoId=${producto.id}&talla=${tallaSeleccionada}&cantidad=1`,
                     {
                         method: "POST",
                         credentials: "include"
@@ -456,7 +456,7 @@ function aplicarFiltros() {
 async function iniciarZara() {
     try {
         const [productosResponse] = await Promise.all([
-            fetch("http://localhost:8080/productos/tienda/Zara"),
+            fetch(`${BASE_URL}/productos/tienda/Zara`),
             cargarFavoritosUsuario()
         ]);
 

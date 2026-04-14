@@ -67,7 +67,7 @@ function finalizarRegistro(nombreUsuario) {
 }
 
 async function iniciarSesionAutomatica(nombre, password) {
-    const response = await fetch("http://localhost:8080/auth/login", {
+    const response = await fetch(`${BASE_URL}/auth/login`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
@@ -99,7 +99,7 @@ form.addEventListener("submit", async (e) => {
     }
 
     try {
-        const response = await fetch("http://localhost:8080/usuarios", {
+        const response = await fetch(`${BASE_URL}/usuarios`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"

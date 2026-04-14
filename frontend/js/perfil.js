@@ -51,7 +51,7 @@ async function iniciarPaginaPerfil() {
 
 async function obtenerSesionActual() {
     try {
-        const response = await fetch("http://localhost:8080/auth/session", {
+        const response = await fetch(`${BASE_URL}/auth/session`, {
             method: "GET",
             credentials: "include"
         });
@@ -128,7 +128,7 @@ function activarSeccion(nombreSeccion) {
 
 async function cargarPerfil(usuarioId) {
     try {
-        const response = await fetch(`http://localhost:8080/usuarios/${usuarioId}/perfil`, {
+        const response = await fetch(`${BASE_URL}/usuarios/${usuarioId}/perfil`, {
             method: "GET",
             credentials: "include"
         });
@@ -267,7 +267,7 @@ function configurarFormularioPerfil(usuarioId) {
                 btnGuardar.textContent = "Guardando...";
             }
 
-            const response = await fetch(`http://localhost:8080/usuarios/${usuarioId}/perfil`, {
+            const response = await fetch(`${BASE_URL}/usuarios/${usuarioId}/perfil`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json"
@@ -439,7 +439,7 @@ async function validarNombreEnVivo(usuarioId) {
     }
 
     try {
-        const response = await fetch(`http://localhost:8080/usuarios/${usuarioId}/validar-nombre?nombre=${encodeURIComponent(nombre)}`, {
+        const response = await fetch(`${BASE_URL}/usuarios/${usuarioId}/validar-nombre?nombre=${encodeURIComponent(nombre)}`, {
             method: "GET",
             credentials: "include"
         });
@@ -486,7 +486,7 @@ async function validarEmailEnVivo(usuarioId) {
     }
 
     try {
-        const response = await fetch(`http://localhost:8080/usuarios/${usuarioId}/validar-email?email=${encodeURIComponent(email)}`, {
+        const response = await fetch(`${BASE_URL}/usuarios/${usuarioId}/validar-email?email=${encodeURIComponent(email)}`, {
             method: "GET",
             credentials: "include"
         });
@@ -645,7 +645,7 @@ function configurarFormularioPassword(usuarioId) {
         };
 
         try {
-            const response = await fetch(`http://localhost:8080/usuarios/${usuarioId}/password`, {
+            const response = await fetch(`${BASE_URL}/usuarios/${usuarioId}/password`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json"
@@ -772,7 +772,7 @@ function configurarTarjetas(usuarioId) {
             };
 
             try {
-                const response = await fetch(`http://localhost:8080/tarjetas/usuario/${usuarioId}`, {
+                const response = await fetch(`${BASE_URL}/tarjetas/usuario/${usuarioId}`, {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json"
@@ -918,7 +918,7 @@ function configurarModalEliminarTarjeta(usuarioId) {
                 confirmarEliminar.disabled = true;
                 confirmarEliminar.textContent = "Eliminando...";
 
-                const response = await fetch(`http://localhost:8080/tarjetas/${tarjetaIdPendienteEliminar}`, {
+                const response = await fetch(`${BASE_URL}/tarjetas/${tarjetaIdPendienteEliminar}`, {
                     method: "DELETE",
                     credentials: "include"
                 });
@@ -958,7 +958,7 @@ async function cargarTarjetas(usuarioId) {
     if (!contenedorTarjetas) return;
 
     try {
-        const response = await fetch(`http://localhost:8080/tarjetas/usuario/${usuarioId}`, {
+        const response = await fetch(`${BASE_URL}/tarjetas/usuario/${usuarioId}`, {
             method: "GET",
             credentials: "include"
         });
@@ -1181,7 +1181,7 @@ function configurarDirecciones(usuarioId) {
                 let response;
 
                 if (direccionIdEnEdicion) {
-                    response = await fetch(`http://localhost:8080/direcciones/usuario/${usuarioId}/${direccionIdEnEdicion}`, {
+                    response = await fetch(`${BASE_URL}/direcciones/usuario/${usuarioId}/${direccionIdEnEdicion}`, {
                         method: "PUT",
                         headers: {
                             "Content-Type": "application/json"
@@ -1190,7 +1190,7 @@ function configurarDirecciones(usuarioId) {
                         body: JSON.stringify(datos)
                     });
                 } else {
-                    response = await fetch(`http://localhost:8080/direcciones/usuario/${usuarioId}`, {
+                    response = await fetch(`${BASE_URL}/direcciones/usuario/${usuarioId}`, {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json"
@@ -1261,7 +1261,7 @@ async function cargarDirecciones(usuarioId) {
     if (!contenedorDirecciones) return;
 
     try {
-        const response = await fetch(`http://localhost:8080/direcciones/usuario/${usuarioId}`, {
+        const response = await fetch(`${BASE_URL}/direcciones/usuario/${usuarioId}`, {
             method: "GET",
             credentials: "include"
         });
@@ -1384,7 +1384,7 @@ async function abrirModalEditarDireccion(usuarioId, direccionId) {
     if (!modal || !form) return;
 
     try {
-        const response = await fetch(`http://localhost:8080/direcciones/usuario/${usuarioId}`, {
+        const response = await fetch(`${BASE_URL}/direcciones/usuario/${usuarioId}`, {
             method: "GET",
             credentials: "include"
         });
@@ -1429,7 +1429,7 @@ async function abrirModalEditarDireccion(usuarioId, direccionId) {
 
 async function marcarDireccionComoPrincipal(usuarioId, direccionId) {
     try {
-        const response = await fetch(`http://localhost:8080/direcciones/usuario/${usuarioId}/${direccionId}/principal`, {
+        const response = await fetch(`${BASE_URL}/direcciones/usuario/${usuarioId}/${direccionId}/principal`, {
             method: "PUT",
             credentials: "include"
         });
@@ -1481,7 +1481,7 @@ function configurarModalEliminarDireccion(usuarioId) {
                 btnConfirmar.disabled = true;
                 btnConfirmar.textContent = "Eliminando...";
 
-                const response = await fetch(`http://localhost:8080/direcciones/usuario/${usuarioId}/${direccionIdPendienteEliminar}`, {
+                const response = await fetch(`${BASE_URL}/direcciones/usuario/${usuarioId}/${direccionIdPendienteEliminar}`, {
                     method: "DELETE",
                     credentials: "include"
                 });
