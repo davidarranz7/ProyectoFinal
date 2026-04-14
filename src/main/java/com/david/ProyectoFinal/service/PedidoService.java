@@ -83,6 +83,7 @@ public class PedidoService {
             itemPedido.setProducto(itemCarrito.getProducto());
             itemPedido.setCantidad(itemCarrito.getCantidad());
             itemPedido.setPrecioUnitario(itemCarrito.getProducto().getPrecio());
+            itemPedido.setTalla(itemCarrito.getTalla());
 
             itemPedidoRepository.save(itemPedido);
         }
@@ -116,7 +117,7 @@ public class PedidoService {
 
         if (pedido.getEstado() == EstadoPedido.ENVIADO ||
                 pedido.getEstado() == EstadoPedido.ENTREGADO) {
-            return null;
+            throw new RuntimeException("No se puede cancelar un pedido enviado o entregado");
         }
 
         pedido.setEstado(EstadoPedido.CANCELADO);
@@ -134,5 +135,25 @@ public class PedidoService {
         return itemPedidoRepository.findByPedidoId(pedidoId);
     }
 
+    public List<Pedido> obtenerTodosLosPedidos() {
+        return pedidoRepository.findAll();
+    }
 
+    public List<Pedido> obtenerPedidosPorEstado(EstadoPedido estado) {
+        return pedidoRepository.findByEstado(estado);
+    }
+
+    public Pedido cambiarEstadoPedido(Long pedidoId, EstadoPedido nuevoEstado) {
+
+        Optional<Pedido> pedidoOptional = pedidoRepository.findById(pedidoId);
+
+        if (pedidoOptional.isEmpty()) {
+            throw new RuntimeException("Pedido no encontrado");
+        }
+
+        Pedido pedido = pedidoOptional.get();
+        pedido.setEstado(nuevoEstado);
+
+        return pedidoRepository.save(pedido);
+    }
 }

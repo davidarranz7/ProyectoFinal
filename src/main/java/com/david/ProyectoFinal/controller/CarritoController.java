@@ -1,10 +1,12 @@
 package com.david.ProyectoFinal.controller;
 
-
 import com.david.ProyectoFinal.model.ItemCarrito;
 import com.david.ProyectoFinal.model.Talla;
 import com.david.ProyectoFinal.service.CarritoService;
+import jakarta.servlet.http.HttpSession;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -21,23 +23,41 @@ public class CarritoController {
         this.carritoService = carritoService;
     }
 
+    private void comprobarAccesoUsuario(Long usuarioId, HttpSession session) {
+        Long usuarioIdSesion = (Long) session.getAttribute("usuarioId");
+
+        if (usuarioIdSesion == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "No hay sesión iniciada");
+        }
+
+        if (!usuarioIdSesion.equals(usuarioId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes acceder al carrito de otro usuario");
+        }
+    }
+
     @PostMapping("/agregar")/// ruta para agregar un producto al carrito
     public ItemCarrito agregarproducto(@RequestParam Long usuarioId,
                                        @RequestParam Long productoId,
                                        @RequestParam Talla talla,
-                                       @RequestParam Integer cantidad) {
+                                       @RequestParam Integer cantidad,
+                                       HttpSession session) {
+        comprobarAccesoUsuario(usuarioId, session);
         return carritoService.agregarProducto(usuarioId, productoId, talla, cantidad);
     }
 
     @GetMapping("/usuario/{usuarioId}")/// ruta para obtener el carrito de un usuario
-    public List<ItemCarrito> obtenerItemsDelCarrito(@PathVariable Long usuarioId) {
+    public List<ItemCarrito> obtenerItemsDelCarrito(@PathVariable Long usuarioId,
+                                                    HttpSession session) {
+        comprobarAccesoUsuario(usuarioId, session);
         return carritoService.obtenerItemsDelCarrito(usuarioId);
     }
 
     @DeleteMapping("/eliminar")/// ruta para eliminar un producto del carrito
     public void eliminarProducto(@RequestParam Long usuarioId,
                                  @RequestParam Long productoId,
-                                 @RequestParam Talla talla) {
+                                 @RequestParam Talla talla,
+                                 HttpSession session) {
+        comprobarAccesoUsuario(usuarioId, session);
         carritoService.eliminarProducto(usuarioId, productoId, talla);
     }
 
@@ -45,17 +65,23 @@ public class CarritoController {
     public ItemCarrito actulizarCantidad(@RequestParam Long usuarioId,
                                          @RequestParam Long productoId,
                                          @RequestParam Talla talla,
-                                         @RequestParam Integer nuevaCantidad) {
+                                         @RequestParam Integer nuevaCantidad,
+                                         HttpSession session) {
+        comprobarAccesoUsuario(usuarioId, session);
         return carritoService.actualizarCantidad(usuarioId, productoId, talla, nuevaCantidad);
     }
 
     @GetMapping("/total/{usuarioId}")/// ruta para obtener el total del carrito de un usuario
-    public BigDecimal caclularTotal(@PathVariable Long usuarioId) {
+    public BigDecimal caclularTotal(@PathVariable Long usuarioId,
+                                    HttpSession session) {
+        comprobarAccesoUsuario(usuarioId, session);
         return carritoService.calcularTotal(usuarioId);
     }
 
     @DeleteMapping("/vaciar")/// ruta para vaciar el carrito de un usuario
-    public void vaciarCarrito(@RequestParam Long usuarioId) {
+    public void vaciarCarrito(@RequestParam Long usuarioId,
+                              HttpSession session) {
+        comprobarAccesoUsuario(usuarioId, session);
         carritoService.vaciarCarrito(usuarioId);
     }
 
@@ -63,7 +89,9 @@ public class CarritoController {
     public ItemCarrito cambiarTalla(@RequestParam Long usuarioId,
                                     @RequestParam Long productoId,
                                     @RequestParam Talla tallaActual,
-                                    @RequestParam Talla nuevaTalla) {
+                                    @RequestParam Talla nuevaTalla,
+                                    HttpSession session) {
+        comprobarAccesoUsuario(usuarioId, session);
         return carritoService.cambiarTalla(usuarioId, productoId, tallaActual, nuevaTalla);
     }
 

@@ -3,6 +3,7 @@ package com.david.ProyectoFinal.controller;
 
 import com.david.ProyectoFinal.model.Tienda;
 import com.david.ProyectoFinal.service.TiendaService;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,6 +23,7 @@ public class TiendaController {
         return tiendaService.obtenerTodas();
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public Tienda crear(@RequestBody Tienda tienda) {
         return tiendaService.guardar(tienda);
@@ -32,6 +34,7 @@ public class TiendaController {
         return tiendaService.obtenerPorId(id);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public void eliminar(@PathVariable Long id) {
         tiendaService.eliminar(id);

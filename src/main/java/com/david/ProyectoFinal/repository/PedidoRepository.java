@@ -14,6 +14,8 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
 
     List<Pedido> findByUsuarioIdAndEstado(Long usuarioId, EstadoPedido estado);
 
+    List<Pedido> findByEstado(EstadoPedido estado);
+
     @Modifying
     @Query("DELETE FROM Pedido p WHERE p.usuario.id = :usuarioId")
     void deleteByUsuarioId(Long usuarioId);

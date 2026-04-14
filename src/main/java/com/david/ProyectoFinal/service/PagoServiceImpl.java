@@ -132,6 +132,7 @@ public class PagoServiceImpl implements PagoService {
             itemPedido.setProducto(itemCarrito.getProducto());
             itemPedido.setCantidad(itemCarrito.getCantidad());
             itemPedido.setPrecioUnitario(itemCarrito.getProducto().getPrecio());
+            itemPedido.setTalla(itemCarrito.getTalla());
             return itemPedido;
         }).toList();
 

@@ -6,6 +6,7 @@ import com.david.ProyectoFinal.dto.ProductoTallaStockResponseDTO;
 import com.david.ProyectoFinal.model.Producto;
 import com.david.ProyectoFinal.service.ProductoService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,6 +26,7 @@ public class ProductoController {
         return productoService.obtenerTodos();
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public Producto crear(@RequestBody Producto producto){
         return productoService.guardar(producto);
@@ -35,34 +37,39 @@ public class ProductoController {
         return productoService.obtenerPorId(id);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public void eliminarPorId(@PathVariable Long id) {
         productoService.eliminar(id);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public Producto actualizar(@PathVariable Long id, @RequestBody Producto producto) {
         return productoService.actualizar(id, producto);
     }
-
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/scrapear/total")
     public ResponseEntity<List<Producto>> scrapearProductos(){
         List<Producto> productos = productoService.scrapearYGuardar();
         return ResponseEntity.ok(productos);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/scrapear/zara")
     public ResponseEntity<List<Producto>> scrapearProductosZara() {
         List<Producto> productos = productoService.scrapearZaraYGuardar();
         return ResponseEntity.ok(productos);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/scrapear/bershka")
     public ResponseEntity<List<Producto>> scrapearProductosBershka() {
         List<Producto> productos = productoService.scrapearBershkaYGuardar();
         return ResponseEntity.ok(productos);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/scrapear/pullandbear")
     public ResponseEntity<List<Producto>> scrapearProductosPullAndBear() {
         List<Producto> productos = productoService.scrapearPullAndBearYGuardar();
@@ -74,6 +81,7 @@ public class ProductoController {
         return productoService.obtenerPorTienda(nombre);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/talla-stock")
     public ResponseEntity<String> asignarTallaStock(@RequestBody ProductoTallaStockDTO dto){
         productoService.asignarTallaStock(dto);

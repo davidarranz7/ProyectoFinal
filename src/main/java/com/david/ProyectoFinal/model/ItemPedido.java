@@ -24,6 +24,10 @@ public class ItemPedido {
 
     private BigDecimal precioUnitario;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Talla talla;
+
     public ItemPedido() {
     }
 
@@ -73,5 +77,13 @@ public class ItemPedido {
 
     public void setPrecioUnitario(BigDecimal precioUnitario) {
         this.precioUnitario = precioUnitario;
+    }
+
+    public Talla getTalla() {
+        return talla;
+    }
+
+    public void setTalla(Talla talla) {
+        this.talla = talla;
     }
 }

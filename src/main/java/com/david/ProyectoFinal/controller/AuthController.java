@@ -5,7 +5,14 @@ import com.david.ProyectoFinal.service.UsuarioService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/auth")
@@ -29,14 +36,33 @@ public class AuthController {
         session.setAttribute("nombreUsuario", usuarioEncontrado.getNombre());
         session.setAttribute("usuarioRol", usuarioEncontrado.getRol());
 
+        List<SimpleGrantedAuthority> authorities = List.of(
+                new SimpleGrantedAuthority("ROLE_" + usuarioEncontrado.getRol().name())
+        );
+
+        UsernamePasswordAuthenticationToken authentication =
+                new UsernamePasswordAuthenticationToken(
+                        usuarioEncontrado.getNombre(),
+                        null,
+                        authorities
+                );
+
+        SecurityContext securityContext = SecurityContextHolder.createEmptyContext();
+        securityContext.setAuthentication(authentication);
+        SecurityContextHolder.setContext(securityContext);
+
+        session.setAttribute(
+                HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
+                securityContext
+        );
+
         return ResponseEntity.ok(usuarioEncontrado);
     }
-
 
     @GetMapping("/session")
     public ResponseEntity<?> obtenerSesion(HttpServletRequest request) {
 
-        HttpSession session = request.getSession(false); // 🔥 CLAVE
+        HttpSession session = request.getSession(false);
 
         if (session == null) {
             return ResponseEntity.status(401).body("No hay sesión iniciada");
@@ -60,6 +86,7 @@ public class AuthController {
     @PostMapping("/logout")
     public ResponseEntity<String> logout(HttpSession session) {
         session.invalidate();
+        SecurityContextHolder.clearContext();
         return ResponseEntity.ok("Sesión cerrada correctamente");
     }
 }

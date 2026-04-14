@@ -6,8 +6,12 @@ import com.david.ProyectoFinal.dto.CambiarPasswordDTO;
 import com.david.ProyectoFinal.dto.UsuarioPerfilDTO;
 import com.david.ProyectoFinal.model.Usuario;
 import com.david.ProyectoFinal.service.UsuarioService;
+import jakarta.servlet.http.HttpSession;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -21,6 +25,19 @@ public class UsuarioController {
         this.usuarioService = usuarioService;
     }
 
+    private void comprobarAccesoUsuario(Long id, HttpSession session) {
+        Long usuarioIdSesion = (Long) session.getAttribute("usuarioId");
+
+        if (usuarioIdSesion == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "No hay sesión iniciada");
+        }
+
+        if (!usuarioIdSesion.equals(id)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes acceder a los datos de otro usuario");
+        }
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     public List<Usuario> obtenerTodos(){
         return usuarioService.obtenerTodos();
@@ -36,29 +53,35 @@ public class UsuarioController {
         }
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{id}")
     public Usuario obtenerPorId(@PathVariable Long id) {
         return usuarioService.obternerPorId(id);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public void eliminar(@PathVariable Long id) {
         usuarioService.eliminar(id);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public Usuario actualizar(@PathVariable Long id, @RequestBody Usuario usuarioActualizado) {
         return usuarioService.actutualizar(id, usuarioActualizado);
     }
 
     @GetMapping("/{id}/perfil")
-    public ResponseEntity<UsuarioPerfilDTO> obtenerPerfil(@PathVariable Long id) {
+    public ResponseEntity<UsuarioPerfilDTO> obtenerPerfil(@PathVariable Long id, HttpSession session) {
+        comprobarAccesoUsuario(id, session);
         return ResponseEntity.ok(usuarioService.obtenerPerfil(id));
     }
 
     @PutMapping("/{id}/perfil")
     public ResponseEntity<?> actualizarPerfil(@PathVariable Long id,
-                                              @RequestBody ActualizarPerfilDTO dto) {
+                                              @RequestBody ActualizarPerfilDTO dto,
+                                              HttpSession session) {
+        comprobarAccesoUsuario(id, session);
         try {
             UsuarioPerfilDTO usuarioActualizado = usuarioService.actualizarPerfil(id, dto);
             return ResponseEntity.ok(usuarioActualizado);
@@ -69,14 +92,18 @@ public class UsuarioController {
 
     @PutMapping("/{id}/password")
     public ResponseEntity<String> cambiarPassword(@PathVariable Long id,
-                                                  @RequestBody CambiarPasswordDTO dto) {
+                                                  @RequestBody CambiarPasswordDTO dto,
+                                                  HttpSession session) {
+        comprobarAccesoUsuario(id, session);
         usuarioService.cambiarPassword(id, dto);
         return ResponseEntity.ok("Contraseña actualizada correctamente");
     }
 
     @GetMapping("/{id}/validar-nombre")
     public ResponseEntity<?> validarNombrePerfil(@PathVariable Long id,
-                                                 @RequestParam String nombre) {
+                                                 @RequestParam String nombre,
+                                                 HttpSession session) {
+        comprobarAccesoUsuario(id, session);
         try {
             return ResponseEntity.ok(usuarioService.validarNombrePerfil(id, nombre));
         } catch (RuntimeException e) {
@@ -86,7 +113,9 @@ public class UsuarioController {
 
     @GetMapping("/{id}/validar-email")
     public ResponseEntity<?> validarEmailPerfil(@PathVariable Long id,
-                                                @RequestParam String email) {
+                                                @RequestParam String email,
+                                                HttpSession session) {
+        comprobarAccesoUsuario(id, session);
         try {
             return ResponseEntity.ok(usuarioService.validarEmailPerfil(id, email));
         } catch (RuntimeException e) {
