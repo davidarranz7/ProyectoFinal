@@ -83,7 +83,7 @@ function actualizarBotonFavorito() {
 
 async function obtenerSesionActual() {
     try {
-        const response = await fetch("http://localhost:8080/auth/session", {
+        const response = await fetch(`${BASE_URL}/auth/session`, {
             method: "GET",
             credentials: "include"
         });
@@ -113,7 +113,7 @@ async function comprobarSiEsFavorito() {
     }
 
     try {
-        const response = await fetch(`http://localhost:8080/favoritos/usuario/${sesion.id}`, {
+        const response = await fetch(`${BASE_URL}/favoritos/usuario/${sesion.id}`, {
             method: "GET",
             credentials: "include"
         });
@@ -198,7 +198,7 @@ async function cargarProducto() {
     }
 
     try {
-        const response = await fetch(`http://localhost:8080/productos/${productoId}`);
+        const response = await fetch(`${BASE_URL}/productos/${productoId}`);
 
         if (!response.ok) {
             throw new Error("No se pudo cargar el producto");
@@ -221,7 +221,7 @@ async function cargarProducto() {
 
 async function cargarTallas() {
     try {
-        const response = await fetch(`http://localhost:8080/productos/${productoId}/talla-stock`);
+        const response = await fetch(`${BASE_URL}/productos/${productoId}/talla-stock`);
 
         if (!response.ok) {
             throw new Error("No se pudieron cargar las tallas");
@@ -253,7 +253,7 @@ function configurarEventosProducto() {
 
             try {
                 const response = await fetch(
-                    `http://localhost:8080/carrito/agregar?usuarioId=${sesion.id}&productoId=${productoId}&talla=${tallaSeleccionada}&cantidad=1`,
+                    `${BASE_URL}/carrito/agregar?usuarioId=${sesion.id}&productoId=${productoId}&talla=${tallaSeleccionada}&cantidad=1`,
                     {
                         method: "POST",
                         credentials: "include"
@@ -289,7 +289,7 @@ function configurarEventosProducto() {
             try {
                 if (esFavorito) {
                     const response = await fetch(
-                        `http://localhost:8080/favoritos?usuarioId=${sesion.id}&productoId=${productoId}`,
+                        `${BASE_URL}/favoritos?usuarioId=${sesion.id}&productoId=${productoId}`,
                         {
                             method: "DELETE",
                             credentials: "include"
@@ -306,7 +306,7 @@ function configurarEventosProducto() {
                     mostrarToast("Eliminado de favoritos");
                 } else {
                     const response = await fetch(
-                        `http://localhost:8080/favoritos?usuarioId=${sesion.id}&productoId=${productoId}`,
+                        `${BASE_URL}/favoritos?usuarioId=${sesion.id}&productoId=${productoId}`,
                         {
                             method: "POST",
                             credentials: "include"

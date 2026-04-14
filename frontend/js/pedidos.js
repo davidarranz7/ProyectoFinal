@@ -4,7 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 async function obtenerSesionActual() {
     try {
-        const response = await fetch("http://localhost:8080/auth/session", {
+        const response = await fetch(`${BASE_URL}/auth/session`, {
             method: "GET",
             credentials: "include"
         });
@@ -61,7 +61,7 @@ async function cargarPedidos(usuarioId) {
     const listaPedidos = document.getElementById("lista-pedidos");
 
     try {
-        const response = await fetch(`http://localhost:8080/pedidos/usuario/${usuarioId}`, {
+        const response = await fetch(`${BASE_URL}/pedidos/usuario/${usuarioId}`, {
             method: "GET",
             credentials: "include"
         });
@@ -84,7 +84,7 @@ async function cargarPedidosPorEstado(usuarioId, estado) {
     const listaPedidos = document.getElementById("lista-pedidos");
 
     try {
-        const response = await fetch(`http://localhost:8080/pedidos/usuario/${usuarioId}/estado/${estado}`, {
+        const response = await fetch(`${BASE_URL}/pedidos/usuario/${usuarioId}/estado/${estado}`, {
             method: "GET",
             credentials: "include"
         });
@@ -167,7 +167,7 @@ async function cargarDetallePedido(pedidoId) {
     const detallePedido = document.getElementById("detalle-pedido");
 
     try {
-        const response = await fetch(`http://localhost:8080/pedidos/${pedidoId}/items`, {
+        const response = await fetch(`${BASE_URL}/pedidos/${pedidoId}/items`, {
             method: "GET",
             credentials: "include"
         });
@@ -232,7 +232,7 @@ async function cancelarPedido(pedidoId) {
     }
 
     try {
-        const response = await fetch(`http://localhost:8080/pedidos/cancelar/${pedidoId}`, {
+        const response = await fetch(`${BASE_URL}/pedidos/cancelar/${pedidoId}`, {
             method: "PUT",
             credentials: "include"
         });

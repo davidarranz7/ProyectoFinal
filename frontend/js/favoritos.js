@@ -4,7 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 async function obtenerSesionActual() {
     try {
-        const response = await fetch("http://localhost:8080/auth/session", {
+        const response = await fetch(`${BASE_URL}/auth/session`, {
             method: "GET",
             credentials: "include"
         });
@@ -33,7 +33,7 @@ async function cargarFavoritos() {
     }
 
     try {
-        const response = await fetch(`http://localhost:8080/favoritos/usuario/${sesion.id}`, {
+        const response = await fetch(`${BASE_URL}/favoritos/usuario/${sesion.id}`, {
             method: "GET",
             credentials: "include"
         });
@@ -77,7 +77,7 @@ async function cargarFavoritos() {
 
                 try {
                     const responseEliminar = await fetch(
-                        `http://localhost:8080/favoritos?usuarioId=${sesion.id}&productoId=${producto.id}`,
+                        `${BASE_URL}/favoritos?usuarioId=${sesion.id}&productoId=${producto.id}`,
                         {
                             method: "DELETE",
                             credentials: "include"

@@ -53,7 +53,7 @@ function inicializarMenu() {
 
     async function obtenerSesionActual() {
         try {
-            const response = await fetch("http://localhost:8080/auth/session", {
+            const response = await fetch(`${BASE_URL}/auth/session`, {
                 method: "GET",
                 credentials: "include"
             });
@@ -116,7 +116,7 @@ function inicializarMenu() {
         }
 
         try {
-            const response = await fetch(`http://localhost:8080/carrito/usuario/${sesion.id}`, {
+            const response = await fetch(`${BASE_URL}/carrito/usuario/${sesion.id}`, {
                 method: "GET",
                 credentials: "include"
             });
@@ -159,11 +159,11 @@ function inicializarMenu() {
 
         try {
             const [itemsResponse, totalResponse] = await Promise.all([
-                fetch(`http://localhost:8080/carrito/usuario/${sesion.id}`, {
+                fetch(`${BASE_URL}/carrito/usuario/${sesion.id}`, {
                     method: "GET",
                     credentials: "include"
                 }),
-                fetch(`http://localhost:8080/carrito/total/${sesion.id}`, {
+                fetch(`${BASE_URL}/carrito/total/${sesion.id}`, {
                     method: "GET",
                     credentials: "include"
                 })
@@ -224,7 +224,7 @@ function inicializarMenu() {
                 btnEliminar.addEventListener("click", async () => {
                     try {
                         const response = await fetch(
-                            `http://localhost:8080/carrito/eliminar?usuarioId=${sesion.id}&productoId=${producto.id}&talla=${item.talla}`,
+                            `${BASE_URL}/carrito/eliminar?usuarioId=${sesion.id}&productoId=${producto.id}&talla=${item.talla}`,
                             {
                                 method: "DELETE",
                                 credentials: "include"
@@ -245,7 +245,7 @@ function inicializarMenu() {
                 btnSumar.addEventListener("click", async () => {
                     try {
                         const response = await fetch(
-                            `http://localhost:8080/carrito/actualizar-cantidad?usuarioId=${sesion.id}&productoId=${producto.id}&talla=${item.talla}&nuevaCantidad=${item.cantidad + 1}`,
+                            `${BASE_URL}/carrito/actualizar-cantidad?usuarioId=${sesion.id}&productoId=${producto.id}&talla=${item.talla}&nuevaCantidad=${item.cantidad + 1}`,
                             {
                                 method: "PUT",
                                 credentials: "include"
@@ -266,7 +266,7 @@ function inicializarMenu() {
                 btnRestar.addEventListener("click", async () => {
                     try {
                         const response = await fetch(
-                            `http://localhost:8080/carrito/actualizar-cantidad?usuarioId=${sesion.id}&productoId=${producto.id}&talla=${item.talla}&nuevaCantidad=${item.cantidad - 1}`,
+                            `${BASE_URL}/carrito/actualizar-cantidad?usuarioId=${sesion.id}&productoId=${producto.id}&talla=${item.talla}&nuevaCantidad=${item.cantidad - 1}`,
                             {
                                 method: "PUT",
                                 credentials: "include"
@@ -321,7 +321,7 @@ function inicializarMenu() {
 
     async function cerrarSesion() {
         try {
-            await fetch("http://localhost:8080/auth/logout", {
+            await fetch(`${BASE_URL}/auth/logout`, {
                 method: "POST",
                 credentials: "include"
             });
