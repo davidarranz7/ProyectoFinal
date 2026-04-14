@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 async function comprobarAccesoAdmin() {
     try {
-        const response = await fetch("http://localhost:8080/auth/session", {
+        const response = await fetch(`${BASE_URL}/auth/session`, {
             method: "GET",
             credentials: "include"
         });
@@ -32,8 +32,6 @@ async function comprobarAccesoAdmin() {
 }
 
 function iniciarAdmin() {
-    const BASE_URL = "http://localhost:8080";
-
     const botonesMenu = document.querySelectorAll(".menu-lateral-btn-admin");
     const secciones = document.querySelectorAll(".seccion-admin");
     const mensajeAdmin = document.getElementById("mensaje-admin");
@@ -232,7 +230,7 @@ function iniciarAdmin() {
     }
 
     if (btnModoSeleccionProductos) {
-        btnModoSeleccionProductos.addEventListener("click", async () => {
+        btnModoSeleccionProductos.addEventListener("click", () => {
             modoSeleccionProductos = !modoSeleccionProductos;
             btnModoSeleccionProductos.textContent = modoSeleccionProductos ? "Salir selección" : "Modo selección";
             resetearSeleccionProductos();

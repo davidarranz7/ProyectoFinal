@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 async function obtenerSesionActual() {
     try {
-        const response = await fetch("http://localhost:8080/auth/session", {
+        const response = await fetch(`${BASE_URL}/auth/session`, {
             method: "GET",
             credentials: "include"
         });
@@ -42,7 +42,7 @@ async function cargarCarrito() {
     }
 
     try {
-        const url = `http://localhost:8080/carrito/usuario/${sesion.id}`;
+        const url = `${BASE_URL}/carrito/usuario/${sesion.id}`;
         const response = await fetch(url, {
             method: "GET",
             credentials: "include"
@@ -149,7 +149,7 @@ async function cargarCarrito() {
 
 async function actualizarCantidad(usuarioId, productoId, talla, nuevaCantidad) {
     try {
-        const url = `http://localhost:8080/carrito/actualizar-cantidad?usuarioId=${usuarioId}&productoId=${productoId}&talla=${encodeURIComponent(talla)}&nuevaCantidad=${nuevaCantidad}`;
+        const url = `${BASE_URL}/carrito/actualizar-cantidad?usuarioId=${usuarioId}&productoId=${productoId}&talla=${encodeURIComponent(talla)}&nuevaCantidad=${nuevaCantidad}`;
 
         const response = await fetch(url, {
             method: "PUT",
@@ -170,7 +170,7 @@ async function actualizarCantidad(usuarioId, productoId, talla, nuevaCantidad) {
 
 async function eliminarProducto(usuarioId, productoId, talla) {
     try {
-        const url = `http://localhost:8080/carrito/eliminar?usuarioId=${usuarioId}&productoId=${productoId}&talla=${encodeURIComponent(talla)}`;
+        const url = `${BASE_URL}/carrito/eliminar?usuarioId=${usuarioId}&productoId=${productoId}&talla=${encodeURIComponent(talla)}`;
 
         const response = await fetch(url, {
             method: "DELETE",
@@ -191,7 +191,7 @@ async function eliminarProducto(usuarioId, productoId, talla) {
 
 async function cambiarTalla(usuarioId, productoId, tallaActual, nuevaTalla) {
     try {
-        const url = `http://localhost:8080/carrito/cambiar-talla?usuarioId=${usuarioId}&productoId=${productoId}&tallaActual=${encodeURIComponent(tallaActual)}&nuevaTalla=${encodeURIComponent(nuevaTalla)}`;
+        const url = `${BASE_URL}/carrito/cambiar-talla?usuarioId=${usuarioId}&productoId=${productoId}&tallaActual=${encodeURIComponent(tallaActual)}&nuevaTalla=${encodeURIComponent(nuevaTalla)}`;
 
         const response = await fetch(url, {
             method: "PUT",

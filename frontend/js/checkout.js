@@ -7,7 +7,7 @@ let subtotalGlobal = 0;
 
 async function obtenerSesionActual() {
     try {
-        const response = await fetch("http://localhost:8080/auth/session", {
+        const response = await fetch(`${BASE_URL}/auth/session`, {
             method: "GET",
             credentials: "include"
         });
@@ -44,7 +44,7 @@ async function cargarResumenCheckout(usuarioId) {
     const totalCheckout = document.getElementById("total-checkout");
 
     try {
-        const response = await fetch(`http://localhost:8080/carrito/usuario/${usuarioId}`, {
+        const response = await fetch(`${BASE_URL}/carrito/usuario/${usuarioId}`, {
             method: "GET",
             credentials: "include"
         });
@@ -202,7 +202,7 @@ async function cargarTiendasRecogidaVigo(nombreTienda, selectTienda) {
 
     try {
         const response = await fetch(
-            `http://localhost:8080/establecimientos/tienda/${encodeURIComponent(nombreTienda)}/ciudad/Vigo`,
+            `${BASE_URL}/establecimientos/tienda/${encodeURIComponent(nombreTienda)}/ciudad/Vigo`,
             {
                 method: "GET",
                 credentials: "include"
@@ -334,7 +334,7 @@ async function confirmarPedido() {
     }
 
     try {
-        const response = await fetch("http://localhost:8080/pagos/procesar", {
+        const response = await fetch(`${BASE_URL}/pagos/procesar`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
