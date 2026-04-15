@@ -4,8 +4,11 @@ import com.david.ProyectoFinal.dto.ActualizarDireccionDTO;
 import com.david.ProyectoFinal.dto.CrearDireccionDTO;
 import com.david.ProyectoFinal.dto.DireccionDTO;
 import com.david.ProyectoFinal.service.DireccionService;
+import jakarta.servlet.http.HttpSession;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -17,6 +20,18 @@ public class DireccionController {
 
     public DireccionController(DireccionService direccionService) {
         this.direccionService = direccionService;
+    }
+
+    private void comprobarAccesoUsuario(Long usuarioId, HttpSession session) {
+        Long usuarioIdSesion = (Long) session.getAttribute("usuarioId");
+
+        if (usuarioIdSesion == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "No hay sesión iniciada");
+        }
+
+        if (!usuarioIdSesion.equals(usuarioId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes acceder a las direcciones de otro usuario");
+        }
     }
 
     @GetMapping("/usuario/{usuarioId}")

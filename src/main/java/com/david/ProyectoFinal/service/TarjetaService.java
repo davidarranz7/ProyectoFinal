@@ -48,6 +48,11 @@ public class TarjetaService {
         return convertirADTO(tarjetaGuardada);
     }
 
+    public Tarjeta obtenerPorId(Long tarjetaId) {
+        return tarjetaRepository.findById(tarjetaId)
+                .orElseThrow(() -> new RuntimeException("Tarjeta no encontrada"));
+    }
+
     public void eliminarTarjeta(Long tarjetaId) {
         if (!tarjetaRepository.existsById(tarjetaId)) {
             throw new RuntimeException("Tarjeta no encontrada");

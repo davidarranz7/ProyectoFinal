@@ -3,11 +3,9 @@ package com.david.ProyectoFinal.service;
 import com.david.ProyectoFinal.dto.ProductoTallaStockDTO;
 import com.david.ProyectoFinal.dto.ProductoTallaStockResponseDTO;
 import com.david.ProyectoFinal.model.*;
-import com.david.ProyectoFinal.repository.CategoriaRepository;
-import com.david.ProyectoFinal.repository.ProductoRepository;
-import com.david.ProyectoFinal.repository.ProductoTallaStockRepository;
-import com.david.ProyectoFinal.repository.TiendaRepository;
+import com.david.ProyectoFinal.repository.*;
 import com.david.ProyectoFinal.scraper.gestor.GestorScraping;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -23,17 +21,24 @@ public class ProductoService {
     private final TiendaRepository tiendaRepository;
     private final CategoriaRepository categoriaRepository;
     private final ProductoTallaStockRepository productoTallaStockRepository;
+    private final FavoritoRepository favoritoRepository;
 
     public ProductoService(ProductoRepository productoRepository,
                            GestorScraping gestorScraping,
                            TiendaRepository tiendaRepository,
                            CategoriaRepository categoriaRepository,
-                           ProductoTallaStockRepository productoTallaStockRepository) {
+                           ProductoTallaStockRepository productoTallaStockRepository,
+                           FavoritoRepository favoritoRepository) {
         this.productoRepository = productoRepository;
         this.gestorScraping = gestorScraping;
         this.tiendaRepository = tiendaRepository;
         this.categoriaRepository = categoriaRepository;
         this.productoTallaStockRepository = productoTallaStockRepository;
+        this.favoritoRepository = favoritoRepository;
+    }
+
+    public List<Producto> obtenerProductosMasFavoritos(int limite) {
+        return favoritoRepository.findProductosMasFavoritos(PageRequest.of(0, limite));
     }
 
     public List<Producto> obtenerTodos() {

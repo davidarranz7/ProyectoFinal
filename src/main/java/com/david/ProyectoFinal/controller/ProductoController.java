@@ -26,6 +26,11 @@ public class ProductoController {
         return productoService.obtenerTodos();
     }
 
+    @GetMapping("/populares")
+    public List<Producto> obtenerProductosPopulares() {
+        return productoService.obtenerProductosMasFavoritos(4);
+    }
+
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public Producto crear(@RequestBody Producto producto){
