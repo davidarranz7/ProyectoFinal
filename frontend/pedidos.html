@@ -1,58 +1,130 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Mis pedidos | MODA</title>
 
-    <link rel="stylesheet" href="css/menu.css">
-    <link rel="stylesheet" href="css/pedidos.css">
+    <link rel="stylesheet" href="css/menu.css" />
+    <link rel="stylesheet" href="css/pedidos.css" />
 </head>
 <body>
-
 <div id="menu-container"></div>
 
-<header class="cabecera-pedidos">
-    <div class="cabecera-superior">
-        <div class="cabecera-pedidos-izquierda">
+<div class="page">
+    <section class="hero">
+        <div class="hero-content">
+            <div class="eyebrow">Área cliente · Pedidos</div>
             <h1>Mis pedidos</h1>
-            <p>Consulta el historial de tus compras y el estado de cada pedido</p>
+            <p>
+                Consulta el historial de tus compras, revisa el estado de cada pedido
+                y accede a una vista mucho más clara y visual de tus productos.
+            </p>
         </div>
 
-        <div class="cabecera-pedidos-derecha">
-            <label for="filtro-estado">Filtrar por estado</label>
-            <select id="filtro-estado">
-                <option value="TODOS">Todos</option>
-                <option value="CONFIRMADO">Confirmado</option>
-                <option value="ENVIADO">Enviado</option>
-                <option value="ENTREGADO">Entregado</option>
-                <option value="CANCELADO">Cancelado</option>
-            </select>
+        <div class="hero-actions">
+            <div class="filter-card">
+                <label for="filtro-estado">Filtrar por estado</label>
+                <select id="filtro-estado">
+                    <option value="TODOS">Todos</option>
+                    <option value="CONFIRMADO">Confirmado</option>
+                    <option value="ENVIADO">Enviado</option>
+                    <option value="ENTREGADO">Entregado</option>
+                    <option value="CANCELADO">Cancelado</option>
+                </select>
+            </div>
         </div>
-    </div>
-</header>
-
-<main class="contenedor-pedidos">
-
-    <section class="zona-izquierda">
-        <section class="pedidos-panel">
-            <div id="mensaje-pedidos" class="mensaje-pedidos" style="display: none;"></div>
-            <div id="lista-pedidos" class="lista-pedidos"></div>
-        </section>
     </section>
 
-    <aside class="zona-derecha">
-        <section id="detalle-pedido-section" class="detalle-pedido-section oculto">
-            <div class="detalle-header">
-                <h2>Detalle del pedido</h2>
-                <button id="cerrar-detalle" class="btn-cerrar-detalle" type="button">✕</button>
+    <main class="layout">
+        <section class="panel left-panel">
+            <div id="mensaje-pedidos" class="mensaje-pedidos" style="display: none;"></div>
+
+            <div class="panel-head">
+                <div>
+                    <div class="small">Historial completo</div>
+                    <h2>Mis pedidos</h2>
+                </div>
+                <div id="stat-pill" class="stat-pill">0 pedidos · 0 artículos</div>
             </div>
 
-            <div id="detalle-pedido" class="detalle-pedido"></div>
+            <div id="lista-pedidos" class="orders"></div>
         </section>
-    </aside>
 
-</main>
+        <aside class="panel right-panel">
+            <section id="detalle-pedido-section" class="detalle-wrapper oculto">
+                <div class="detail-head">
+                    <div>
+                        <div class="small">Pedido seleccionado</div>
+                        <h2 id="detalle-titulo">Detalle del pedido</h2>
+                    </div>
+                    <button id="cerrar-detalle" class="close-btn" type="button">✕</button>
+                </div>
+
+                <div class="resume-box">
+                    <div class="resume-title">Resumen rápido</div>
+
+                    <div class="resume-grid">
+                        <div class="resume-item">
+                            <span class="k">Estado</span>
+                            <span id="detalle-estado" class="v">—</span>
+                        </div>
+
+                        <div class="resume-item">
+                            <span class="k">Método de pago</span>
+                            <span id="detalle-pago" class="v">—</span>
+                        </div>
+
+                        <div class="resume-item">
+                            <span class="k">Fecha</span>
+                            <span id="detalle-fecha" class="v">—</span>
+                        </div>
+
+                        <div class="resume-item">
+                            <span class="k">Referencia</span>
+                            <span id="detalle-referencia" class="v">—</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="detalle-pedido" class="items"></div>
+
+                <div class="summary">
+                    <div class="small">Resumen económico</div>
+
+                    <div class="sum-row">
+                        <span>Subtotal</span>
+                        <span id="resumen-subtotal">0,00 €</span>
+                    </div>
+
+                    <div class="sum-row">
+                        <span>Envío</span>
+                        <span id="resumen-envio">Gratis</span>
+                    </div>
+
+                    <div class="sum-row">
+                        <span>Descuento aplicado</span>
+                        <span id="resumen-descuento">0,00 €</span>
+                    </div>
+
+                    <div class="sum-row total">
+                        <span>Total pagado</span>
+                        <span id="resumen-total">0,00 €</span>
+                    </div>
+                </div>
+            </section>
+
+            <section id="detalle-vacio" class="empty-detail">
+                <div class="empty-detail-icon">🛍️</div>
+                <h3>Selecciona un pedido</h3>
+                <p>
+                    Pulsa en <strong>“Ver detalle”</strong> para ver los productos,
+                    el resumen y la información del pedido.
+                </p>
+            </section>
+        </aside>
+    </main>
+</div>
 
 <script src="js/config.js"></script>
 <script src="js/menu.js"></script>

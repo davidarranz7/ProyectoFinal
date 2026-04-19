@@ -3,193 +3,226 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Mi perfil</title>
-    <link rel="stylesheet" href="css/perfil.css" />
+    <title>Mi perfil | MODA</title>
     <link rel="stylesheet" href="css/menu.css" />
+    <link rel="stylesheet" href="css/perfil.css" />
 </head>
 <body>
 <div id="menu-container"></div>
 
-<div class="perfil-container">
-    <aside class="card perfil-lateral">
-        <div class="avatar" id="avatar-inicial">D</div>
-        <h2 id="perfil-nombre-lateral">Usuario</h2>
-        <p id="mini-email">usuario@email.com</p>
-
-        <button class="btn btn-principal" type="button" id="btn-cambiar-foto">
-            Cambiar foto
-        </button>
-
-        <div class="menu-lateral">
-            <button id="btn-menu-perfil" class="menu-lateral-btn menu-lateral-activo" type="button">
-                Mi perfil
-            </button>
-            <button id="btn-menu-password" class="menu-lateral-btn" type="button">
-                Cambiar contraseña
-            </button>
-            <button id="btn-menu-tarjetas" class="menu-lateral-btn" type="button">
-                Métodos de pago
-            </button>
+<div class="perfil-page">
+    <section class="hero-perfil">
+        <div class="hero-perfil-izquierda">
+            <div class="hero-eyebrow">Área cliente · Perfil</div>
+            <h1>Gestiona tu cuenta de forma más clara y visual</h1>
+            <p>
+                Consulta tus datos, cambia tu contraseña, administra tus direcciones
+                y guarda tus métodos de pago en una vista más moderna.
+            </p>
         </div>
 
-        <div class="mini-datos">
-            <div class="mini-dato">
-                <span>Tipo de cuenta</span>
-                <span id="mini-rol">Cuenta estándar</span>
+        <div class="hero-perfil-derecha">
+            <div class="hero-resumen">
+                <span class="hero-resumen-label">Estado</span>
+                <strong class="hero-resumen-valor">Perfil activo</strong>
+                <p class="hero-resumen-texto">
+                    Tu cuenta está lista para comprar, gestionar pedidos y guardar métodos de pago.
+                </p>
             </div>
         </div>
-    </aside>
+    </section>
 
-    <main class="contenido">
-        <div id="mensaje-perfil" class="mensaje-perfil" style="display:none;"></div>
-
-        <!-- SECCIÓN PERFIL -->
-        <section class="card seccion-contenido" id="seccion-perfil">
-            <div class="cabecera-seccion">
-                <div>
-                    <h1 class="titulo-seccion">Mi perfil</h1>
-                    <p class="subtitulo-seccion">
-                        Consulta tus datos y gestiona tu cuenta.
-                    </p>
-                </div>
-
-                <div class="acciones-cabecera">
-                    <button class="btn btn-secundario btn-auto" type="button" id="btn-editar-perfil">
-                        Editar perfil
-                    </button>
-                </div>
+    <div class="perfil-container">
+        <aside class="card perfil-lateral">
+            <div class="perfil-lateral-superior">
+                <div class="avatar" id="avatar-inicial">D</div>
+                <h2 id="perfil-nombre-lateral">Usuario</h2>
+                <p id="mini-email">usuario@email.com</p>
+                <div class="badge-cuenta" id="mini-rol">Cuenta estándar</div>
             </div>
 
-            <form id="formPerfil">
-                <div class="bloque-perfil">
-                    <h2 class="titulo-bloque">Datos principales</h2>
+            <div class="sidebar-actions">
+                <button class="btn btn-principal" type="button" id="btn-editar-perfil">
+                    Editar perfil
+                </button>
 
+                <button class="btn btn-secundario" type="button" id="btn-cambiar-foto">
+                    Cambiar foto
+                </button>
+            </div>
+
+            <div class="menu-lateral">
+                <button id="btn-menu-perfil" class="menu-lateral-btn menu-lateral-activo" type="button">
+                    Mi perfil
+                </button>
+                <button id="btn-menu-password" class="menu-lateral-btn" type="button">
+                    Cambiar contraseña
+                </button>
+                <button id="btn-menu-direcciones" class="menu-lateral-btn" type="button">
+                    Direcciones
+                </button>
+                <button id="btn-menu-tarjetas" class="menu-lateral-btn" type="button">
+                    Métodos de pago
+                </button>
+            </div>
+
+            <div class="mini-datos">
+                <div class="mini-dato">
+                    <span>Tipo de cuenta</span>
+                    <strong id="mini-rol-resumen">Cuenta estándar</strong>
+                </div>
+
+                <div class="mini-dato">
+                    <span>Perfil</span>
+                    <strong>Completado</strong>
+                </div>
+
+                <div class="mini-dato">
+                    <span>Estado</span>
+                    <strong>Activo</strong>
+                </div>
+            </div>
+        </aside>
+
+        <main class="contenido">
+            <div id="mensaje-perfil" class="mensaje-perfil" style="display:none;"></div>
+
+            <!-- SECCIÓN PERFIL -->
+            <section class="card seccion-contenido" id="seccion-perfil">
+                <div class="cabecera-seccion">
+                    <div>
+                        <div class="small-head">Información principal</div>
+                        <h1 class="titulo-seccion">Mi perfil</h1>
+                        <p class="subtitulo-seccion">
+                            Consulta tus datos personales y mantén tu cuenta actualizada.
+                        </p>
+                    </div>
+
+                    <div class="pill-resumen">Perfil completado al 92%</div>
+                </div>
+
+                <form id="formPerfil">
                     <div class="form-grid">
-                        <div class="campo">
-                            <label for="nombre">Nombre</label>
+                        <div class="info-card">
+                            <span>Nombre</span>
                             <input type="text" id="nombre" readonly />
                             <small id="validacion-nombre" class="texto-validacion"></small>
                         </div>
 
-                        <div class="campo">
-                            <label for="email">Email</label>
+                        <div class="info-card">
+                            <span>Email</span>
                             <input type="email" id="email" readonly />
                             <small id="validacion-email" class="texto-validacion"></small>
                         </div>
 
-                        <div class="campo">
-                            <label for="rol">Rol</label>
+                        <div class="info-card">
+                            <span>Rol</span>
                             <input type="text" id="rol" readonly />
                         </div>
 
-                        <div class="campo">
-                            <label for="tipoCuenta">Tipo cuenta</label>
+                        <div class="info-card">
+                            <span>Tipo cuenta</span>
                             <input type="text" id="tipoCuenta" readonly />
                         </div>
                     </div>
-                </div>
 
-                <!-- DIRECCIONES DENTRO DE MI PERFIL -->
-                <div class="bloque-perfil bloque-direcciones-perfil">
-                    <div class="direcciones-header">
-                        <div>
-                            <h2 class="titulo-bloque titulo-bloque-sin-margen">Direcciones</h2>
-                            <p class="subtitulo-seccion">
-                                Gestiona tus direcciones de envío
-                            </p>
-                        </div>
-
-                        <button class="btn btn-principal btn-auto" id="btn-anadir-direccion" type="button">
-                            + Añadir dirección
+                    <div class="acciones" id="acciones-edicion-perfil">
+                        <button class="btn btn-secundario btn-auto" type="button" id="btn-cancelar-edicion-perfil" style="display:none;">
+                            Cancelar
+                        </button>
+                        <button class="btn btn-principal btn-auto" type="submit" id="btn-guardar-perfil" style="display:none;">
+                            Guardar cambios
                         </button>
                     </div>
+                </form>
+            </section>
 
-                    <div class="direcciones-grid" id="contenedor-direcciones">
-                        <!-- JS pinta aquí las direcciones -->
+            <!-- SECCIÓN PASSWORD -->
+            <section class="card seccion-contenido" id="seccion-password" style="display:none;">
+                <div class="cabecera-seccion">
+                    <div>
+                        <div class="small-head">Seguridad</div>
+                        <h1 class="titulo-seccion">Cambiar contraseña</h1>
+                        <p class="subtitulo-seccion">
+                            Actualiza tu contraseña para proteger mejor tu cuenta.
+                        </p>
                     </div>
                 </div>
 
-                <div class="acciones" id="acciones-edicion-perfil">
-                    <button class="btn btn-secundario btn-auto" type="button" id="btn-cancelar-edicion-perfil" style="display:none;">
-                        Cancelar
-                    </button>
-                    <button class="btn btn-principal btn-auto" type="submit" id="btn-guardar-perfil" style="display:none;">
-                        Guardar cambios
-                    </button>
-                </div>
-            </form>
-        </section>
-
-        <!-- SECCIÓN PASSWORD -->
-        <section class="card seccion-contenido" id="seccion-password" style="display:none;">
-            <div class="cabecera-seccion">
-                <div>
-                    <h1 class="titulo-seccion">Cambiar contraseña</h1>
-                    <p class="subtitulo-seccion">
-                        Actualiza tu contraseña para mantener tu cuenta protegida.
-                    </p>
-                </div>
-            </div>
-
-            <form id="formPassword">
-                <div class="bloque-perfil">
-                    <div class="form-grid">
-                        <div class="campo campo-completo">
-                            <label for="passwordActual">Contraseña actual</label>
-                            <input type="password" id="passwordActual" />
-                        </div>
-
-                        <div class="campo">
-                            <label for="passwordNueva">Nueva contraseña</label>
-                            <input type="password" id="passwordNueva" />
-                        </div>
-
-                        <div class="campo">
-                            <label for="confirmarPassword">Confirmar nueva contraseña</label>
-                            <input type="password" id="confirmarPassword" />
-                        </div>
+                <form id="formPassword" class="form-password">
+                    <div class="campo">
+                        <label for="passwordActual">Contraseña actual</label>
+                        <input type="password" id="passwordActual" />
                     </div>
-                </div>
 
-                <div class="acciones">
-                    <button class="btn btn-principal btn-auto" type="submit">
-                        Actualizar contraseña
+                    <div class="campo">
+                        <label for="passwordNueva">Nueva contraseña</label>
+                        <input type="password" id="passwordNueva" />
+                    </div>
+
+                    <div class="campo">
+                        <label for="confirmarPassword">Confirmar nueva contraseña</label>
+                        <input type="password" id="confirmarPassword" />
+                    </div>
+
+                    <div class="acciones">
+                        <button class="btn btn-principal btn-auto" type="submit">
+                            Actualizar contraseña
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- SECCIÓN DIRECCIONES -->
+            <section class="card seccion-contenido" id="seccion-direcciones" style="display:none;">
+                <div class="cabecera-seccion">
+                    <div>
+                        <div class="small-head">Envío</div>
+                        <h1 class="titulo-seccion">Direcciones guardadas</h1>
+                        <p class="subtitulo-seccion">
+                            Gestiona tus direcciones de envío de forma rápida.
+                        </p>
+                    </div>
+
+                    <button class="btn btn-principal btn-auto" id="btn-anadir-direccion" type="button">
+                        + Añadir dirección
                     </button>
                 </div>
-            </form>
-        </section>
 
-        <!-- SECCIÓN TARJETAS -->
-        <section class="card seccion-contenido" id="seccion-tarjetas" style="display:none;">
-            <div class="tarjetas-header">
-                <div>
-                    <h1 class="titulo-seccion titulo-sin-margen">Métodos de pago</h1>
-                    <p class="subtitulo-seccion">Gestiona tus tarjetas guardadas</p>
+                <div class="direcciones-grid" id="contenedor-direcciones"></div>
+            </section>
+
+            <!-- SECCIÓN TARJETAS -->
+            <section class="card seccion-contenido" id="seccion-tarjetas" style="display:none;">
+                <div class="cabecera-seccion">
+                    <div>
+                        <div class="small-head">Pago</div>
+                        <h1 class="titulo-seccion">Métodos de pago</h1>
+                        <p class="subtitulo-seccion">
+                            Guarda tus tarjetas y gestiona tus métodos de pago.
+                        </p>
+                    </div>
+
+                    <button class="btn btn-principal btn-auto" id="btn-anadir-tarjeta" type="button">
+                        + Añadir tarjeta
+                    </button>
                 </div>
 
-                <button class="btn btn-principal btn-auto" id="btn-anadir-tarjeta" type="button">
-                    + Añadir tarjeta
-                </button>
-            </div>
-
-            <div class="tarjetas" id="contenedor-tarjetas">
-                <!-- JS pinta aquí las tarjetas -->
-            </div>
-        </section>
-    </main>
+                <div class="tarjetas-grid" id="contenedor-tarjetas"></div>
+            </section>
+        </main>
+    </div>
 </div>
 
-<!-- MODAL AÑADIR / EDITAR DIRECCIÓN -->
+<!-- MODAL DIRECCIÓN -->
 <div id="modal-direccion" class="modal-overlay" style="display:none;">
-    <div class="modal-contenido modal-mediano modal-direccion-contenido">
+    <div class="modal-contenido modal-mediano">
         <button id="cerrar-modal-direccion" type="button" class="modal-cerrar">×</button>
 
         <h2 class="modal-titulo" id="titulo-modal-direccion">Añadir dirección</h2>
 
         <form id="formDireccion">
             <div id="mensaje-modal-direccion" class="mensaje-modal" style="display:none;"></div>
-
-            <input type="hidden" id="direccionId" />
 
             <div class="modal-grid-direccion">
                 <div class="campo campo-completo">
@@ -204,37 +237,37 @@
 
                 <div class="campo">
                     <label for="provinciaDireccion" class="modal-label">Provincia</label>
-                    <input type="text" id="provinciaDireccion" class="modal-input" placeholder="Pontevedra" />
+                    <input type="text" id="provinciaDireccion" class="modal-input" />
                 </div>
 
                 <div class="campo">
                     <label for="municipioDireccion" class="modal-label">Municipio</label>
-                    <input type="text" id="municipioDireccion" class="modal-input" placeholder="Vigo" />
+                    <input type="text" id="municipioDireccion" class="modal-input" />
                 </div>
 
                 <div class="campo">
                     <label for="calleDireccion" class="modal-label">Calle</label>
-                    <input type="text" id="calleDireccion" class="modal-input" placeholder="Torrecedeira" />
+                    <input type="text" id="calleDireccion" class="modal-input" />
                 </div>
 
                 <div class="campo">
                     <label for="numeroDireccionModal" class="modal-label">Número</label>
-                    <input type="text" id="numeroDireccionModal" class="modal-input" placeholder="12" />
+                    <input type="text" id="numeroDireccionModal" class="modal-input" />
                 </div>
 
                 <div class="campo">
                     <label for="pisoDireccion" class="modal-label">Piso</label>
-                    <input type="text" id="pisoDireccion" class="modal-input" placeholder="3º" />
+                    <input type="text" id="pisoDireccion" class="modal-input" />
                 </div>
 
                 <div class="campo">
                     <label for="puertaDireccion" class="modal-label">Puerta</label>
-                    <input type="text" id="puertaDireccion" class="modal-input" placeholder="A" />
+                    <input type="text" id="puertaDireccion" class="modal-input" />
                 </div>
 
                 <div class="campo campo-completo">
                     <label for="codigoPostalDireccion" class="modal-label">Código postal</label>
-                    <input type="text" id="codigoPostalDireccion" class="modal-input" placeholder="36202" />
+                    <input type="text" id="codigoPostalDireccion" class="modal-input" />
                 </div>
             </div>
 
@@ -242,7 +275,7 @@
                 <button id="cancelar-modal-direccion" type="button" class="btn btn-secundario btn-auto">
                     Cancelar
                 </button>
-                <button type="submit" class="btn btn-principal btn-auto" id="btn-guardar-direccion">
+                <button type="submit" class="btn btn-principal btn-auto">
                     Guardar dirección
                 </button>
             </div>
@@ -254,7 +287,6 @@
 <div id="modal-confirmar-eliminar-direccion" class="modal-overlay" style="display:none;">
     <div class="modal-contenido modal-pequeno">
         <button id="cerrar-modal-eliminar-direccion" type="button" class="modal-cerrar">×</button>
-
         <h2 class="modal-titulo">Eliminar dirección</h2>
         <p class="modal-texto">¿Seguro que quieres eliminar esta dirección?</p>
 
@@ -269,7 +301,7 @@
     </div>
 </div>
 
-<!-- MODAL AÑADIR TARJETA -->
+<!-- MODAL TARJETA -->
 <div id="modal-tarjeta" class="modal-overlay" style="display:none;">
     <div class="modal-contenido modal-mediano">
         <button id="cerrar-modal-tarjeta" type="button" class="modal-cerrar">×</button>
@@ -323,7 +355,6 @@
 <div id="modal-confirmar-eliminar" class="modal-overlay" style="display:none;">
     <div class="modal-contenido modal-pequeno">
         <button id="cerrar-modal-eliminar" type="button" class="modal-cerrar">×</button>
-
         <h2 class="modal-titulo">Eliminar tarjeta</h2>
         <p class="modal-texto">¿Seguro que quieres eliminar esta tarjeta?</p>
 

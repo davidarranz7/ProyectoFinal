@@ -73,21 +73,10 @@ function configurarNavegacionSecciones() {
     const btnTarjetas = document.getElementById("btn-menu-tarjetas");
     const btnDirecciones = document.getElementById("btn-menu-direcciones");
 
-    if (btnPerfil) {
-        btnPerfil.addEventListener("click", () => activarSeccion("perfil"));
-    }
-
-    if (btnPassword) {
-        btnPassword.addEventListener("click", () => activarSeccion("password"));
-    }
-
-    if (btnTarjetas) {
-        btnTarjetas.addEventListener("click", () => activarSeccion("tarjetas"));
-    }
-
-    if (btnDirecciones) {
-        btnDirecciones.addEventListener("click", () => activarSeccion("direcciones"));
-    }
+    if (btnPerfil) btnPerfil.addEventListener("click", () => activarSeccion("perfil"));
+    if (btnPassword) btnPassword.addEventListener("click", () => activarSeccion("password"));
+    if (btnTarjetas) btnTarjetas.addEventListener("click", () => activarSeccion("tarjetas"));
+    if (btnDirecciones) btnDirecciones.addEventListener("click", () => activarSeccion("direcciones"));
 }
 
 function activarSeccion(nombreSeccion) {
@@ -106,15 +95,11 @@ function activarSeccion(nombreSeccion) {
     };
 
     Object.values(secciones).forEach(seccion => {
-        if (seccion) {
-            seccion.style.display = "none";
-        }
+        if (seccion) seccion.style.display = "none";
     });
 
     Object.values(botones).forEach(boton => {
-        if (boton) {
-            boton.classList.remove("menu-lateral-activo");
-        }
+        if (boton) boton.classList.remove("menu-lateral-activo");
     });
 
     if (secciones[nombreSeccion]) {
@@ -173,19 +158,16 @@ function actualizarPanelLateral(usuario) {
     const nombreLateral = document.getElementById("perfil-nombre-lateral");
     const miniEmail = document.getElementById("mini-email");
     const miniRol = document.getElementById("mini-rol");
+    const miniRolResumen = document.getElementById("mini-rol-resumen");
     const avatarInicial = document.getElementById("avatar-inicial");
 
-    if (nombreLateral) {
-        nombreLateral.textContent = usuario.nombre || "Usuario";
-    }
+    if (nombreLateral) nombreLateral.textContent = usuario.nombre || "Usuario";
+    if (miniEmail) miniEmail.textContent = usuario.email || "";
 
-    if (miniEmail) {
-        miniEmail.textContent = usuario.email || "";
-    }
+    const tipoCuenta = formatearTipoCuenta(usuario.rol);
 
-    if (miniRol) {
-        miniRol.textContent = formatearTipoCuenta(usuario.rol);
-    }
+    if (miniRol) miniRol.textContent = tipoCuenta;
+    if (miniRolResumen) miniRolResumen.textContent = tipoCuenta;
 
     if (avatarInicial) {
         const inicial = usuario.nombre && usuario.nombre.trim().length > 0
@@ -198,7 +180,6 @@ function actualizarPanelLateral(usuario) {
 
 function actualizarNombreMenu(nombreNuevo) {
     const profileNameMenu = document.querySelector("#menu-container #profile-name");
-
     if (profileNameMenu) {
         profileNameMenu.textContent = nombreNuevo;
     }
@@ -206,11 +187,7 @@ function actualizarNombreMenu(nombreNuevo) {
 
 function formatearTipoCuenta(rol) {
     if (!rol) return "Cuenta estándar";
-
-    if (rol.toUpperCase() === "ADMIN") {
-        return "Cuenta administrador";
-    }
-
+    if (rol.toUpperCase() === "ADMIN") return "Cuenta administrador";
     return "Cuenta estándar";
 }
 
@@ -221,9 +198,7 @@ function configurarFormularioPerfil(usuarioId) {
     const btnGuardar = document.getElementById("btn-guardar-perfil");
 
     if (btnEditar) {
-        btnEditar.addEventListener("click", () => {
-            activarModoEdicionPerfil();
-        });
+        btnEditar.addEventListener("click", () => activarModoEdicionPerfil());
     }
 
     if (btnCancelar) {
@@ -285,15 +260,10 @@ function configurarFormularioPerfil(usuarioId) {
             const usuarioActualizado = textoRespuesta ? JSON.parse(textoRespuesta) : null;
 
             if (usuarioActualizado) {
-                const inputNombre = document.getElementById("nombre");
-                const inputEmail = document.getElementById("email");
-                const inputRol = document.getElementById("rol");
-                const inputTipoCuenta = document.getElementById("tipoCuenta");
-
-                if (inputNombre) inputNombre.value = usuarioActualizado.nombre || "";
-                if (inputEmail) inputEmail.value = usuarioActualizado.email || "";
-                if (inputRol) inputRol.value = usuarioActualizado.rol || "";
-                if (inputTipoCuenta) inputTipoCuenta.value = formatearTipoCuenta(usuarioActualizado.rol);
+                document.getElementById("nombre").value = usuarioActualizado.nombre || "";
+                document.getElementById("email").value = usuarioActualizado.email || "";
+                document.getElementById("rol").value = usuarioActualizado.rol || "";
+                document.getElementById("tipoCuenta").value = formatearTipoCuenta(usuarioActualizado.rol);
 
                 valoresOriginalesPerfil.nombre = usuarioActualizado.nombre || "";
                 valoresOriginalesPerfil.email = usuarioActualizado.email || "";
@@ -361,15 +331,10 @@ function desactivarModoEdicionPerfil() {
 }
 
 function restaurarValoresOriginalesPerfil() {
-    const inputNombre = document.getElementById("nombre");
-    const inputEmail = document.getElementById("email");
-    const inputRol = document.getElementById("rol");
-    const inputTipoCuenta = document.getElementById("tipoCuenta");
-
-    if (inputNombre) inputNombre.value = valoresOriginalesPerfil.nombre;
-    if (inputEmail) inputEmail.value = valoresOriginalesPerfil.email;
-    if (inputRol) inputRol.value = valoresOriginalesPerfil.rol;
-    if (inputTipoCuenta) inputTipoCuenta.value = formatearTipoCuenta(valoresOriginalesPerfil.rol);
+    document.getElementById("nombre").value = valoresOriginalesPerfil.nombre;
+    document.getElementById("email").value = valoresOriginalesPerfil.email;
+    document.getElementById("rol").value = valoresOriginalesPerfil.rol;
+    document.getElementById("tipoCuenta").value = formatearTipoCuenta(valoresOriginalesPerfil.rol);
 }
 
 function configurarValidacionEnVivoPerfil(usuarioId) {
@@ -396,7 +361,7 @@ function configurarValidacionEnVivoPerfil(usuarioId) {
 
             timeoutValidacionNombre = setTimeout(async () => {
                 await validarNombreEnVivo(usuarioId);
-            }, 1000);
+            }, 800);
         });
     }
 
@@ -420,16 +385,13 @@ function configurarValidacionEnVivoPerfil(usuarioId) {
 
             timeoutValidacionEmail = setTimeout(async () => {
                 await validarEmailEnVivo(usuarioId);
-            }, 1000);
+            }, 800);
         });
     }
 }
 
 async function validarNombreEnVivo(usuarioId) {
-    const inputNombre = document.getElementById("nombre");
-    if (!inputNombre) return;
-
-    const nombre = inputNombre.value.trim();
+    const nombre = document.getElementById("nombre")?.value.trim() || "";
 
     if (nombre.toLowerCase() === valoresOriginalesPerfil.nombre.trim().toLowerCase()) {
         mostrarValidacionCampo("nombre", "Es tu nombre actual", true);
@@ -445,23 +407,14 @@ async function validarNombreEnVivo(usuarioId) {
         });
 
         const texto = await response.text();
-        let data = null;
-
-        try {
-            data = texto ? JSON.parse(texto) : null;
-        } catch (_) {
-            data = null;
-        }
+        const data = texto ? JSON.parse(texto) : null;
 
         if (!response.ok) {
             throw new Error(obtenerMensajeErrorAmigable(texto, "perfil"));
         }
 
-        const mensaje = data?.mensaje || "Nombre validado";
-        const disponible = !!data?.disponible;
-
-        mostrarValidacionCampo("nombre", mensaje, disponible);
-        estadoValidacionPerfil.nombreValido = disponible;
+        mostrarValidacionCampo("nombre", data?.mensaje || "Nombre validado", !!data?.disponible);
+        estadoValidacionPerfil.nombreValido = !!data?.disponible;
         actualizarEstadoBotonGuardarPerfil();
 
     } catch (error) {
@@ -473,10 +426,7 @@ async function validarNombreEnVivo(usuarioId) {
 }
 
 async function validarEmailEnVivo(usuarioId) {
-    const inputEmail = document.getElementById("email");
-    if (!inputEmail) return;
-
-    const email = inputEmail.value.trim();
+    const email = document.getElementById("email")?.value.trim() || "";
 
     if (email.toLowerCase() === valoresOriginalesPerfil.email.trim().toLowerCase()) {
         mostrarValidacionCampo("email", "Es tu email actual", true);
@@ -492,23 +442,14 @@ async function validarEmailEnVivo(usuarioId) {
         });
 
         const texto = await response.text();
-        let data = null;
-
-        try {
-            data = texto ? JSON.parse(texto) : null;
-        } catch (_) {
-            data = null;
-        }
+        const data = texto ? JSON.parse(texto) : null;
 
         if (!response.ok) {
             throw new Error(obtenerMensajeErrorAmigable(texto, "perfil"));
         }
 
-        const mensaje = data?.mensaje || "Email validado";
-        const disponible = !!data?.disponible;
-
-        mostrarValidacionCampo("email", mensaje, disponible);
-        estadoValidacionPerfil.emailValido = disponible;
+        mostrarValidacionCampo("email", data?.mensaje || "Email validado", !!data?.disponible);
+        estadoValidacionPerfil.emailValido = !!data?.disponible;
         actualizarEstadoBotonGuardarPerfil();
 
     } catch (error) {
@@ -520,30 +461,15 @@ async function validarEmailEnVivo(usuarioId) {
 }
 
 function validarDatosPerfil(nombre, email) {
-    if (!nombre || !email) {
-        return "Nombre y email son obligatorios.";
-    }
-
-    if (nombre.length < 3) {
-        return "El nombre debe tener al menos 3 caracteres.";
-    }
-
-    if (nombre.length > 30) {
-        return "El nombre no puede superar los 30 caracteres.";
-    }
+    if (!nombre || !email) return "Nombre y email son obligatorios.";
+    if (nombre.length < 3) return "El nombre debe tener al menos 3 caracteres.";
+    if (nombre.length > 30) return "El nombre no puede superar los 30 caracteres.";
 
     const regexNombre = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ0-9._\-\s]+$/;
-    if (!regexNombre.test(nombre)) {
-        return "El nombre contiene caracteres no permitidos.";
-    }
+    if (!regexNombre.test(nombre)) return "El nombre contiene caracteres no permitidos.";
 
-    if (!esEmailValido(email)) {
-        return "Introduce un email válido.";
-    }
-
-    if (email.length > 100) {
-        return "El email es demasiado largo.";
-    }
+    if (!esEmailValido(email)) return "Introduce un email válido.";
+    if (email.length > 100) return "El email es demasiado largo.";
 
     return null;
 }
@@ -554,9 +480,7 @@ function validarNombreLocal(nombre) {
     if (nombre.length > 30) return "No puede superar los 30 caracteres.";
 
     const regexNombre = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ0-9._\-\s]+$/;
-    if (!regexNombre.test(nombre)) {
-        return "Contiene caracteres no permitidos.";
-    }
+    if (!regexNombre.test(nombre)) return "Contiene caracteres no permitidos.";
 
     return null;
 }
@@ -569,8 +493,7 @@ function validarEmailLocal(email) {
 }
 
 function esEmailValido(email) {
-    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return regex.test(email);
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
 function mostrarValidacionCampo(campo, mensaje, esValido) {
@@ -638,20 +561,12 @@ function configurarFormularioPassword(usuarioId) {
             return;
         }
 
-        const datos = {
-            passwordActual,
-            passwordNueva,
-            confirmarPassword
-        };
-
         try {
             const response = await fetch(`${BASE_URL}/usuarios/${usuarioId}/password`, {
                 method: "PUT",
-                headers: {
-                    "Content-Type": "application/json"
-                },
+                headers: { "Content-Type": "application/json" },
                 credentials: "include",
-                body: JSON.stringify(datos)
+                body: JSON.stringify({ passwordActual, passwordNueva, confirmarPassword })
             });
 
             const texto = await response.text();
@@ -670,9 +585,7 @@ function configurarFormularioPassword(usuarioId) {
     });
 }
 
-/* =========================
-   TARJETAS
-========================= */
+/* TARJETAS */
 
 function configurarTarjetas(usuarioId) {
     const btnAnadirTarjeta = document.getElementById("btn-anadir-tarjeta");
@@ -684,41 +597,23 @@ function configurarTarjetas(usuarioId) {
     const btnCambiarFoto = document.getElementById("btn-cambiar-foto");
 
     function abrirModalTarjeta() {
-        if (modalTarjeta) {
-            ocultarMensajeModalTarjeta();
-            modalTarjeta.style.display = "flex";
-        }
+        ocultarMensajeModalTarjeta();
+        modalTarjeta.style.display = "flex";
     }
 
     function cerrarModalTarjetaLocal() {
-        if (modalTarjeta) {
-            modalTarjeta.style.display = "none";
-        }
-
-        if (formTarjeta) {
-            formTarjeta.reset();
-        }
-
+        modalTarjeta.style.display = "none";
+        if (formTarjeta) formTarjeta.reset();
         ocultarMensajeModalTarjeta();
     }
 
-    if (btnAnadirTarjeta) {
-        btnAnadirTarjeta.addEventListener("click", abrirModalTarjeta);
-    }
-
-    if (cerrarModalTarjeta) {
-        cerrarModalTarjeta.addEventListener("click", cerrarModalTarjetaLocal);
-    }
-
-    if (cancelarModalTarjeta) {
-        cancelarModalTarjeta.addEventListener("click", cerrarModalTarjetaLocal);
-    }
+    if (btnAnadirTarjeta) btnAnadirTarjeta.addEventListener("click", abrirModalTarjeta);
+    if (cerrarModalTarjeta) cerrarModalTarjeta.addEventListener("click", cerrarModalTarjetaLocal);
+    if (cancelarModalTarjeta) cancelarModalTarjeta.addEventListener("click", cerrarModalTarjetaLocal);
 
     if (modalTarjeta) {
         modalTarjeta.addEventListener("click", (e) => {
-            if (e.target === modalTarjeta) {
-                cerrarModalTarjetaLocal();
-            }
+            if (e.target === modalTarjeta) cerrarModalTarjetaLocal();
         });
     }
 
@@ -764,21 +659,17 @@ function configurarTarjetas(usuarioId) {
                 return;
             }
 
-            const datos = {
-                titular,
-                numeroTarjeta: numeroTarjeta.replace(/\s+/g, ""),
-                fechaExpiracion,
-                tipo
-            };
-
             try {
                 const response = await fetch(`${BASE_URL}/tarjetas/usuario/${usuarioId}`, {
                     method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
+                    headers: { "Content-Type": "application/json" },
                     credentials: "include",
-                    body: JSON.stringify(datos)
+                    body: JSON.stringify({
+                        titular,
+                        numeroTarjeta: numeroTarjeta.replace(/\s+/g, ""),
+                        fechaExpiracion,
+                        tipo
+                    })
                 });
 
                 const textoRespuesta = await response.text();
@@ -788,12 +679,7 @@ function configurarTarjetas(usuarioId) {
                 }
 
                 formTarjeta.reset();
-                ocultarMensajeModalTarjeta();
-
-                if (modalTarjeta) {
-                    modalTarjeta.style.display = "none";
-                }
-
+                modalTarjeta.style.display = "none";
                 mostrarMensaje("Tarjeta guardada correctamente.", "ok");
                 await cargarTarjetas(usuarioId);
 
@@ -825,43 +711,25 @@ function validarDatosTarjeta(titular, numeroTarjeta, fechaExpiracion, tipo) {
         return "Debes completar todos los datos de la tarjeta.";
     }
 
-    if (titular.length < 3) {
-        return "El nombre del titular es demasiado corto.";
-    }
+    if (titular.length < 3) return "El nombre del titular es demasiado corto.";
 
     const numeroLimpio = numeroTarjeta.replace(/\s+/g, "");
+    if (!/^\d{16}$/.test(numeroLimpio)) return "El número de tarjeta debe tener 16 dígitos.";
+    if (!/^\d{2}\/\d{2}$/.test(fechaExpiracion)) return "La fecha de expiración debe tener formato MM/AA.";
 
-    if (!/^\d{16}$/.test(numeroLimpio)) {
-        return "El número de tarjeta debe tener 16 dígitos.";
-    }
+    const [mesTexto, anioTexto] = fechaExpiracion.split("/");
+    const mes = parseInt(mesTexto, 10);
+    const anio = parseInt(anioTexto, 10);
 
-    if (!/^\d{2}\/\d{2}$/.test(fechaExpiracion)) {
-        return "La fecha de expiración debe tener formato MM/AA.";
-    }
-
-    const partesFecha = fechaExpiracion.split("/");
-    const mes = parseInt(partesFecha[0], 10);
-    const anio = parseInt(partesFecha[1], 10);
-
-    if (Number.isNaN(mes) || Number.isNaN(anio)) {
-        return "La fecha de expiración no es válida.";
-    }
-
-    if (mes < 1 || mes > 12) {
-        return "El mes de expiración no es válido.";
-    }
+    if (Number.isNaN(mes) || Number.isNaN(anio)) return "La fecha de expiración no es válida.";
+    if (mes < 1 || mes > 12) return "El mes de expiración no es válido.";
 
     const hoy = new Date();
     const anioActual2Digitos = hoy.getFullYear() % 100;
     const mesActual = hoy.getMonth() + 1;
 
-    if (anio < anioActual2Digitos) {
-        return "La tarjeta está caducada.";
-    }
-
-    if (anio === anioActual2Digitos && mes < mesActual) {
-        return "La tarjeta está caducada.";
-    }
+    if (anio < anioActual2Digitos) return "La tarjeta está caducada.";
+    if (anio === anioActual2Digitos && mes < mesActual) return "La tarjeta está caducada.";
 
     return null;
 }
@@ -873,11 +741,7 @@ function formatearNumeroTarjetaInput(valor) {
 
 function formatearFechaExpiracionInput(valor) {
     const soloNumeros = valor.replace(/\D/g, "").slice(0, 4);
-
-    if (soloNumeros.length <= 2) {
-        return soloNumeros;
-    }
-
+    if (soloNumeros.length <= 2) return soloNumeros;
     return `${soloNumeros.slice(0, 2)}/${soloNumeros.slice(2)}`;
 }
 
@@ -888,25 +752,16 @@ function configurarModalEliminarTarjeta(usuarioId) {
     const confirmarEliminar = document.getElementById("confirmar-eliminar-tarjeta");
 
     function cerrarModal() {
-        if (modalEliminar) {
-            modalEliminar.style.display = "none";
-        }
+        modalEliminar.style.display = "none";
         tarjetaIdPendienteEliminar = null;
     }
 
-    if (cerrarModalEliminar) {
-        cerrarModalEliminar.addEventListener("click", cerrarModal);
-    }
-
-    if (cancelarEliminar) {
-        cancelarEliminar.addEventListener("click", cerrarModal);
-    }
+    if (cerrarModalEliminar) cerrarModalEliminar.addEventListener("click", cerrarModal);
+    if (cancelarEliminar) cancelarEliminar.addEventListener("click", cerrarModal);
 
     if (modalEliminar) {
         modalEliminar.addEventListener("click", (e) => {
-            if (e.target === modalEliminar) {
-                cerrarModal();
-            }
+            if (e.target === modalEliminar) cerrarModal();
         });
     }
 
@@ -945,12 +800,8 @@ function configurarModalEliminarTarjeta(usuarioId) {
 }
 
 function abrirModalEliminarTarjeta(tarjetaId) {
-    const modalEliminar = document.getElementById("modal-confirmar-eliminar");
     tarjetaIdPendienteEliminar = tarjetaId;
-
-    if (modalEliminar) {
-        modalEliminar.style.display = "flex";
-    }
+    document.getElementById("modal-confirmar-eliminar").style.display = "flex";
 }
 
 async function cargarTarjetas(usuarioId) {
@@ -989,8 +840,8 @@ function renderizarTarjetas(tarjetas) {
         return;
     }
 
-    tarjetas.forEach(tarjeta => {
-        contenedorTarjetas.appendChild(crearTarjetaHTML(tarjeta));
+    tarjetas.forEach((tarjeta, index) => {
+        contenedorTarjetas.appendChild(crearTarjetaHTML(tarjeta, index));
     });
 
     const bloqueAnadir = document.createElement("div");
@@ -999,59 +850,37 @@ function renderizarTarjetas(tarjetas) {
     contenedorTarjetas.appendChild(bloqueAnadir);
 }
 
-function crearTarjetaHTML(tarjeta) {
-    const card = document.createElement("div");
-    card.classList.add("tarjeta-banco");
+function crearTarjetaHTML(tarjeta, index = 0) {
+    const card = document.createElement("article");
 
-    const tipo = (tarjeta.tipo || "").toUpperCase();
+    const variantes = ["card-black", "card-rose", "card-gold"];
+    const variante = variantes[index % variantes.length];
 
-    if (tipo === "VISA") {
-        card.style.background = "#111";
-        card.style.color = "#fff";
-    } else if (tipo === "MASTERCARD") {
-        card.style.background = "linear-gradient(135deg, #f5aac2, #df7aa0)";
-        card.style.color = "#fff";
-    } else {
-        card.style.background = "#444";
-        card.style.color = "#fff";
-    }
-
-    card.style.borderRadius = "18px";
-    card.style.padding = "22px";
-    card.style.minHeight = "200px";
-    card.style.display = "flex";
-    card.style.flexDirection = "column";
-    card.style.justifyContent = "space-between";
-    card.style.boxShadow = "0 10px 25px rgba(0,0,0,0.12)";
-    card.style.position = "relative";
+    card.className = `payment-card ${variante}`;
 
     card.innerHTML = `
-        <button class="btn-eliminar-tarjeta"
-                data-id="${tarjeta.id}"
-                type="button"
-                style="position:absolute; top:12px; right:12px; border:none; background:rgba(255,255,255,0.18); color:#fff; padding:8px 10px; border-radius:10px; cursor:pointer;">
-            Eliminar
-        </button>
+        <button class="btn-eliminar-tarjeta" data-id="${tarjeta.id}" type="button">Eliminar</button>
 
-        <div class="tarjeta-top" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:22px;">
-            <span style="font-size:18px; font-weight:700;">${formatearTipoTarjeta(tarjeta.tipo)}</span>
-            <div style="width:42px; height:30px; border-radius:8px; background:rgba(255,255,255,0.35);"></div>
+        <div class="payment-top">
+            <div class="payment-type">${formatearTipoTarjeta(tarjeta.tipo)}</div>
+            <div class="chip-card"></div>
         </div>
 
-        <div class="numero-tarjeta" style="font-size:22px; letter-spacing:2px; font-weight:600; margin-bottom:24px;">
-            ${tarjeta.numeroEnmascarado || "**** **** **** 0000"}
-        </div>
+        <div class="payment-number">${tarjeta.numeroEnmascarado || "**** **** **** 0000"}</div>
 
-        <div class="tarjeta-bottom" style="display:flex; justify-content:space-between; gap:20px;">
+        <div class="payment-bottom">
             <div>
-                <small style="opacity:0.85;">Titular</small><br />
-                <strong>${tarjeta.titular || "Usuario"}</strong>
+                <small>Titular</small>
+                <strong>${escaparHTML(tarjeta.titular || "Usuario")}</strong>
             </div>
+
             <div>
-                <small style="opacity:0.85;">Expira</small><br />
-                <strong>${tarjeta.fechaExpiracion || "--/--"}</strong>
+                <small>Expira</small>
+                <strong>${escaparHTML(tarjeta.fechaExpiracion || "--/--")}</strong>
             </div>
         </div>
+
+        <div class="tag-primary">${index === 0 ? "Preferida" : "Guardada"}</div>
     `;
 
     return card;
@@ -1064,9 +893,7 @@ function formatearTipoTarjeta(tipo) {
     return tipo;
 }
 
-/* =========================
-   DIRECCIONES
-========================= */
+/* DIRECCIONES */
 
 function configurarDirecciones(usuarioId) {
     const btnAnadirDireccion = document.getElementById("btn-anadir-direccion");
@@ -1079,50 +906,27 @@ function configurarDirecciones(usuarioId) {
     function abrirModalDireccionNueva() {
         direccionIdEnEdicion = null;
         if (formDireccion) formDireccion.reset();
-
-        const titulo = document.getElementById("modal-direccion-titulo");
-        if (titulo) titulo.textContent = "Añadir dirección";
-
-        const checkPrincipal = document.getElementById("principalDireccion");
-        if (checkPrincipal) checkPrincipal.checked = false;
-
+        document.getElementById("titulo-modal-direccion").textContent = "Añadir dirección";
+        document.getElementById("principalDireccion").checked = false;
         ocultarMensajeModalDireccion();
-
-        if (modalDireccion) {
-            modalDireccion.style.display = "flex";
-        }
+        modalDireccion.style.display = "flex";
     }
 
     function cerrarModalDireccionLocal() {
         direccionIdEnEdicion = null;
         if (formDireccion) formDireccion.reset();
         ocultarMensajeModalDireccion();
-
-        const titulo = document.getElementById("modal-direccion-titulo");
-        if (titulo) titulo.textContent = "Añadir dirección";
-
-        if (modalDireccion) {
-            modalDireccion.style.display = "none";
-        }
+        document.getElementById("titulo-modal-direccion").textContent = "Añadir dirección";
+        modalDireccion.style.display = "none";
     }
 
-    if (btnAnadirDireccion) {
-        btnAnadirDireccion.addEventListener("click", abrirModalDireccionNueva);
-    }
-
-    if (cerrarModalDireccion) {
-        cerrarModalDireccion.addEventListener("click", cerrarModalDireccionLocal);
-    }
-
-    if (cancelarModalDireccion) {
-        cancelarModalDireccion.addEventListener("click", cerrarModalDireccionLocal);
-    }
+    if (btnAnadirDireccion) btnAnadirDireccion.addEventListener("click", abrirModalDireccionNueva);
+    if (cerrarModalDireccion) cerrarModalDireccion.addEventListener("click", cerrarModalDireccionLocal);
+    if (cancelarModalDireccion) cancelarModalDireccion.addEventListener("click", cerrarModalDireccionLocal);
 
     if (modalDireccion) {
         modalDireccion.addEventListener("click", (e) => {
-            if (e.target === modalDireccion) {
-                cerrarModalDireccionLocal();
-            }
+            if (e.target === modalDireccion) cerrarModalDireccionLocal();
         });
     }
 
@@ -1141,7 +945,6 @@ function configurarDirecciones(usuarioId) {
             if (btnEditar) {
                 const direccionId = btnEditar.dataset.id;
                 if (!direccionId) return;
-
                 await abrirModalEditarDireccion(usuarioId, direccionId);
                 return;
             }
@@ -1149,7 +952,6 @@ function configurarDirecciones(usuarioId) {
             if (btnEliminar) {
                 const direccionId = btnEliminar.dataset.id;
                 if (!direccionId) return;
-
                 abrirModalEliminarDireccion(direccionId);
                 return;
             }
@@ -1157,7 +959,6 @@ function configurarDirecciones(usuarioId) {
             if (btnPrincipal) {
                 const direccionId = btnPrincipal.dataset.id;
                 if (!direccionId) return;
-
                 await marcarDireccionComoPrincipal(usuarioId, direccionId);
             }
         });
@@ -1183,18 +984,14 @@ function configurarDirecciones(usuarioId) {
                 if (direccionIdEnEdicion) {
                     response = await fetch(`${BASE_URL}/direcciones/usuario/${usuarioId}/${direccionIdEnEdicion}`, {
                         method: "PUT",
-                        headers: {
-                            "Content-Type": "application/json"
-                        },
+                        headers: { "Content-Type": "application/json" },
                         credentials: "include",
                         body: JSON.stringify(datos)
                     });
                 } else {
                     response = await fetch(`${BASE_URL}/direcciones/usuario/${usuarioId}`, {
                         method: "POST",
-                        headers: {
-                            "Content-Type": "application/json"
-                        },
+                        headers: { "Content-Type": "application/json" },
                         credentials: "include",
                         body: JSON.stringify(datos)
                     });
@@ -1242,22 +1039,15 @@ function validarDatosDireccion(datos) {
     if (!datos.calle) return "La calle es obligatoria.";
     if (!datos.numero) return "El número es obligatorio.";
     if (!datos.codigoPostal) return "El código postal es obligatorio.";
-
     if (datos.alias.length < 2) return "El alias es demasiado corto.";
     if (datos.codigoPostal.length !== 5 || !/^\d{5}$/.test(datos.codigoPostal)) {
         return "El código postal debe tener 5 dígitos.";
     }
-
     return null;
 }
 
 async function cargarDirecciones(usuarioId) {
     const contenedorDirecciones = document.getElementById("contenedor-direcciones");
-    const provincia = document.getElementById("provincia");
-    const ciudad = document.getElementById("ciudad");
-    const calle = document.getElementById("calle");
-    const numeroDireccion = document.getElementById("numeroDireccion");
-
     if (!contenedorDirecciones) return;
 
     try {
@@ -1273,26 +1063,7 @@ async function cargarDirecciones(usuarioId) {
         }
 
         const direcciones = texto ? JSON.parse(texto) : [];
-
         renderizarDirecciones(direcciones);
-
-        const principalDireccion = Array.isArray(direcciones)
-            ? direcciones.find(d => d.principal) || direcciones[0]
-            : null;
-
-        if (principalDireccion) {
-            if (provincia) provincia.value = principalDireccion.provincia || "";
-            if (ciudad) ciudad.value = principalDireccion.municipio || "";
-            if (calle) calle.value = principalDireccion.calle || "";
-
-            const numeroTexto = construirLineaNumeroDireccion(principalDireccion);
-            if (numeroDireccion) numeroDireccion.value = numeroTexto || "-";
-        } else {
-            if (provincia) provincia.value = "";
-            if (ciudad) ciudad.value = "";
-            if (calle) calle.value = "";
-            if (numeroDireccion) numeroDireccion.value = "-";
-        }
 
     } catch (error) {
         console.error("Error al cargar direcciones:", error);
@@ -1322,8 +1093,8 @@ function renderizarDirecciones(direcciones) {
 }
 
 function crearDireccionHTML(direccion) {
-    const card = document.createElement("div");
-    card.className = "direccion-card";
+    const card = document.createElement("article");
+    card.className = "address-card";
 
     const lineaNumero = construirLineaNumeroDireccion(direccion);
     const lineaCompleta = [
@@ -1332,20 +1103,13 @@ function crearDireccionHTML(direccion) {
     ].join("");
 
     card.innerHTML = `
-        <div class="direccion-card-top">
+        <div class="address-top">
             <div>
-                <h3 class="direccion-alias">${escaparHTML(direccion.alias || "Dirección")}</h3>
-                ${direccion.principal ? `<span class="badge-principal">Principal</span>` : ""}
+                <h4>${escaparHTML(direccion.alias || "Dirección")}</h4>
+                <p>${direccion.principal ? "Dirección principal para tus pedidos" : "Dirección guardada"}</p>
             </div>
 
-            <div class="direccion-acciones">
-                <button type="button" class="btn-editar-direccion btn-mini" data-id="${direccion.id}">
-                    Editar
-                </button>
-                <button type="button" class="btn-eliminar-direccion btn-mini btn-mini-peligro" data-id="${direccion.id}">
-                    Eliminar
-                </button>
-            </div>
+            ${direccion.principal ? `<span class="tag-ok">Principal</span>` : ""}
         </div>
 
         <div class="direccion-lineas">
@@ -1354,12 +1118,14 @@ function crearDireccionHTML(direccion) {
             ${direccion.puerta ? `<p>Puerta: ${escaparHTML(direccion.puerta)}</p>` : ""}
         </div>
 
-        <div class="direccion-footer">
+        <div class="direccion-acciones">
+            <button type="button" class="btn-editar-direccion" data-id="${direccion.id}">Editar</button>
             ${
                 direccion.principal
                     ? `<span class="texto-principal-actual">Dirección principal actual</span>`
-                    : `<button type="button" class="btn-principal-direccion btn-mini" data-id="${direccion.id}">Marcar como principal</button>`
+                    : `<button type="button" class="btn-principal-direccion" data-id="${direccion.id}">Marcar principal</button>`
             }
+            <button type="button" class="btn-eliminar-direccion" data-id="${direccion.id}">Eliminar</button>
         </div>
     `;
 
@@ -1368,20 +1134,14 @@ function crearDireccionHTML(direccion) {
 
 function construirLineaNumeroDireccion(direccion) {
     const partes = [];
-
     if (direccion.numero) partes.push(`Nº ${direccion.numero}`);
     if (direccion.piso) partes.push(`Piso ${direccion.piso}`);
     if (direccion.puerta) partes.push(`Puerta ${direccion.puerta}`);
-
     return partes.join(" · ");
 }
 
 async function abrirModalEditarDireccion(usuarioId, direccionId) {
     const modal = document.getElementById("modal-direccion");
-    const titulo = document.getElementById("modal-direccion-titulo");
-    const form = document.getElementById("formDireccion");
-
-    if (!modal || !form) return;
 
     try {
         const response = await fetch(`${BASE_URL}/direcciones/usuario/${usuarioId}`, {
@@ -1398,16 +1158,11 @@ async function abrirModalEditarDireccion(usuarioId, direccionId) {
         const direcciones = texto ? JSON.parse(texto) : [];
         const direccion = direcciones.find(d => String(d.id) === String(direccionId));
 
-        if (!direccion) {
-            throw new Error("No se encontró la dirección seleccionada.");
-        }
+        if (!direccion) throw new Error("No se encontró la dirección seleccionada.");
 
         direccionIdEnEdicion = direccion.id;
 
-        if (titulo) {
-            titulo.textContent = "Editar dirección";
-        }
-
+        document.getElementById("titulo-modal-direccion").textContent = "Editar dirección";
         document.getElementById("aliasDireccion").value = direccion.alias || "";
         document.getElementById("provinciaDireccion").value = direccion.provincia || "";
         document.getElementById("municipioDireccion").value = direccion.municipio || "";
@@ -1456,9 +1211,7 @@ function configurarModalEliminarDireccion(usuarioId) {
     const btnConfirmar = document.getElementById("confirmar-eliminar-direccion");
 
     function cerrarModal() {
-        if (modal) {
-            modal.style.display = "none";
-        }
+        modal.style.display = "none";
         direccionIdPendienteEliminar = null;
     }
 
@@ -1467,9 +1220,7 @@ function configurarModalEliminarDireccion(usuarioId) {
 
     if (modal) {
         modal.addEventListener("click", (e) => {
-            if (e.target === modal) {
-                cerrarModal();
-            }
+            if (e.target === modal) cerrarModal();
         });
     }
 
@@ -1508,12 +1259,8 @@ function configurarModalEliminarDireccion(usuarioId) {
 }
 
 function abrirModalEliminarDireccion(direccionId) {
-    const modal = document.getElementById("modal-confirmar-eliminar-direccion");
     direccionIdPendienteEliminar = direccionId;
-
-    if (modal) {
-        modal.style.display = "flex";
-    }
+    document.getElementById("modal-confirmar-eliminar-direccion").style.display = "flex";
 }
 
 function mostrarMensajeModalDireccion(texto, tipo = "error") {
@@ -1535,9 +1282,7 @@ function ocultarMensajeModalDireccion() {
     mensaje.classList.remove("ok", "error");
 }
 
-/* =========================
-   MENSAJES
-========================= */
+/* MENSAJES */
 
 function mostrarMensaje(texto, tipo = "error") {
     const mensaje = document.getElementById("mensaje-perfil");
@@ -1582,14 +1327,10 @@ function ocultarMensajeModalTarjeta() {
     mensaje.classList.remove("ok", "error");
 }
 
-/* =========================
-   ERRORES AMIGABLES
-========================= */
+/* ERRORES */
 
 function obtenerMensajeErrorAmigable(textoError, contexto = "") {
-    if (!textoError) {
-        return "No se pudo completar la operación.";
-    }
+    if (!textoError) return "No se pudo completar la operación.";
 
     let json = null;
 
@@ -1649,9 +1390,7 @@ function obtenerMensajeErrorAmigable(textoError, contexto = "") {
     return "Ha ocurrido un error inesperado.";
 }
 
-/* =========================
-   UTILS
-========================= */
+/* UTILS */
 
 function escaparHTML(texto) {
     if (texto === null || texto === undefined) return "";
