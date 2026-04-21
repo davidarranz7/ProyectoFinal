@@ -117,7 +117,8 @@ public class UsuarioService {
                 usuario.getId(),
                 usuario.getNombre(),
                 usuario.getEmail(),
-                usuario.getRol().name()
+                usuario.getRol().name(),
+                usuario.getFotoPerfilUrl()
         );
     }
 
@@ -157,7 +158,8 @@ public class UsuarioService {
                 usuarioActualizado.getId(),
                 usuarioActualizado.getNombre(),
                 usuarioActualizado.getEmail(),
-                usuarioActualizado.getRol().name()
+                usuarioActualizado.getRol().name(),
+                usuarioActualizado.getFotoPerfilUrl()
         );
     }
 

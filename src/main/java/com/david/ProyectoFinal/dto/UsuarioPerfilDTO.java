@@ -6,15 +6,17 @@ public class UsuarioPerfilDTO {
     private String nombre;
     private String email;
     private String rol;
+    private String fotoPerfilUrl;
 
     public UsuarioPerfilDTO() {
     }
 
-    public UsuarioPerfilDTO(Long id, String nombre, String email, String rol) {
+    public UsuarioPerfilDTO(Long id, String nombre, String email, String rol, String fotoPerfilUrl) {
         this.id = id;
         this.nombre = nombre;
         this.email = email;
         this.rol = rol;
+        this.fotoPerfilUrl = fotoPerfilUrl;
     }
 
     public Long getId() {
