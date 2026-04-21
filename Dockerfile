@@ -1,4 +1,4 @@
-FROM eclipse-temurin:21-jdk
+FROM mcr.microsoft.com/playwright/java:v1.52.0-jammy
 
 WORKDIR /app
 

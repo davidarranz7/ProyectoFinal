@@ -22,20 +22,22 @@ public class Usuario {
     @Enumerated(EnumType.STRING)
     private Rol rol;
 
+    private String fotoPerfilUrl;
+
     /// Constructores
     /// Constructor vacío-> necesario para JPA para que pueda crear el objeto la base de datos
 
     public Usuario() {
     }
     /// Constructor con parámetros-> Todos los necesarios de un usuario
-    public Usuario(Long id, String nombre, String email, String password, Rol rol) {
+    public Usuario(Long id, String nombre, String email, String password, Rol rol, String fotoPerfilUrl) {
         this.id = id;
         this.nombre = nombre;
         this.email = email;
         this.password = password;
         this.rol = rol;
+        this.fotoPerfilUrl = fotoPerfilUrl;
     }
-
 
     /// Getters y Setters
 
@@ -77,5 +79,13 @@ public class Usuario {
 
     public void setRol(Rol rol) {
         this.rol = rol;
+    }
+
+    public String getFotoPerfilUrl() {
+        return fotoPerfilUrl;
+    }
+
+    public void setFotoPerfilUrl(String fotoPerfilUrl) {
+        this.fotoPerfilUrl = fotoPerfilUrl;
     }
 }

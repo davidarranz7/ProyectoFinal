@@ -54,12 +54,21 @@ body {
         radial-gradient(circle at bottom right, rgba(199,168,122,0.10), transparent 20%),
         linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
     min-height: 100vh;
-    padding: 36px;
+}
+
+#menu-container {
+    width: 100%;
+    min-height: 72px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 5001;
 }
 
 .page {
     max-width: 1500px;
     margin: 0 auto;
+    padding: 110px 36px 36px;
 }
 
 /* HERO */
@@ -208,7 +217,7 @@ body {
 .right-panel {
     padding: 26px;
     position: sticky;
-    top: 26px;
+    top: 95px;
 }
 
 .mensaje-pedidos {
@@ -802,8 +811,8 @@ body {
 }
 
 @media (max-width: 900px) {
-    body {
-        padding: 18px;
+    .page {
+        padding: 100px 18px 18px;
     }
 
     .hero {
@@ -830,6 +839,10 @@ body {
 }
 
 @media (max-width: 640px) {
+    .page {
+        padding: 90px 14px 18px;
+    }
+
     .hero h1 {
         font-size: 32px;
     }

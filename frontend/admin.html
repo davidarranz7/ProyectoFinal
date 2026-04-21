@@ -10,224 +10,296 @@
 <body>
 <div id="menu-container"></div>
 
-<div class="admin-container">
-    <aside class="card admin-lateral">
-        <div class="admin-icono">A</div>
-        <h2>Administrador</h2>
-        <p id="admin-bienvenida">Panel de control</p>
+<div class="admin-shell">
 
-        <div class="menu-lateral-admin">
-            <button class="menu-lateral-btn-admin menu-lateral-btn-admin-activo" type="button" data-seccion="panel-principal">Panel principal</button>
-            <button class="menu-lateral-btn-admin" type="button" data-seccion="scraping">Scraping</button>
-            <button class="menu-lateral-btn-admin" type="button" data-seccion="productos">Productos</button>
-            <button class="menu-lateral-btn-admin" type="button" data-seccion="usuarios">Usuarios</button>
-            <button class="menu-lateral-btn-admin" type="button" data-seccion="pedidos">Pedidos</button>
+    <aside class="admin-sidebar">
+        <div class="admin-sidebar-top">
+            <div class="admin-logo">
+                <span>A</span>
+            </div>
+            <div class="admin-identidad">
+                <h2>Administrador</h2>
+                <p id="admin-bienvenida">Control total de la plataforma</p>
+            </div>
         </div>
 
-        <div class="mini-datos-admin">
-            <div class="mini-dato-admin">
-                <span>Acceso</span>
+        <nav class="admin-nav">
+            <button class="admin-nav-btn admin-nav-btn-activo" type="button" data-seccion="panel-principal">
+                <span class="admin-nav-icon">🏠</span>
+                <span>Panel principal</span>
+            </button>
+
+            <button class="admin-nav-btn" type="button" data-seccion="scraping">
+                <span class="admin-nav-icon">⚙️</span>
+                <span>Scraping</span>
+            </button>
+
+            <button class="admin-nav-btn" type="button" data-seccion="productos">
+                <span class="admin-nav-icon">🛍️</span>
+                <span>Productos</span>
+            </button>
+
+            <button class="admin-nav-btn" type="button" data-seccion="usuarios">
+                <span class="admin-nav-icon">👥</span>
+                <span>Usuarios</span>
+            </button>
+
+            <button class="admin-nav-btn" type="button" data-seccion="pedidos">
+                <span class="admin-nav-icon">📦</span>
+                <span>Pedidos</span>
+            </button>
+        </nav>
+
+        <div class="admin-sidebar-bottom">
+            <div class="admin-mini-card">
+                <span class="admin-mini-label">Rol</span>
                 <strong>Administrador</strong>
             </div>
-            <div class="mini-dato-admin">
-                <span>Estado</span>
-                <strong>Panel activo</strong>
+
+            <div class="admin-mini-card">
+                <span class="admin-mini-label">Sistema</span>
+                <strong>Operativo</strong>
             </div>
         </div>
     </aside>
 
-    <main class="admin-contenido">
+    <main class="admin-main">
+
         <div id="mensaje-admin" class="mensaje-admin"></div>
 
-        <section class="card seccion-admin" id="panel-principal">
-            <div class="cabecera-seccion-admin">
+        <!-- PANEL PRINCIPAL -->
+        <section class="admin-section" id="panel-principal">
+            <div class="admin-section-header">
                 <div>
-                    <h1 class="titulo-seccion-admin">Panel de administración</h1>
-                    <p class="subtitulo-seccion-admin">
-                        Gestiona scraping, productos, usuarios y pedidos desde un único lugar.
+                    <p class="admin-section-eyebrow">Dashboard</p>
+                    <h1>Panel de administración</h1>
+                    <p class="admin-section-subtitle">
+                        Supervisa la tienda, controla el catálogo, revisa usuarios y gestiona pedidos desde una única vista.
                     </p>
                 </div>
             </div>
 
-            <div class="resumen-grid">
-                <article class="resumen-card">
-                    <span class="resumen-etiqueta">Productos</span>
+            <div class="admin-metrics-grid">
+                <article class="metric-card">
+                    <div class="metric-card-top">
+                        <span class="metric-badge">Productos</span>
+                        <span class="metric-icon">🛍️</span>
+                    </div>
                     <h3 id="total-productos">--</h3>
-                    <p>Total de productos registrados</p>
+                    <p>Total de productos registrados en la plataforma.</p>
                 </article>
 
-                <article class="resumen-card">
-                    <span class="resumen-etiqueta">Usuarios</span>
+                <article class="metric-card">
+                    <div class="metric-card-top">
+                        <span class="metric-badge">Usuarios</span>
+                        <span class="metric-icon">👥</span>
+                    </div>
                     <h3 id="total-usuarios">--</h3>
-                    <p>Total de usuarios de la plataforma</p>
+                    <p>Total de cuentas registradas en el sistema.</p>
                 </article>
 
-                <article class="resumen-card">
-                    <span class="resumen-etiqueta">Pedidos</span>
+                <article class="metric-card">
+                    <div class="metric-card-top">
+                        <span class="metric-badge">Pedidos</span>
+                        <span class="metric-icon">📦</span>
+                    </div>
                     <h3 id="total-pedidos">--</h3>
-                    <p>Pedidos realizados</p>
+                    <p>Pedidos realizados por los clientes.</p>
                 </article>
 
-                <article class="resumen-card">
-                    <span class="resumen-etiqueta">Scraping</span>
-                    <h3 id="estado-scraping">Listo</h3>
-                    <p>Estado del sistema de scraping</p>
+                <article class="metric-card metric-card-status">
+                    <div class="metric-card-top">
+                        <span class="metric-badge">Scraping</span>
+                        <span class="metric-icon">⚙️</span>
+                    </div>
+                    <h3 id="estado-scraping">Inactivo</h3>
+                    <p id="detalle-scraping">Sin procesos activos en este momento.</p>
+                    <div id="chip-scraping" class="status-chip status-chip-neutral">Inactivo</div>
                 </article>
             </div>
         </section>
 
-        <section class="card seccion-admin" id="scraping">
-            <div class="cabecera-bloque-admin">
-                <div>
-                    <h2 class="titulo-bloque-admin">Centro de scraping</h2>
-                    <p class="subtitulo-seccion-admin">
-                        Ejecuta procesos de scraping manualmente desde el panel.
-                    </p>
-                </div>
-            </div>
-
-            <div class="acciones-scraping-grid">
-                <div class="accion-admin-card">
+        <!-- SCRAPING -->
+        <section class="admin-section" id="scraping">
+            <div class="admin-block">
+                <div class="admin-block-header">
                     <div>
-                        <h3>Zara</h3>
-                        <p>Obtén productos actualizados de Zara.</p>
-                    </div>
-                    <button class="btn btn-principal btn-auto" type="button" id="btn-scraping-zara">Ejecutar scraping</button>
-                </div>
-
-                <div class="accion-admin-card">
-                    <div>
-                        <h3>Bershka</h3>
-                        <p>Lanza el scraping de productos de Bershka.</p>
-                    </div>
-                    <button class="btn btn-principal btn-auto" type="button" id="btn-scraping-bershka">Ejecutar scraping</button>
-                </div>
-
-                <div class="accion-admin-card">
-                    <div>
-                        <h3>Pull&amp;Bear</h3>
-                        <p>Actualiza el catálogo con scraping manual.</p>
-                    </div>
-                    <button class="btn btn-principal btn-auto" type="button" id="btn-scraping-pull">Ejecutar scraping</button>
-                </div>
-
-                <div class="accion-admin-card accion-admin-card-destacada">
-                    <div>
-                        <h3>Scraping completo</h3>
-                        <p>Ejecuta todos los scrapers disponibles de una sola vez.</p>
-                    </div>
-                    <button class="btn btn-principal btn-auto" type="button" id="btn-scraping-todo">Ejecutar todo</button>
-                </div>
-            </div>
-        </section>
-
-        <section class="card seccion-admin" id="productos">
-            <div class="cabecera-bloque-admin">
-                <div>
-                    <h2 class="titulo-bloque-admin">Productos</h2>
-                    <p class="subtitulo-seccion-admin">
-                        Revisa el catálogo, corrige datos, elimina productos y gestiona stock por tallas.
-                    </p>
-                </div>
-            </div>
-
-            <div class="gestion-panel-admin">
-                <div class="gestion-panel-intro">
-                    <div class="gestion-icono">P</div>
-                    <div>
-                        <h3>Gestión del catálogo</h3>
-                        <p>
-                            Carga el catálogo, edita productos, elimina los que sobren y aplica stock individual o múltiple.
+                        <p class="admin-section-eyebrow">Automatización</p>
+                        <h2>Centro de scraping</h2>
+                        <p class="admin-section-subtitle">
+                            Ejecuta procesos manuales, comprueba el estado actual y revisa la última acción realizada.
                         </p>
                     </div>
                 </div>
 
-                <div class="gestion-panel-acciones">
-                    <button class="btn btn-principal btn-auto" type="button" id="btn-gestionar-productos">Cargar catálogo</button>
-                    <button class="btn btn-secundario btn-auto" type="button" id="btn-recargar-productos">Recargar</button>
-                    <button class="btn btn-secundario btn-auto" type="button" id="btn-modo-seleccion-productos">Modo selección</button>
-                    <button class="btn btn-principal btn-auto" type="button" id="btn-stock-seleccionados" disabled>Stock seleccionados</button>
-                </div>
-            </div>
-
-            <div id="productos-admin-estado" class="gestion-estado-admin" style="display:none;"></div>
-
-            <div class="bloque-scroll-admin">
-                <div id="contenedor-productos-admin" class="grid-admin-cards scroll-interno-admin">
-                    <div class="placeholder-admin-cards">
-                        <h3>Catálogo pendiente de cargar</h3>
-                        <p>Pulsa en “Cargar catálogo” para ver los productos del sistema.</p>
+                <div class="scraping-status-grid">
+                    <div class="scraping-status-card">
+                        <span class="scraping-status-label">Estado actual</span>
+                        <strong id="scraping-estado-box">Inactivo</strong>
                     </div>
+
+                    <div class="scraping-status-card">
+                        <span class="scraping-status-label">Última acción</span>
+                        <strong id="scraping-ultima-accion">Sin ejecuciones recientes</strong>
+                    </div>
+                </div>
+
+                <div class="scraping-cards-grid">
+                    <article class="scraping-card">
+                        <div class="scraping-card-body">
+                            <span class="scraping-card-icon">Z</span>
+                            <div>
+                                <h3>Zara</h3>
+                                <p>Actualiza el catálogo de Zara con un scraping manual.</p>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" type="button" id="btn-scraping-zara">Ejecutar</button>
+                    </article>
+
+                    <article class="scraping-card">
+                        <div class="scraping-card-body">
+                            <span class="scraping-card-icon">B</span>
+                            <div>
+                                <h3>Bershka</h3>
+                                <p>Lanza la actualización de productos de Bershka.</p>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" type="button" id="btn-scraping-bershka">Ejecutar</button>
+                    </article>
+
+                    <article class="scraping-card">
+                        <div class="scraping-card-body">
+                            <span class="scraping-card-icon">P</span>
+                            <div>
+                                <h3>Pull&amp;Bear</h3>
+                                <p>Ejecuta el scraping manual del catálogo de Pull&amp;Bear.</p>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" type="button" id="btn-scraping-pull">Ejecutar</button>
+                    </article>
+
+                    <article class="scraping-card scraping-card-dark">
+                        <div class="scraping-card-body">
+                            <span class="scraping-card-icon">∞</span>
+                            <div>
+                                <h3>Scraping completo</h3>
+                                <p>Lanza todos los scrapers disponibles de una sola vez.</p>
+                            </div>
+                        </div>
+                        <button class="btn btn-light" type="button" id="btn-scraping-todo">Ejecutar todo</button>
+                    </article>
                 </div>
             </div>
         </section>
 
-        <section class="card seccion-admin" id="usuarios">
-            <div class="cabecera-bloque-admin">
-                <div>
-                    <h2 class="titulo-bloque-admin">Usuarios</h2>
-                    <p class="subtitulo-seccion-admin">
-                        Consulta usuarios registrados, revisa sus roles y realiza cambios administrativos.
-                    </p>
-                </div>
-            </div>
-
-            <div class="gestion-panel-admin">
-                <div class="gestion-panel-intro">
-                    <div class="gestion-icono">U</div>
+        <!-- PRODUCTOS -->
+        <section class="admin-section" id="productos">
+            <div class="admin-block">
+                <div class="admin-block-header">
                     <div>
-                        <h3>Gestión de usuarios</h3>
-                        <p>
-                            Aquí podrás listar usuarios, revisar su rol actual, editar nombre o email y cambiar permisos.
+                        <p class="admin-section-eyebrow">Catálogo</p>
+                        <h2>Productos</h2>
+                        <p class="admin-section-subtitle">
+                            Busca, selecciona, edita, elimina y gestiona el stock del catálogo sin depender de cargas manuales.
                         </p>
                     </div>
                 </div>
 
-                <div class="gestion-panel-acciones">
-                    <button class="btn btn-principal btn-auto" type="button" id="btn-gestionar-usuarios">Cargar usuarios</button>
-                    <button class="btn btn-secundario btn-auto" type="button" id="btn-recargar-usuarios">Recargar</button>
+                <div class="toolbar-admin">
+                    <div class="toolbar-left">
+                        <div class="toolbar-search">
+                            <input
+                                    type="text"
+                                    id="buscador-productos-admin"
+                                    placeholder="Buscar productos por nombre, categoría o tienda..."
+                            />
+                        </div>
+                    </div>
+
+                    <div class="toolbar-right">
+                        <button class="btn btn-secondary" type="button" id="btn-modo-seleccion-productos">Modo selección</button>
+                        <button class="btn btn-secondary" type="button" id="btn-seleccionar-todos-productos">Seleccionar todos</button>
+                        <button class="btn btn-primary" type="button" id="btn-stock-seleccionados" disabled>Editar stock</button>
+                    </div>
                 </div>
-            </div>
 
-            <div id="usuarios-admin-estado" class="gestion-estado-admin" style="display:none;"></div>
+                <div id="productos-admin-estado" class="estado-panel-admin" style="display:none;"></div>
 
-            <div class="bloque-scroll-admin">
-                <div id="contenedor-usuarios-admin" class="grid-admin-cards scroll-interno-admin">
-                    <div class="placeholder-admin-cards">
-                        <h3>Usuarios pendientes de cargar</h3>
-                        <p>Pulsa en “Cargar usuarios” para ver las cuentas registradas en la plataforma.</p>
+                <div class="admin-list-wrap">
+                    <div id="contenedor-productos-admin" class="admin-list-grid">
+                        <div class="empty-admin-state">
+                            <h3>Cargando productos</h3>
+                            <p>El catálogo aparecerá aquí automáticamente.</p>
+                        </div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <section class="card seccion-admin" id="pedidos">
-            <div class="cabecera-bloque-admin">
-                <div>
-                    <h2 class="titulo-bloque-admin">Pedidos</h2>
-                    <p class="subtitulo-seccion-admin">
-                        Revisión de pedidos, estados y flujo de compra.
-                    </p>
+        <!-- USUARIOS -->
+        <section class="admin-section" id="usuarios">
+            <div class="admin-block">
+                <div class="admin-block-header">
+                    <div>
+                        <p class="admin-section-eyebrow">Clientes</p>
+                        <h2>Usuarios</h2>
+                        <p class="admin-section-subtitle">
+                            Revisa cuentas, edita sus datos, elimina usuarios y consulta su actividad, compras y favoritos.
+                        </p>
+                    </div>
+                </div>
+
+                <div id="usuarios-admin-estado" class="estado-panel-admin" style="display:none;"></div>
+
+                <div class="admin-list-wrap">
+                    <div id="contenedor-usuarios-admin" class="admin-list-grid">
+                        <div class="empty-admin-state">
+                            <h3>Cargando usuarios</h3>
+                            <p>Las cuentas registradas aparecerán aquí automáticamente.</p>
+                        </div>
+                    </div>
                 </div>
             </div>
+        </section>
 
-            <div class="accesos-grid">
-                <div class="acceso-card">
-                    <h3>Gestión de pedidos</h3>
-                    <p>Zona preparada para listar pedidos y controlar su estado.</p>
-                    <button class="btn btn-secundario btn-auto" type="button" id="btn-gestionar-pedidos">Gestionar pedidos</button>
+        <!-- PEDIDOS -->
+        <section class="admin-section" id="pedidos">
+            <div class="admin-block">
+                <div class="admin-block-header">
+                    <div>
+                        <p class="admin-section-eyebrow">Ventas</p>
+                        <h2>Pedidos</h2>
+                        <p class="admin-section-subtitle">
+                            Consulta todos los pedidos, filtra por estado, revisa su detalle y actualiza su flujo de entrega.
+                        </p>
+                    </div>
                 </div>
 
-                <div class="acceso-card">
-                    <h3>Seguimiento</h3>
-                    <p>Podrás consultar pedidos pendientes, completados o cancelados.</p>
-                    <button class="btn btn-secundario btn-auto" type="button">Próximamente</button>
+                <div class="toolbar-admin">
+                    <div class="toolbar-left">
+                        <div class="toolbar-filter">
+                            <select id="filtro-estado-pedidos">
+                                <option value="TODOS">Todos los estados</option>
+                                <option value="PENDIENTE">Pendiente</option>
+                                <option value="CONFIRMADO">Confirmado</option>
+                                <option value="PREPARANDO">Preparando</option>
+                                <option value="ENVIADO">Enviado</option>
+                                <option value="ENTREGADO">Entregado</option>
+                                <option value="CANCELADO">Cancelado</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="acceso-card">
-                    <h3>Operaciones administrativas</h3>
-                    <p>Espacio pensado para futuras acciones sobre pedidos y devoluciones.</p>
-                    <button class="btn btn-secundario btn-auto" type="button">Próximamente</button>
+                <div id="pedidos-admin-estado" class="estado-panel-admin" style="display:none;"></div>
+
+                <div class="admin-list-wrap">
+                    <div id="contenedor-pedidos-admin" class="admin-list-grid">
+                        <div class="empty-admin-state">
+                            <h3>Cargando pedidos</h3>
+                            <p>Los pedidos aparecerán aquí automáticamente.</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -236,43 +308,43 @@
 
 <!-- MODAL EDITAR PRODUCTO -->
 <div id="modal-editar-producto" class="modal-admin-overlay" style="display:none;">
-    <div class="modal-admin-contenido">
-        <div class="modal-admin-cabecera">
+    <div class="modal-admin modal-admin-large">
+        <div class="modal-admin-header">
             <h3>Editar producto</h3>
-            <button type="button" class="modal-admin-cerrar" id="cerrar-modal-editar-producto">×</button>
+            <button type="button" class="modal-admin-close" id="cerrar-modal-editar-producto">×</button>
         </div>
 
         <form id="form-editar-producto" class="form-admin-grid">
             <input type="hidden" id="editar-producto-id" />
 
-            <div class="campo-admin campo-admin-completo">
+            <div class="form-group form-group-full">
                 <label for="editar-producto-nombre">Nombre</label>
                 <input type="text" id="editar-producto-nombre" required />
             </div>
 
-            <div class="campo-admin campo-admin-completo">
+            <div class="form-group form-group-full">
                 <label for="editar-producto-descripcion">Descripción</label>
                 <textarea id="editar-producto-descripcion" rows="5"></textarea>
             </div>
 
-            <div class="campo-admin">
+            <div class="form-group">
                 <label for="editar-producto-precio">Precio</label>
                 <input type="number" id="editar-producto-precio" step="0.01" min="0" required />
             </div>
 
-            <div class="campo-admin">
+            <div class="form-group">
                 <label for="editar-producto-url-imagen">URL imagen</label>
                 <input type="text" id="editar-producto-url-imagen" />
             </div>
 
-            <div class="campo-admin campo-admin-completo">
+            <div class="form-group form-group-full">
                 <label for="editar-producto-url-producto">URL producto</label>
                 <input type="text" id="editar-producto-url-producto" readonly />
             </div>
 
-            <div class="acciones-modal-admin campo-admin-completo">
-                <button type="button" class="btn btn-secundario" id="cancelar-modal-editar-producto">Cancelar</button>
-                <button type="submit" class="btn btn-principal" id="guardar-cambios-producto">Guardar cambios</button>
+            <div class="modal-admin-actions form-group-full">
+                <button type="button" class="btn btn-secondary" id="cancelar-modal-editar-producto">Cancelar</button>
+                <button type="submit" class="btn btn-primary" id="guardar-cambios-producto">Guardar cambios</button>
             </div>
         </form>
     </div>
@@ -280,36 +352,36 @@
 
 <!-- MODAL ELIMINAR PRODUCTO -->
 <div id="modal-eliminar-producto" class="modal-admin-overlay" style="display:none;">
-    <div class="modal-admin-contenido modal-admin-contenido-pequeno">
-        <div class="modal-admin-cabecera">
+    <div class="modal-admin modal-admin-small">
+        <div class="modal-admin-header">
             <h3>Eliminar producto</h3>
-            <button type="button" class="modal-admin-cerrar" id="cerrar-modal-eliminar-producto">×</button>
+            <button type="button" class="modal-admin-close" id="cerrar-modal-eliminar-producto">×</button>
         </div>
 
-        <p class="texto-modal-admin">¿Seguro que quieres eliminar este producto?</p>
+        <p class="modal-admin-text">¿Seguro que quieres eliminar este producto?</p>
 
-        <div class="acciones-modal-admin">
-            <button type="button" class="btn btn-secundario" id="cancelar-modal-eliminar-producto">Cancelar</button>
-            <button type="button" class="btn btn-principal btn-peligro" id="confirmar-eliminar-producto">Eliminar</button>
+        <div class="modal-admin-actions">
+            <button type="button" class="btn btn-secondary" id="cancelar-modal-eliminar-producto">Cancelar</button>
+            <button type="button" class="btn btn-danger" id="confirmar-eliminar-producto">Eliminar</button>
         </div>
     </div>
 </div>
 
 <!-- MODAL STOCK PRODUCTOS -->
 <div id="modal-stock-productos" class="modal-admin-overlay" style="display:none;">
-    <div class="modal-admin-contenido">
-        <div class="modal-admin-cabecera">
+    <div class="modal-admin modal-admin-large">
+        <div class="modal-admin-header">
             <h3>Gestionar stock</h3>
-            <button type="button" class="modal-admin-cerrar" id="cerrar-modal-stock-productos">×</button>
+            <button type="button" class="modal-admin-close" id="cerrar-modal-stock-productos">×</button>
         </div>
 
         <form id="form-stock-productos" class="form-admin-grid">
-            <div class="campo-admin campo-admin-completo">
+            <div class="form-group form-group-full">
                 <label>Productos seleccionados</label>
-                <div id="stock-resumen-productos" class="resumen-stock-productos"></div>
+                <div id="stock-resumen-productos" class="stock-resumen-box"></div>
             </div>
 
-            <div class="campo-admin campo-admin-completo">
+            <div class="form-group form-group-full">
                 <label>Tallas</label>
                 <div class="tallas-check-grid">
                     <label class="check-talla"><input type="checkbox" value="XS" class="check-stock-talla" /> <span>XS</span></label>
@@ -320,21 +392,21 @@
                 </div>
             </div>
 
-            <div class="campo-admin">
+            <div class="form-group">
                 <label for="stock-cantidad-productos">Cantidad</label>
                 <input type="number" id="stock-cantidad-productos" min="0" required />
             </div>
 
-            <div class="campo-admin campo-admin-completo">
+            <div class="form-group form-group-full">
                 <label>Stock actual</label>
                 <div id="stock-actual-producto" class="stock-actual-box">
-                    <p class="texto-stock-vacio">Selecciona un producto para ver el stock actual por talla.</p>
+                    <p class="texto-box-vacio">Selecciona un producto para ver el stock actual por talla.</p>
                 </div>
             </div>
 
-            <div class="acciones-modal-admin campo-admin-completo">
-                <button type="button" class="btn btn-secundario" id="cancelar-modal-stock-productos">Cancelar</button>
-                <button type="submit" class="btn btn-principal" id="guardar-stock-productos">Guardar stock</button>
+            <div class="modal-admin-actions form-group-full">
+                <button type="button" class="btn btn-secondary" id="cancelar-modal-stock-productos">Cancelar</button>
+                <button type="submit" class="btn btn-primary" id="guardar-stock-productos">Guardar stock</button>
             </div>
         </form>
     </div>
@@ -342,26 +414,26 @@
 
 <!-- MODAL EDITAR USUARIO -->
 <div id="modal-editar-usuario" class="modal-admin-overlay" style="display:none;">
-    <div class="modal-admin-contenido">
-        <div class="modal-admin-cabecera">
+    <div class="modal-admin modal-admin-large">
+        <div class="modal-admin-header">
             <h3>Editar usuario</h3>
-            <button type="button" class="modal-admin-cerrar" id="cerrar-modal-editar-usuario">×</button>
+            <button type="button" class="modal-admin-close" id="cerrar-modal-editar-usuario">×</button>
         </div>
 
         <form id="form-editar-usuario" class="form-admin-grid">
             <input type="hidden" id="editar-usuario-id" />
 
-            <div class="campo-admin">
+            <div class="form-group">
                 <label for="editar-usuario-nombre">Nombre</label>
                 <input type="text" id="editar-usuario-nombre" required />
             </div>
 
-            <div class="campo-admin">
+            <div class="form-group">
                 <label for="editar-usuario-email">Email</label>
                 <input type="email" id="editar-usuario-email" required />
             </div>
 
-            <div class="campo-admin campo-admin-completo">
+            <div class="form-group form-group-full">
                 <label for="editar-usuario-rol">Rol</label>
                 <select id="editar-usuario-rol">
                     <option value="USER">USUARIO</option>
@@ -369,9 +441,9 @@
                 </select>
             </div>
 
-            <div class="acciones-modal-admin campo-admin-completo">
-                <button type="button" class="btn btn-secundario" id="cancelar-modal-editar-usuario">Cancelar</button>
-                <button type="submit" class="btn btn-principal" id="guardar-cambios-usuario">Guardar cambios</button>
+            <div class="modal-admin-actions form-group-full">
+                <button type="button" class="btn btn-secondary" id="cancelar-modal-editar-usuario">Cancelar</button>
+                <button type="submit" class="btn btn-primary" id="guardar-cambios-usuario">Guardar cambios</button>
             </div>
         </form>
     </div>
@@ -379,21 +451,75 @@
 
 <!-- MODAL ELIMINAR USUARIO -->
 <div id="modal-eliminar-usuario" class="modal-admin-overlay" style="display:none;">
-    <div class="modal-admin-contenido modal-admin-contenido-pequeno">
-        <div class="modal-admin-cabecera">
+    <div class="modal-admin modal-admin-small">
+        <div class="modal-admin-header">
             <h3>Eliminar usuario</h3>
-            <button type="button" class="modal-admin-cerrar" id="cerrar-modal-eliminar-usuario">×</button>
+            <button type="button" class="modal-admin-close" id="cerrar-modal-eliminar-usuario">×</button>
         </div>
 
-        <p class="texto-modal-admin">
-            ¿Seguro que quieres eliminar este usuario? Si el backend tiene restricciones por pedidos,
-            carrito, favoritos o tarjetas, esta operación puede fallar.
+        <p class="modal-admin-text">
+            ¿Seguro que quieres eliminar este usuario? Esta acción puede afectar a pedidos, carrito, favoritos y otros datos relacionados.
         </p>
 
-        <div class="acciones-modal-admin">
-            <button type="button" class="btn btn-secundario" id="cancelar-modal-eliminar-usuario">Cancelar</button>
-            <button type="button" class="btn btn-principal btn-peligro" id="confirmar-eliminar-usuario">Eliminar</button>
+        <div class="modal-admin-actions">
+            <button type="button" class="btn btn-secondary" id="cancelar-modal-eliminar-usuario">Cancelar</button>
+            <button type="button" class="btn btn-danger" id="confirmar-eliminar-usuario">Eliminar</button>
         </div>
+    </div>
+</div>
+
+<!-- MODAL DETALLE USUARIO -->
+<div id="modal-detalle-usuario" class="modal-admin-overlay" style="display:none;">
+    <div class="modal-admin modal-admin-xl">
+        <div class="modal-admin-header">
+            <h3>Detalle de usuario</h3>
+            <button type="button" class="modal-admin-close" id="cerrar-modal-detalle-usuario">×</button>
+        </div>
+
+        <div id="contenido-detalle-usuario" class="detalle-admin-layout"></div>
+    </div>
+</div>
+
+<!-- MODAL DETALLE PEDIDO -->
+<div id="modal-detalle-pedido" class="modal-admin-overlay" style="display:none;">
+    <div class="modal-admin modal-admin-xl">
+        <div class="modal-admin-header">
+            <h3>Detalle de pedido</h3>
+            <button type="button" class="modal-admin-close" id="cerrar-modal-detalle-pedido">×</button>
+        </div>
+
+        <div id="contenido-detalle-pedido" class="detalle-admin-layout"></div>
+    </div>
+</div>
+
+<!-- MODAL CAMBIAR ESTADO PEDIDO -->
+<div id="modal-cambiar-estado-pedido" class="modal-admin-overlay" style="display:none;">
+    <div class="modal-admin modal-admin-small">
+        <div class="modal-admin-header">
+            <h3>Cambiar estado del pedido</h3>
+            <button type="button" class="modal-admin-close" id="cerrar-modal-cambiar-estado-pedido">×</button>
+        </div>
+
+        <form id="form-cambiar-estado-pedido" class="form-admin-grid">
+            <input type="hidden" id="cambiar-estado-pedido-id" />
+
+            <div class="form-group form-group-full">
+                <label for="nuevo-estado-pedido">Nuevo estado</label>
+                <select id="nuevo-estado-pedido" required>
+                    <option value="PENDIENTE">Pendiente</option>
+                    <option value="CONFIRMADO">Confirmado</option>
+                    <option value="PREPARANDO">Preparando</option>
+                    <option value="ENVIADO">Enviado</option>
+                    <option value="ENTREGADO">Entregado</option>
+                    <option value="CANCELADO">Cancelado</option>
+                </select>
+            </div>
+
+            <div class="modal-admin-actions form-group-full">
+                <button type="button" class="btn btn-secondary" id="cancelar-modal-cambiar-estado-pedido">Cancelar</button>
+                <button type="submit" class="btn btn-primary" id="guardar-cambio-estado-pedido">Guardar cambio</button>
+            </div>
+        </form>
     </div>
 </div>
 

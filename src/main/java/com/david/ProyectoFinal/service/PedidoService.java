@@ -145,13 +145,47 @@ public class PedidoService {
 
     public Pedido cambiarEstadoPedido(Long pedidoId, EstadoPedido nuevoEstado) {
 
-        Optional<Pedido> pedidoOptional = pedidoRepository.findById(pedidoId);
+        Pedido pedido = pedidoRepository.findById(pedidoId)
+                .orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
 
-        if (pedidoOptional.isEmpty()) {
-            throw new RuntimeException("Pedido no encontrado");
+        EstadoPedido estadoActual = pedido.getEstado();
+
+        if (estadoActual == EstadoPedido.ENTREGADO || estadoActual == EstadoPedido.CANCELADO) {
+            throw new RuntimeException("No se puede modificar un pedido ya finalizado");
         }
 
-        Pedido pedido = pedidoOptional.get();
+        boolean cambioValido = false;
+
+        switch (estadoActual) {
+            case PENDIENTE:
+                if (nuevoEstado == EstadoPedido.CONFIRMADO || nuevoEstado == EstadoPedido.CANCELADO) {
+                    cambioValido = true;
+                }
+                break;
+
+            case CONFIRMADO:
+                if (nuevoEstado == EstadoPedido.PREPARANDO || nuevoEstado == EstadoPedido.CANCELADO) {
+                    cambioValido = true;
+                }
+                break;
+
+            case PREPARANDO:
+                if (nuevoEstado == EstadoPedido.ENVIADO || nuevoEstado == EstadoPedido.CANCELADO) {
+                    cambioValido = true;
+                }
+                break;
+
+            case ENVIADO:
+                if (nuevoEstado == EstadoPedido.ENTREGADO) {
+                    cambioValido = true;
+                }
+                break;
+        }
+
+        if (!cambioValido) {
+            throw new RuntimeException("Cambio de estado no permitido");
+        }
+
         pedido.setEstado(nuevoEstado);
 
         return pedidoRepository.save(pedido);

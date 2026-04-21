@@ -4,7 +4,11 @@ package com.david.ProyectoFinal.controller;
 import com.david.ProyectoFinal.dto.ActualizarPerfilDTO;
 import com.david.ProyectoFinal.dto.CambiarPasswordDTO;
 import com.david.ProyectoFinal.dto.UsuarioPerfilDTO;
+import com.david.ProyectoFinal.model.Favorito;
+import com.david.ProyectoFinal.model.Pedido;
 import com.david.ProyectoFinal.model.Usuario;
+import com.david.ProyectoFinal.service.FavoritoService;
+import com.david.ProyectoFinal.service.PedidoService;
 import com.david.ProyectoFinal.service.UsuarioService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.http.HttpStatus;
@@ -20,9 +24,13 @@ import java.util.List;
 public class UsuarioController {
 
     private final UsuarioService usuarioService;
+    private final PedidoService pedidoService;
+    private final FavoritoService favoritoService;
 
-    public UsuarioController(UsuarioService usuarioService) {
+    public UsuarioController(UsuarioService usuarioService, PedidoService pedidoService, FavoritoService favoritoService) {
         this.usuarioService = usuarioService;
+        this.pedidoService = pedidoService;
+        this.favoritoService = favoritoService;
     }
 
     private void comprobarAccesoUsuario(Long id, HttpSession session) {
@@ -123,4 +131,15 @@ public class UsuarioController {
         }
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/{id}/pedidos")
+    public List<Pedido> obtenerPedidosDeUsuarioComoAdmin(@PathVariable Long id) {
+        return pedidoService.obtenerPedidosPorUsuario(id);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/{id}/favoritos")
+    public List<Favorito> obtenerFavoritosDeUsuarioComoAdmin(@PathVariable Long id) {
+        return favoritoService.obtenerFavoritosDeUsuario(id);
+    }
 }

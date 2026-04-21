@@ -58,7 +58,7 @@ public class BershkaScraper implements ScraperTienda{
         try (Playwright playwright = Playwright.create()) {
 
             Browser browser = playwright.chromium().launch(
-                    new BrowserType.LaunchOptions().setHeadless(false)
+                    new BrowserType.LaunchOptions().setHeadless(true)
             );
 
             Page page = browser.newPage();
@@ -69,7 +69,11 @@ public class BershkaScraper implements ScraperTienda{
 
             List<ConfigScrapingTienda> configuraciones = List.of(
                     new ConfigScrapingTienda("https://www.bershka.com/es/hombre/ropa/camisetas-n3294.html?celement=1010193239", Seccion.HOMBRE, "Camisetas"),
+                    new ConfigScrapingTienda("https://www.bershka.com/es/hombre/ropa/pantalones-n3288.html?celement=1010193241",Seccion.HOMBRE,"Pantalones"),
+                    new ConfigScrapingTienda("https://www.bershka.com/es/hombre/ropa/sudaderas-n3714.html?celement=1010193244", Seccion.HOMBRE,"Sudaderas"),
                     new ConfigScrapingTienda("https://www.bershka.com/es/mujer/ropa/camisetas-n4365.html", Seccion.MUJER, "Camisetas")
+
+
             );
 
             boolean cookiesAceptadas = false;

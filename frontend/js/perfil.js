@@ -12,12 +12,12 @@ let timeoutMensajePerfil = null;
 
 let modoEdicionPerfil = false;
 
-let estadoValidacionPerfil = {
+const estadoValidacionPerfil = {
     nombreValido: true,
     emailValido: true
 };
 
-let valoresOriginalesPerfil = {
+const valoresOriginalesPerfil = {
     nombre: "",
     email: "",
     rol: ""
@@ -56,10 +56,7 @@ async function obtenerSesionActual() {
             credentials: "include"
         });
 
-        if (!response.ok) {
-            return null;
-        }
-
+        if (!response.ok) return null;
         return await response.json();
     } catch (error) {
         console.error("Error al comprobar sesión:", error);
@@ -68,46 +65,48 @@ async function obtenerSesionActual() {
 }
 
 function configurarNavegacionSecciones() {
-    const btnPerfil = document.getElementById("btn-menu-perfil");
-    const btnPassword = document.getElementById("btn-menu-password");
-    const btnTarjetas = document.getElementById("btn-menu-tarjetas");
-    const btnDirecciones = document.getElementById("btn-menu-direcciones");
+    const botones = {
+        perfil: document.getElementById("btn-menu-perfil"),
+        password: document.getElementById("btn-menu-password"),
+        direcciones: document.getElementById("btn-menu-direcciones"),
+        tarjetas: document.getElementById("btn-menu-tarjetas")
+    };
 
-    if (btnPerfil) btnPerfil.addEventListener("click", () => activarSeccion("perfil"));
-    if (btnPassword) btnPassword.addEventListener("click", () => activarSeccion("password"));
-    if (btnTarjetas) btnTarjetas.addEventListener("click", () => activarSeccion("tarjetas"));
-    if (btnDirecciones) btnDirecciones.addEventListener("click", () => activarSeccion("direcciones"));
+    Object.entries(botones).forEach(([seccion, boton]) => {
+        if (!boton) return;
+        boton.addEventListener("click", () => activarSeccion(seccion));
+    });
 }
 
 function activarSeccion(nombreSeccion) {
     const secciones = {
         perfil: document.getElementById("seccion-perfil"),
         password: document.getElementById("seccion-password"),
-        tarjetas: document.getElementById("seccion-tarjetas"),
-        direcciones: document.getElementById("seccion-direcciones")
+        direcciones: document.getElementById("seccion-direcciones"),
+        tarjetas: document.getElementById("seccion-tarjetas")
     };
 
     const botones = {
         perfil: document.getElementById("btn-menu-perfil"),
         password: document.getElementById("btn-menu-password"),
-        tarjetas: document.getElementById("btn-menu-tarjetas"),
-        direcciones: document.getElementById("btn-menu-direcciones")
+        direcciones: document.getElementById("btn-menu-direcciones"),
+        tarjetas: document.getElementById("btn-menu-tarjetas")
     };
 
-    Object.values(secciones).forEach(seccion => {
-        if (seccion) seccion.style.display = "none";
+    Object.values(secciones).forEach((seccion) => {
+        if (seccion) seccion.classList.add("hidden");
     });
 
-    Object.values(botones).forEach(boton => {
-        if (boton) boton.classList.remove("menu-lateral-activo");
+    Object.values(botones).forEach((boton) => {
+        if (boton) boton.classList.remove("perfil-nav-btn-active");
     });
 
     if (secciones[nombreSeccion]) {
-        secciones[nombreSeccion].style.display = "block";
+        secciones[nombreSeccion].classList.remove("hidden");
     }
 
     if (botones[nombreSeccion]) {
-        botones[nombreSeccion].classList.add("menu-lateral-activo");
+        botones[nombreSeccion].classList.add("perfil-nav-btn-active");
     }
 }
 
@@ -124,15 +123,10 @@ async function cargarPerfil(usuarioId) {
 
         const usuario = await response.json();
 
-        const inputNombre = document.getElementById("nombre");
-        const inputEmail = document.getElementById("email");
-        const inputRol = document.getElementById("rol");
-        const inputTipoCuenta = document.getElementById("tipoCuenta");
-
-        if (inputNombre) inputNombre.value = usuario.nombre || "";
-        if (inputEmail) inputEmail.value = usuario.email || "";
-        if (inputRol) inputRol.value = usuario.rol || "";
-        if (inputTipoCuenta) inputTipoCuenta.value = formatearTipoCuenta(usuario.rol);
+        asignarValor("nombre", usuario.nombre || "");
+        asignarValor("email", usuario.email || "");
+        asignarValor("rol", usuario.rol || "");
+        asignarValor("tipoCuenta", formatearTipoCuenta(usuario.rol));
 
         valoresOriginalesPerfil.nombre = usuario.nombre || "";
         valoresOriginalesPerfil.email = usuario.email || "";
@@ -147,7 +141,6 @@ async function cargarPerfil(usuarioId) {
 
         actualizarPanelLateral(usuario);
         actualizarNombreMenu(usuario.nombre);
-
     } catch (error) {
         console.error("Error al cargar perfil:", error);
         mostrarMensaje("No se pudo cargar tu perfil.");
@@ -170,10 +163,9 @@ function actualizarPanelLateral(usuario) {
     if (miniRolResumen) miniRolResumen.textContent = tipoCuenta;
 
     if (avatarInicial) {
-        const inicial = usuario.nombre && usuario.nombre.trim().length > 0
+        const inicial = usuario.nombre && usuario.nombre.trim()
             ? usuario.nombre.trim().charAt(0).toUpperCase()
             : "U";
-
         avatarInicial.textContent = inicial;
     }
 }
@@ -187,8 +179,7 @@ function actualizarNombreMenu(nombreNuevo) {
 
 function formatearTipoCuenta(rol) {
     if (!rol) return "Cuenta estándar";
-    if (rol.toUpperCase() === "ADMIN") return "Cuenta administrador";
-    return "Cuenta estándar";
+    return rol.toUpperCase() === "ADMIN" ? "Cuenta administrador" : "Cuenta estándar";
 }
 
 function configurarFormularioPerfil(usuarioId) {
@@ -220,8 +211,8 @@ function configurarFormularioPerfil(usuarioId) {
 
         if (!modoEdicionPerfil) return;
 
-        const nombre = document.getElementById("nombre")?.value.trim() || "";
-        const email = document.getElementById("email")?.value.trim() || "";
+        const nombre = obtenerValor("nombre");
+        const email = obtenerValor("email");
 
         const errorValidacion = validarDatosPerfil(nombre, email);
         if (errorValidacion) {
@@ -234,8 +225,6 @@ function configurarFormularioPerfil(usuarioId) {
             return;
         }
 
-        const datos = { nombre, email };
-
         try {
             if (btnGuardar) {
                 btnGuardar.disabled = true;
@@ -244,11 +233,9 @@ function configurarFormularioPerfil(usuarioId) {
 
             const response = await fetch(`${BASE_URL}/usuarios/${usuarioId}/perfil`, {
                 method: "PUT",
-                headers: {
-                    "Content-Type": "application/json"
-                },
+                headers: { "Content-Type": "application/json" },
                 credentials: "include",
-                body: JSON.stringify(datos)
+                body: JSON.stringify({ nombre, email })
             });
 
             const textoRespuesta = await response.text();
@@ -260,10 +247,10 @@ function configurarFormularioPerfil(usuarioId) {
             const usuarioActualizado = textoRespuesta ? JSON.parse(textoRespuesta) : null;
 
             if (usuarioActualizado) {
-                document.getElementById("nombre").value = usuarioActualizado.nombre || "";
-                document.getElementById("email").value = usuarioActualizado.email || "";
-                document.getElementById("rol").value = usuarioActualizado.rol || "";
-                document.getElementById("tipoCuenta").value = formatearTipoCuenta(usuarioActualizado.rol);
+                asignarValor("nombre", usuarioActualizado.nombre || "");
+                asignarValor("email", usuarioActualizado.email || "");
+                asignarValor("rol", usuarioActualizado.rol || "");
+                asignarValor("tipoCuenta", formatearTipoCuenta(usuarioActualizado.rol));
 
                 valoresOriginalesPerfil.nombre = usuarioActualizado.nombre || "";
                 valoresOriginalesPerfil.email = usuarioActualizado.email || "";
@@ -281,7 +268,6 @@ function configurarFormularioPerfil(usuarioId) {
             estadoValidacionPerfil.emailValido = true;
 
             desactivarModoEdicionPerfil();
-
         } catch (error) {
             console.error("Error al actualizar perfil:", error);
             mostrarMensaje(error.message || "No se pudo actualizar el perfil.");
@@ -297,18 +283,12 @@ function configurarFormularioPerfil(usuarioId) {
 function activarModoEdicionPerfil() {
     modoEdicionPerfil = true;
 
-    const inputNombre = document.getElementById("nombre");
-    const inputEmail = document.getElementById("email");
-    const btnEditar = document.getElementById("btn-editar-perfil");
-    const btnGuardar = document.getElementById("btn-guardar-perfil");
-    const btnCancelar = document.getElementById("btn-cancelar-edicion-perfil");
+    setReadOnly("nombre", false);
+    setReadOnly("email", false);
 
-    if (inputNombre) inputNombre.removeAttribute("readonly");
-    if (inputEmail) inputEmail.removeAttribute("readonly");
-
-    if (btnEditar) btnEditar.style.display = "none";
-    if (btnGuardar) btnGuardar.style.display = "inline-flex";
-    if (btnCancelar) btnCancelar.style.display = "inline-flex";
+    toggleHidden("btn-editar-perfil", true);
+    toggleHidden("btn-guardar-perfil", false);
+    toggleHidden("btn-cancelar-edicion-perfil", false);
 
     actualizarEstadoBotonGuardarPerfil();
 }
@@ -316,25 +296,19 @@ function activarModoEdicionPerfil() {
 function desactivarModoEdicionPerfil() {
     modoEdicionPerfil = false;
 
-    const inputNombre = document.getElementById("nombre");
-    const inputEmail = document.getElementById("email");
-    const btnEditar = document.getElementById("btn-editar-perfil");
-    const btnGuardar = document.getElementById("btn-guardar-perfil");
-    const btnCancelar = document.getElementById("btn-cancelar-edicion-perfil");
+    setReadOnly("nombre", true);
+    setReadOnly("email", true);
 
-    if (inputNombre) inputNombre.setAttribute("readonly", true);
-    if (inputEmail) inputEmail.setAttribute("readonly", true);
-
-    if (btnEditar) btnEditar.style.display = "inline-flex";
-    if (btnGuardar) btnGuardar.style.display = "none";
-    if (btnCancelar) btnCancelar.style.display = "none";
+    toggleHidden("btn-editar-perfil", false);
+    toggleHidden("btn-guardar-perfil", true);
+    toggleHidden("btn-cancelar-edicion-perfil", true);
 }
 
 function restaurarValoresOriginalesPerfil() {
-    document.getElementById("nombre").value = valoresOriginalesPerfil.nombre;
-    document.getElementById("email").value = valoresOriginalesPerfil.email;
-    document.getElementById("rol").value = valoresOriginalesPerfil.rol;
-    document.getElementById("tipoCuenta").value = formatearTipoCuenta(valoresOriginalesPerfil.rol);
+    asignarValor("nombre", valoresOriginalesPerfil.nombre);
+    asignarValor("email", valoresOriginalesPerfil.email);
+    asignarValor("rol", valoresOriginalesPerfil.rol);
+    asignarValor("tipoCuenta", formatearTipoCuenta(valoresOriginalesPerfil.rol));
 }
 
 function configurarValidacionEnVivoPerfil(usuarioId) {
@@ -391,7 +365,7 @@ function configurarValidacionEnVivoPerfil(usuarioId) {
 }
 
 async function validarNombreEnVivo(usuarioId) {
-    const nombre = document.getElementById("nombre")?.value.trim() || "";
+    const nombre = obtenerValor("nombre");
 
     if (nombre.toLowerCase() === valoresOriginalesPerfil.nombre.trim().toLowerCase()) {
         mostrarValidacionCampo("nombre", "Es tu nombre actual", true);
@@ -416,7 +390,6 @@ async function validarNombreEnVivo(usuarioId) {
         mostrarValidacionCampo("nombre", data?.mensaje || "Nombre validado", !!data?.disponible);
         estadoValidacionPerfil.nombreValido = !!data?.disponible;
         actualizarEstadoBotonGuardarPerfil();
-
     } catch (error) {
         console.error("Error validando nombre:", error);
         mostrarValidacionCampo("nombre", error.message || "No se pudo validar el nombre", false);
@@ -426,7 +399,7 @@ async function validarNombreEnVivo(usuarioId) {
 }
 
 async function validarEmailEnVivo(usuarioId) {
-    const email = document.getElementById("email")?.value.trim() || "";
+    const email = obtenerValor("email");
 
     if (email.toLowerCase() === valoresOriginalesPerfil.email.trim().toLowerCase()) {
         mostrarValidacionCampo("email", "Es tu email actual", true);
@@ -451,7 +424,6 @@ async function validarEmailEnVivo(usuarioId) {
         mostrarValidacionCampo("email", data?.mensaje || "Email validado", !!data?.disponible);
         estadoValidacionPerfil.emailValido = !!data?.disponible;
         actualizarEstadoBotonGuardarPerfil();
-
     } catch (error) {
         console.error("Error validando email:", error);
         mostrarValidacionCampo("email", error.message || "No se pudo validar el email", false);
@@ -536,15 +508,14 @@ function actualizarEstadoBotonGuardarPerfil() {
 
 function configurarFormularioPassword(usuarioId) {
     const formPassword = document.getElementById("formPassword");
-
     if (!formPassword) return;
 
     formPassword.addEventListener("submit", async (e) => {
         e.preventDefault();
 
-        const passwordActual = document.getElementById("passwordActual")?.value.trim() || "";
-        const passwordNueva = document.getElementById("passwordNueva")?.value.trim() || "";
-        const confirmarPassword = document.getElementById("confirmarPassword")?.value.trim() || "";
+        const passwordActual = obtenerValor("passwordActual");
+        const passwordNueva = obtenerValor("passwordNueva");
+        const confirmarPassword = obtenerValor("confirmarPassword");
 
         if (!passwordActual || !passwordNueva || !confirmarPassword) {
             mostrarMensaje("Debes completar todos los campos de contraseña.");
@@ -577,7 +548,6 @@ function configurarFormularioPassword(usuarioId) {
 
             formPassword.reset();
             mostrarMensaje("Contraseña actualizada correctamente.", "ok");
-
         } catch (error) {
             console.error("Error al cambiar contraseña:", error);
             mostrarMensaje(error.message || "No se pudo actualizar la contraseña.");
@@ -598,11 +568,11 @@ function configurarTarjetas(usuarioId) {
 
     function abrirModalTarjeta() {
         ocultarMensajeModalTarjeta();
-        modalTarjeta.style.display = "flex";
+        mostrarElemento(modalTarjeta);
     }
 
     function cerrarModalTarjetaLocal() {
-        modalTarjeta.style.display = "none";
+        ocultarElemento(modalTarjeta);
         if (formTarjeta) formTarjeta.reset();
         ocultarMensajeModalTarjeta();
     }
@@ -625,7 +595,7 @@ function configurarTarjetas(usuarioId) {
 
     if (contenedorTarjetas) {
         contenedorTarjetas.addEventListener("click", (e) => {
-            const bloqueAnadir = e.target.closest(".add-card");
+            const bloqueAnadir = e.target.closest("[data-action='anadir-tarjeta']");
             const btnEliminar = e.target.closest(".btn-eliminar-tarjeta");
 
             if (bloqueAnadir) {
@@ -647,13 +617,12 @@ function configurarTarjetas(usuarioId) {
 
             ocultarMensajeModalTarjeta();
 
-            const titular = document.getElementById("titularTarjeta")?.value.trim() || "";
-            const numeroTarjeta = document.getElementById("numeroTarjeta")?.value.trim() || "";
-            const fechaExpiracion = document.getElementById("fechaExpiracionTarjeta")?.value.trim() || "";
-            const tipo = document.getElementById("tipoTarjeta")?.value || "";
+            const titular = obtenerValor("titularTarjeta");
+            const numeroTarjeta = obtenerValor("numeroTarjeta");
+            const fechaExpiracion = obtenerValor("fechaExpiracionTarjeta");
+            const tipo = obtenerValor("tipoTarjeta");
 
             const errorTarjeta = validarDatosTarjeta(titular, numeroTarjeta, fechaExpiracion, tipo);
-
             if (errorTarjeta) {
                 mostrarMensajeModalTarjeta(errorTarjeta, "error");
                 return;
@@ -679,10 +648,9 @@ function configurarTarjetas(usuarioId) {
                 }
 
                 formTarjeta.reset();
-                modalTarjeta.style.display = "none";
+                ocultarElemento(modalTarjeta);
                 mostrarMensaje("Tarjeta guardada correctamente.", "ok");
                 await cargarTarjetas(usuarioId);
-
             } catch (error) {
                 console.error("Error al guardar tarjeta:", error);
                 mostrarMensajeModalTarjeta(error.message || "No se pudo guardar la tarjeta.", "error");
@@ -752,7 +720,7 @@ function configurarModalEliminarTarjeta(usuarioId) {
     const confirmarEliminar = document.getElementById("confirmar-eliminar-tarjeta");
 
     function cerrarModal() {
-        modalEliminar.style.display = "none";
+        ocultarElemento(modalEliminar);
         tarjetaIdPendienteEliminar = null;
     }
 
@@ -787,7 +755,6 @@ function configurarModalEliminarTarjeta(usuarioId) {
                 cerrarModal();
                 mostrarMensaje("Tarjeta eliminada correctamente.", "ok");
                 await cargarTarjetas(usuarioId);
-
             } catch (error) {
                 console.error("Error al eliminar tarjeta:", error);
                 mostrarMensaje(error.message || "No se pudo eliminar la tarjeta.");
@@ -801,7 +768,7 @@ function configurarModalEliminarTarjeta(usuarioId) {
 
 function abrirModalEliminarTarjeta(tarjetaId) {
     tarjetaIdPendienteEliminar = tarjetaId;
-    document.getElementById("modal-confirmar-eliminar").style.display = "flex";
+    mostrarElemento(document.getElementById("modal-confirmar-eliminar"));
 }
 
 async function cargarTarjetas(usuarioId) {
@@ -822,10 +789,9 @@ async function cargarTarjetas(usuarioId) {
 
         const tarjetas = textoRespuesta ? JSON.parse(textoRespuesta) : [];
         renderizarTarjetas(tarjetas);
-
     } catch (error) {
         console.error("Error al cargar tarjetas:", error);
-        contenedorTarjetas.innerHTML = `<div class="add-card">No se pudieron cargar las tarjetas</div>`;
+        renderizarEstadoVacioTarjetas("No se pudieron cargar las tarjetas");
     }
 }
 
@@ -833,57 +799,95 @@ function renderizarTarjetas(tarjetas) {
     const contenedorTarjetas = document.getElementById("contenedor-tarjetas");
     if (!contenedorTarjetas) return;
 
-    contenedorTarjetas.innerHTML = "";
+    limpiarContenedor(contenedorTarjetas);
 
     if (!Array.isArray(tarjetas) || tarjetas.length === 0) {
-        contenedorTarjetas.innerHTML = `<div class="add-card">Añadir nueva tarjeta de pago</div>`;
+        contenedorTarjetas.appendChild(crearTarjetaAgregar());
         return;
     }
 
     tarjetas.forEach((tarjeta, index) => {
-        contenedorTarjetas.appendChild(crearTarjetaHTML(tarjeta, index));
+        contenedorTarjetas.appendChild(crearTarjetaPago(tarjeta, index));
     });
 
-    const bloqueAnadir = document.createElement("div");
-    bloqueAnadir.className = "add-card";
-    bloqueAnadir.textContent = "Añadir nueva tarjeta de pago";
-    contenedorTarjetas.appendChild(bloqueAnadir);
+    contenedorTarjetas.appendChild(crearTarjetaAgregar());
 }
 
-function crearTarjetaHTML(tarjeta, index = 0) {
-    const card = document.createElement("article");
-
+function crearTarjetaPago(tarjeta, index) {
     const variantes = ["card-black", "card-rose", "card-gold"];
     const variante = variantes[index % variantes.length];
 
-    card.className = `payment-card ${variante}`;
+    const article = document.createElement("article");
+    article.className = `payment-card ${variante}`;
 
-    card.innerHTML = `
-        <button class="btn-eliminar-tarjeta" data-id="${tarjeta.id}" type="button">Eliminar</button>
+    const btnEliminar = document.createElement("button");
+    btnEliminar.type = "button";
+    btnEliminar.className = "btn-eliminar-tarjeta";
+    btnEliminar.dataset.id = tarjeta.id;
+    btnEliminar.textContent = "Eliminar";
 
-        <div class="payment-top">
-            <div class="payment-type">${formatearTipoTarjeta(tarjeta.tipo)}</div>
-            <div class="chip-card"></div>
-        </div>
+    const top = document.createElement("div");
+    top.className = "payment-top";
 
-        <div class="payment-number">${tarjeta.numeroEnmascarado || "**** **** **** 0000"}</div>
+    const type = document.createElement("div");
+    type.className = "payment-type";
+    type.textContent = formatearTipoTarjeta(tarjeta.tipo);
 
-        <div class="payment-bottom">
-            <div>
-                <small>Titular</small>
-                <strong>${escaparHTML(tarjeta.titular || "Usuario")}</strong>
-            </div>
+    const chip = document.createElement("div");
+    chip.className = "chip-card";
 
-            <div>
-                <small>Expira</small>
-                <strong>${escaparHTML(tarjeta.fechaExpiracion || "--/--")}</strong>
-            </div>
-        </div>
+    top.append(type, chip);
 
-        <div class="tag-primary">${index === 0 ? "Preferida" : "Guardada"}</div>
-    `;
+    const numero = document.createElement("div");
+    numero.className = "payment-number";
+    numero.textContent = tarjeta.numeroEnmascarado || "**** **** **** 0000";
 
-    return card;
+    const bottom = document.createElement("div");
+    bottom.className = "payment-bottom";
+
+    const titularBox = document.createElement("div");
+    const titularSmall = document.createElement("small");
+    titularSmall.textContent = "Titular";
+    const titularStrong = document.createElement("strong");
+    titularStrong.textContent = tarjeta.titular || "Usuario";
+    titularBox.append(titularSmall, titularStrong);
+
+    const fechaBox = document.createElement("div");
+    const fechaSmall = document.createElement("small");
+    fechaSmall.textContent = "Expira";
+    const fechaStrong = document.createElement("strong");
+    fechaStrong.textContent = tarjeta.fechaExpiracion || "--/--";
+    fechaBox.append(fechaSmall, fechaStrong);
+
+    bottom.append(titularBox, fechaBox);
+
+    const tag = document.createElement("div");
+    tag.className = "tag-primary";
+    tag.textContent = index === 0 ? "Preferida" : "Guardada";
+
+    article.append(btnEliminar, top, numero, bottom, tag);
+    return article;
+}
+
+function crearTarjetaAgregar() {
+    const box = document.createElement("button");
+    box.type = "button";
+    box.className = "add-card";
+    box.dataset.action = "anadir-tarjeta";
+    box.textContent = "Añadir nueva tarjeta de pago";
+    return box;
+}
+
+function renderizarEstadoVacioTarjetas(texto) {
+    const contenedorTarjetas = document.getElementById("contenedor-tarjetas");
+    if (!contenedorTarjetas) return;
+
+    limpiarContenedor(contenedorTarjetas);
+
+    const box = document.createElement("div");
+    box.className = "add-card";
+    box.textContent = texto;
+    contenedorTarjetas.appendChild(box);
 }
 
 function formatearTipoTarjeta(tipo) {
@@ -906,18 +910,18 @@ function configurarDirecciones(usuarioId) {
     function abrirModalDireccionNueva() {
         direccionIdEnEdicion = null;
         if (formDireccion) formDireccion.reset();
-        document.getElementById("titulo-modal-direccion").textContent = "Añadir dirección";
-        document.getElementById("principalDireccion").checked = false;
+        asignarTexto("titulo-modal-direccion", "Añadir dirección");
+        setChecked("principalDireccion", false);
         ocultarMensajeModalDireccion();
-        modalDireccion.style.display = "flex";
+        mostrarElemento(modalDireccion);
     }
 
     function cerrarModalDireccionLocal() {
         direccionIdEnEdicion = null;
         if (formDireccion) formDireccion.reset();
         ocultarMensajeModalDireccion();
-        document.getElementById("titulo-modal-direccion").textContent = "Añadir dirección";
-        modalDireccion.style.display = "none";
+        asignarTexto("titulo-modal-direccion", "Añadir dirección");
+        ocultarElemento(modalDireccion);
     }
 
     if (btnAnadirDireccion) btnAnadirDireccion.addEventListener("click", abrirModalDireccionNueva);
@@ -935,7 +939,7 @@ function configurarDirecciones(usuarioId) {
             const btnEditar = e.target.closest(".btn-editar-direccion");
             const btnEliminar = e.target.closest(".btn-eliminar-direccion");
             const btnPrincipal = e.target.closest(".btn-principal-direccion");
-            const bloqueAnadir = e.target.closest(".add-card-direccion");
+            const bloqueAnadir = e.target.closest("[data-action='anadir-direccion']");
 
             if (bloqueAnadir) {
                 abrirModalDireccionNueva();
@@ -1009,7 +1013,6 @@ function configurarDirecciones(usuarioId) {
                     "ok"
                 );
                 await cargarDirecciones(usuarioId);
-
             } catch (error) {
                 console.error("Error guardando dirección:", error);
                 mostrarMensajeModalDireccion(error.message || "No se pudo guardar la dirección.", "error");
@@ -1020,14 +1023,14 @@ function configurarDirecciones(usuarioId) {
 
 function obtenerDatosFormularioDireccion() {
     return {
-        alias: document.getElementById("aliasDireccion")?.value.trim() || "",
-        provincia: document.getElementById("provinciaDireccion")?.value.trim() || "",
-        municipio: document.getElementById("municipioDireccion")?.value.trim() || "",
-        calle: document.getElementById("calleDireccion")?.value.trim() || "",
-        numero: document.getElementById("numeroDireccionModal")?.value.trim() || "",
-        piso: document.getElementById("pisoDireccion")?.value.trim() || "",
-        puerta: document.getElementById("puertaDireccion")?.value.trim() || "",
-        codigoPostal: document.getElementById("codigoPostalDireccion")?.value.trim() || "",
+        alias: obtenerValor("aliasDireccion"),
+        provincia: obtenerValor("provinciaDireccion"),
+        municipio: obtenerValor("municipioDireccion"),
+        calle: obtenerValor("calleDireccion"),
+        numero: obtenerValor("numeroDireccionModal"),
+        piso: obtenerValor("pisoDireccion"),
+        puerta: obtenerValor("puertaDireccion"),
+        codigoPostal: obtenerValor("codigoPostalDireccion"),
         principal: document.getElementById("principalDireccion")?.checked || false
     };
 }
@@ -1064,10 +1067,9 @@ async function cargarDirecciones(usuarioId) {
 
         const direcciones = texto ? JSON.parse(texto) : [];
         renderizarDirecciones(direcciones);
-
     } catch (error) {
         console.error("Error al cargar direcciones:", error);
-        contenedorDirecciones.innerHTML = `<div class="add-card-direccion">No se pudieron cargar las direcciones</div>`;
+        renderizarEstadoVacioDirecciones("No se pudieron cargar las direcciones");
     }
 }
 
@@ -1075,69 +1077,133 @@ function renderizarDirecciones(direcciones) {
     const contenedorDirecciones = document.getElementById("contenedor-direcciones");
     if (!contenedorDirecciones) return;
 
-    contenedorDirecciones.innerHTML = "";
+    limpiarContenedor(contenedorDirecciones);
 
     if (!Array.isArray(direcciones) || direcciones.length === 0) {
-        contenedorDirecciones.innerHTML = `<div class="add-card-direccion">Añadir nueva dirección</div>`;
+        contenedorDirecciones.appendChild(crearDireccionAgregar());
         return;
     }
 
-    direcciones.forEach(direccion => {
-        contenedorDirecciones.appendChild(crearDireccionHTML(direccion));
+    direcciones.forEach((direccion) => {
+        contenedorDirecciones.appendChild(crearDireccionCard(direccion));
     });
 
-    const bloqueAnadir = document.createElement("div");
-    bloqueAnadir.className = "add-card-direccion";
-    bloqueAnadir.textContent = "Añadir nueva dirección";
-    contenedorDirecciones.appendChild(bloqueAnadir);
+    contenedorDirecciones.appendChild(crearDireccionAgregar());
 }
 
-function crearDireccionHTML(direccion) {
+function crearDireccionCard(direccion) {
     const card = document.createElement("article");
     card.className = "address-card";
 
-    const lineaNumero = construirLineaNumeroDireccion(direccion);
-    const lineaCompleta = [
-        direccion.calle || "",
-        lineaNumero ? `, ${lineaNumero}` : ""
-    ].join("");
+    const top = document.createElement("div");
+    top.className = "address-top";
 
-    card.innerHTML = `
-        <div class="address-top">
-            <div>
-                <h4>${escaparHTML(direccion.alias || "Dirección")}</h4>
-                <p>${direccion.principal ? "Dirección principal para tus pedidos" : "Dirección guardada"}</p>
-            </div>
+    const topLeft = document.createElement("div");
+    const titulo = document.createElement("h4");
+    titulo.textContent = direccion.alias || "Dirección";
+    const subtitulo = document.createElement("p");
+    subtitulo.textContent = direccion.principal
+        ? "Dirección principal para tus pedidos"
+        : "Dirección guardada";
+    topLeft.append(titulo, subtitulo);
 
-            ${direccion.principal ? `<span class="tag-ok">Principal</span>` : ""}
-        </div>
+    top.appendChild(topLeft);
 
-        <div class="direccion-lineas">
-            <p>${escaparHTML(lineaCompleta)}</p>
-            <p>${escaparHTML((direccion.codigoPostal || "") + " " + (direccion.municipio || "") + ", " + (direccion.provincia || ""))}</p>
-            ${direccion.puerta ? `<p>Puerta: ${escaparHTML(direccion.puerta)}</p>` : ""}
-        </div>
+    if (direccion.principal) {
+        const tag = document.createElement("span");
+        tag.className = "tag-ok";
+        tag.textContent = "Principal";
+        top.appendChild(tag);
+    }
 
-        <div class="direccion-acciones">
-            <button type="button" class="btn-editar-direccion" data-id="${direccion.id}">Editar</button>
-            ${
-                direccion.principal
-                    ? `<span class="texto-principal-actual">Dirección principal actual</span>`
-                    : `<button type="button" class="btn-principal-direccion" data-id="${direccion.id}">Marcar principal</button>`
-            }
-            <button type="button" class="btn-eliminar-direccion" data-id="${direccion.id}">Eliminar</button>
-        </div>
-    `;
+    const lineas = document.createElement("div");
+    lineas.className = "direccion-lineas";
 
+    const linea1 = document.createElement("p");
+    linea1.textContent = construirLineaDireccion(direccion);
+
+    const linea2 = document.createElement("p");
+    linea2.textContent = `${direccion.codigoPostal || ""} ${direccion.municipio || ""}, ${direccion.provincia || ""}`.trim();
+
+    lineas.append(linea1, linea2);
+
+    if (direccion.puerta) {
+        const linea3 = document.createElement("p");
+        linea3.textContent = `Puerta: ${direccion.puerta}`;
+        lineas.appendChild(linea3);
+    }
+
+    const acciones = document.createElement("div");
+    acciones.className = "direccion-acciones";
+
+    const btnEditar = document.createElement("button");
+    btnEditar.type = "button";
+    btnEditar.className = "btn-editar-direccion";
+    btnEditar.dataset.id = direccion.id;
+    btnEditar.textContent = "Editar";
+
+    acciones.appendChild(btnEditar);
+
+    if (direccion.principal) {
+        const textoPrincipal = document.createElement("span");
+        textoPrincipal.className = "texto-principal-actual";
+        textoPrincipal.textContent = "Dirección principal actual";
+        acciones.appendChild(textoPrincipal);
+    } else {
+        const btnPrincipal = document.createElement("button");
+        btnPrincipal.type = "button";
+        btnPrincipal.className = "btn-principal-direccion";
+        btnPrincipal.dataset.id = direccion.id;
+        btnPrincipal.textContent = "Marcar principal";
+        acciones.appendChild(btnPrincipal);
+    }
+
+    const btnEliminar = document.createElement("button");
+    btnEliminar.type = "button";
+    btnEliminar.className = "btn-eliminar-direccion";
+    btnEliminar.dataset.id = direccion.id;
+    btnEliminar.textContent = "Eliminar";
+    acciones.appendChild(btnEliminar);
+
+    card.append(top, lineas, acciones);
     return card;
 }
 
-function construirLineaNumeroDireccion(direccion) {
+function crearDireccionAgregar() {
+    const box = document.createElement("button");
+    box.type = "button";
+    box.className = "add-card-direccion";
+    box.dataset.action = "anadir-direccion";
+    box.textContent = "Añadir nueva dirección";
+    return box;
+}
+
+function renderizarEstadoVacioDirecciones(texto) {
+    const contenedorDirecciones = document.getElementById("contenedor-direcciones");
+    if (!contenedorDirecciones) return;
+
+    limpiarContenedor(contenedorDirecciones);
+
+    const box = document.createElement("div");
+    box.className = "add-card-direccion";
+    box.textContent = texto;
+    contenedorDirecciones.appendChild(box);
+}
+
+function construirLineaDireccion(direccion) {
     const partes = [];
-    if (direccion.numero) partes.push(`Nº ${direccion.numero}`);
-    if (direccion.piso) partes.push(`Piso ${direccion.piso}`);
-    if (direccion.puerta) partes.push(`Puerta ${direccion.puerta}`);
-    return partes.join(" · ");
+    if (direccion.calle) partes.push(direccion.calle);
+
+    const numero = [];
+    if (direccion.numero) numero.push(`Nº ${direccion.numero}`);
+    if (direccion.piso) numero.push(`Piso ${direccion.piso}`);
+    if (direccion.puerta) numero.push(`Puerta ${direccion.puerta}`);
+
+    if (numero.length > 0) {
+        partes.push(numero.join(" · "));
+    }
+
+    return partes.join(", ");
 }
 
 async function abrirModalEditarDireccion(usuarioId, direccionId) {
@@ -1156,26 +1222,25 @@ async function abrirModalEditarDireccion(usuarioId, direccionId) {
         }
 
         const direcciones = texto ? JSON.parse(texto) : [];
-        const direccion = direcciones.find(d => String(d.id) === String(direccionId));
+        const direccion = direcciones.find((d) => String(d.id) === String(direccionId));
 
         if (!direccion) throw new Error("No se encontró la dirección seleccionada.");
 
         direccionIdEnEdicion = direccion.id;
 
-        document.getElementById("titulo-modal-direccion").textContent = "Editar dirección";
-        document.getElementById("aliasDireccion").value = direccion.alias || "";
-        document.getElementById("provinciaDireccion").value = direccion.provincia || "";
-        document.getElementById("municipioDireccion").value = direccion.municipio || "";
-        document.getElementById("calleDireccion").value = direccion.calle || "";
-        document.getElementById("numeroDireccionModal").value = direccion.numero || "";
-        document.getElementById("pisoDireccion").value = direccion.piso || "";
-        document.getElementById("puertaDireccion").value = direccion.puerta || "";
-        document.getElementById("codigoPostalDireccion").value = direccion.codigoPostal || "";
-        document.getElementById("principalDireccion").checked = !!direccion.principal;
+        asignarTexto("titulo-modal-direccion", "Editar dirección");
+        asignarValor("aliasDireccion", direccion.alias || "");
+        asignarValor("provinciaDireccion", direccion.provincia || "");
+        asignarValor("municipioDireccion", direccion.municipio || "");
+        asignarValor("calleDireccion", direccion.calle || "");
+        asignarValor("numeroDireccionModal", direccion.numero || "");
+        asignarValor("pisoDireccion", direccion.piso || "");
+        asignarValor("puertaDireccion", direccion.puerta || "");
+        asignarValor("codigoPostalDireccion", direccion.codigoPostal || "");
+        setChecked("principalDireccion", !!direccion.principal);
 
         ocultarMensajeModalDireccion();
-        modal.style.display = "flex";
-
+        mostrarElemento(modal);
     } catch (error) {
         console.error("Error al abrir edición de dirección:", error);
         mostrarMensaje(error.message || "No se pudo cargar la dirección.");
@@ -1197,7 +1262,6 @@ async function marcarDireccionComoPrincipal(usuarioId, direccionId) {
 
         mostrarMensaje("Dirección principal actualizada.", "ok");
         await cargarDirecciones(usuarioId);
-
     } catch (error) {
         console.error("Error marcando dirección principal:", error);
         mostrarMensaje(error.message || "No se pudo marcar la dirección como principal.");
@@ -1211,7 +1275,7 @@ function configurarModalEliminarDireccion(usuarioId) {
     const btnConfirmar = document.getElementById("confirmar-eliminar-direccion");
 
     function cerrarModal() {
-        modal.style.display = "none";
+        ocultarElemento(modal);
         direccionIdPendienteEliminar = null;
     }
 
@@ -1246,7 +1310,6 @@ function configurarModalEliminarDireccion(usuarioId) {
                 cerrarModal();
                 mostrarMensaje("Dirección eliminada correctamente.", "ok");
                 await cargarDirecciones(usuarioId);
-
             } catch (error) {
                 console.error("Error al eliminar dirección:", error);
                 mostrarMensaje(error.message || "No se pudo eliminar la dirección.");
@@ -1260,7 +1323,7 @@ function configurarModalEliminarDireccion(usuarioId) {
 
 function abrirModalEliminarDireccion(direccionId) {
     direccionIdPendienteEliminar = direccionId;
-    document.getElementById("modal-confirmar-eliminar-direccion").style.display = "flex";
+    mostrarElemento(document.getElementById("modal-confirmar-eliminar-direccion"));
 }
 
 function mostrarMensajeModalDireccion(texto, tipo = "error") {
@@ -1268,8 +1331,7 @@ function mostrarMensajeModalDireccion(texto, tipo = "error") {
     if (!mensaje) return;
 
     mensaje.textContent = texto;
-    mensaje.style.display = "block";
-    mensaje.classList.remove("ok", "error");
+    mensaje.classList.remove("hidden", "ok", "error");
     mensaje.classList.add(tipo);
 }
 
@@ -1278,7 +1340,7 @@ function ocultarMensajeModalDireccion() {
     if (!mensaje) return;
 
     mensaje.textContent = "";
-    mensaje.style.display = "none";
+    mensaje.classList.add("hidden");
     mensaje.classList.remove("ok", "error");
 }
 
@@ -1289,22 +1351,13 @@ function mostrarMensaje(texto, tipo = "error") {
     if (!mensaje) return;
 
     mensaje.textContent = texto;
-    mensaje.style.display = "block";
-
-    if (tipo === "ok") {
-        mensaje.style.backgroundColor = "#ecfdf3";
-        mensaje.style.color = "#166534";
-        mensaje.style.border = "1px solid #a7f3c0";
-    } else {
-        mensaje.style.backgroundColor = "#fff1f2";
-        mensaje.style.color = "#b42318";
-        mensaje.style.border = "1px solid #fecdd3";
-    }
+    mensaje.classList.remove("hidden", "ok", "error");
+    mensaje.classList.add(tipo === "ok" ? "ok" : "error");
 
     clearTimeout(timeoutMensajePerfil);
 
     timeoutMensajePerfil = setTimeout(() => {
-        mensaje.style.display = "none";
+        mensaje.classList.add("hidden");
     }, 4000);
 }
 
@@ -1313,8 +1366,7 @@ function mostrarMensajeModalTarjeta(texto, tipo = "error") {
     if (!mensaje) return;
 
     mensaje.textContent = texto;
-    mensaje.style.display = "block";
-    mensaje.classList.remove("ok", "error");
+    mensaje.classList.remove("hidden", "ok", "error");
     mensaje.classList.add(tipo);
 }
 
@@ -1323,7 +1375,7 @@ function ocultarMensajeModalTarjeta() {
     if (!mensaje) return;
 
     mensaje.textContent = "";
-    mensaje.style.display = "none";
+    mensaje.classList.add("hidden");
     mensaje.classList.remove("ok", "error");
 }
 
@@ -1390,15 +1442,54 @@ function obtenerMensajeErrorAmigable(textoError, contexto = "") {
     return "Ha ocurrido un error inesperado.";
 }
 
-/* UTILS */
+/* HELPERS */
 
-function escaparHTML(texto) {
-    if (texto === null || texto === undefined) return "";
+function obtenerValor(id) {
+    const el = document.getElementById(id);
+    return el ? el.value.trim() : "";
+}
 
-    return String(texto)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
+function asignarValor(id, valor) {
+    const el = document.getElementById(id);
+    if (el) el.value = valor;
+}
+
+function asignarTexto(id, texto) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = texto;
+}
+
+function setReadOnly(id, estado) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (estado) el.setAttribute("readonly", true);
+    else el.removeAttribute("readonly");
+}
+
+function setChecked(id, estado) {
+    const el = document.getElementById(id);
+    if (el) el.checked = estado;
+}
+
+function toggleHidden(id, oculto) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.hidden = oculto;
+}
+
+function mostrarElemento(el) {
+    if (!el) return;
+    el.classList.remove("hidden");
+}
+
+function ocultarElemento(el) {
+    if (!el) return;
+    el.classList.add("hidden");
+}
+
+function limpiarContenedor(contenedor) {
+    if (!contenedor) return;
+    while (contenedor.firstChild) {
+        contenedor.removeChild(contenedor.firstChild);
+    }
 }

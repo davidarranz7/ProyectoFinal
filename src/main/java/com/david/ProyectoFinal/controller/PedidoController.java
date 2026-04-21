@@ -113,4 +113,10 @@ public class PedidoController {
                                       @PathVariable EstadoPedido nuevoEstado) {
         return pedidoService.cambiarEstadoPedido(pedidoId, nuevoEstado);
     }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/admin/{pedidoId}/items")
+    public List<ItemPedido> obtenerItemsDePedidoComoAdmin(@PathVariable Long pedidoId) {
+        return pedidoService.obtenerItemsDePedido(pedidoId);
+    }
 }
