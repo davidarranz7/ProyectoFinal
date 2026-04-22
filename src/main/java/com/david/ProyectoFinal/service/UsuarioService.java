@@ -9,8 +9,14 @@ import com.david.ProyectoFinal.model.Usuario;
 import com.david.ProyectoFinal.repository.*;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.UUID;
 
 @Service/// INdica que esto es la logica de negocio
 public class UsuarioService {
@@ -79,6 +85,7 @@ public class UsuarioService {
             usuario.setNombre(usuarioActualizado.getNombre());
             usuario.setEmail(usuarioActualizado.getEmail());
             usuario.setRol(usuarioActualizado.getRol());
+            usuario.setFotoPerfilUrl(usuarioActualizado.getFotoPerfilUrl());
 
             return usuarioRepository.save(usuario);
         }
@@ -161,6 +168,62 @@ public class UsuarioService {
                 usuarioActualizado.getRol().name(),
                 usuarioActualizado.getFotoPerfilUrl()
         );
+    }
+
+    public UsuarioPerfilDTO subirFotoPerfil(Long usuarioId, MultipartFile foto) {
+        Usuario usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        if (foto == null || foto.isEmpty()) {
+            throw new RuntimeException("Debes seleccionar una imagen");
+        }
+
+        String contentType = foto.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw new RuntimeException("El archivo debe ser una imagen válida");
+        }
+
+        String nombreOriginal = foto.getOriginalFilename();
+        String extension = obtenerExtension(nombreOriginal);
+
+        if (extension.isBlank()) {
+            throw new RuntimeException("La imagen no tiene una extensión válida");
+        }
+
+        try {
+            Path carpetaUploads = Paths.get(System.getProperty("user.dir"), "uploads", "perfiles");
+            Files.createDirectories(carpetaUploads);
+
+            String nombreArchivo = "usuario_" + usuarioId + "_" + UUID.randomUUID() + "." + extension;
+            Path rutaArchivo = carpetaUploads.resolve(nombreArchivo);
+
+            Files.write(rutaArchivo, foto.getBytes());
+
+            String urlFoto = "/uploads/perfiles/" + nombreArchivo;
+            usuario.setFotoPerfilUrl(urlFoto);
+
+            Usuario usuarioActualizado = usuarioRepository.save(usuario);
+
+            return new UsuarioPerfilDTO(
+                    usuarioActualizado.getId(),
+                    usuarioActualizado.getNombre(),
+                    usuarioActualizado.getEmail(),
+                    usuarioActualizado.getRol().name(),
+                    usuarioActualizado.getFotoPerfilUrl()
+            );
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new RuntimeException("No se pudo guardar la imagen");
+        }
+    }
+
+    private String obtenerExtension(String nombreArchivo) {
+        if (nombreArchivo == null || !nombreArchivo.contains(".")) {
+            return "";
+        }
+
+        return nombreArchivo.substring(nombreArchivo.lastIndexOf('.') + 1).toLowerCase();
     }
 
     public void cambiarPassword(Long usuarioId, CambiarPasswordDTO dto) {

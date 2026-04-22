@@ -36,7 +36,13 @@
     <div class="perfil-layout">
         <aside class="perfil-sidebar">
             <div class="perfil-sidebar-top">
-                <div class="perfil-avatar" id="avatar-inicial">D</div>
+                <div class="perfil-avatar" id="avatar-inicial">
+                    <img id="perfil-foto-img" class="perfil-avatar-img hidden" alt="Foto de perfil" />
+                    <span id="perfil-avatar-texto">D</span>
+                </div>
+
+                <input type="file" id="input-foto-perfil" accept="image/*" hidden />
+
                 <h2 id="perfil-nombre-lateral">Usuario</h2>
                 <p id="mini-email">usuario@email.com</p>
                 <div class="perfil-badge" id="mini-rol">Cuenta estándar</div>
@@ -88,7 +94,6 @@
         <main class="perfil-main">
             <div id="mensaje-perfil" class="perfil-alert hidden"></div>
 
-            <!-- SECCIÓN PERFIL -->
             <section class="perfil-card perfil-section" id="seccion-perfil">
                 <div class="perfil-section-header">
                     <div>
@@ -136,7 +141,6 @@
                 </form>
             </section>
 
-            <!-- SECCIÓN PASSWORD -->
             <section class="perfil-card perfil-section hidden" id="seccion-password">
                 <div class="perfil-section-header">
                     <div>
@@ -172,7 +176,6 @@
                 </form>
             </section>
 
-            <!-- SECCIÓN DIRECCIONES -->
             <section class="perfil-card perfil-section hidden" id="seccion-direcciones">
                 <div class="perfil-section-header">
                     <div>
@@ -189,7 +192,6 @@
                 <div class="perfil-cards-grid" id="contenedor-direcciones"></div>
             </section>
 
-            <!-- SECCIÓN TARJETAS -->
             <section class="perfil-card perfil-section hidden" id="seccion-tarjetas">
                 <div class="perfil-section-header">
                     <div>
@@ -209,7 +211,6 @@
     </div>
 </div>
 
-<!-- MODAL DIRECCIÓN -->
 <div id="modal-direccion" class="modal-overlay hidden">
     <div class="modal-box modal-medium">
         <button id="cerrar-modal-direccion" type="button" class="modal-close">×</button>
@@ -278,7 +279,6 @@
     </div>
 </div>
 
-<!-- MODAL ELIMINAR DIRECCIÓN -->
 <div id="modal-confirmar-eliminar-direccion" class="modal-overlay hidden">
     <div class="modal-box modal-small">
         <button id="cerrar-modal-eliminar-direccion" type="button" class="modal-close">×</button>
@@ -296,7 +296,6 @@
     </div>
 </div>
 
-<!-- MODAL TARJETA -->
 <div id="modal-tarjeta" class="modal-overlay hidden">
     <div class="modal-box modal-medium">
         <button id="cerrar-modal-tarjeta" type="button" class="modal-close">×</button>
@@ -344,7 +343,6 @@
     </div>
 </div>
 
-<!-- MODAL ELIMINAR TARJETA -->
 <div id="modal-confirmar-eliminar" class="modal-overlay hidden">
     <div class="modal-box modal-small">
         <button id="cerrar-modal-eliminar" type="button" class="modal-close">×</button>
@@ -357,6 +355,72 @@
             </button>
             <button id="confirmar-eliminar-tarjeta" type="button" class="btn btn-danger">
                 Eliminar
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL RECORTE FOTO PERFIL -->
+<div id="modal-recorte-foto" class="modal-overlay hidden">
+    <div class="modal-box modal-recorte">
+        <button id="cerrar-modal-recorte-foto" type="button" class="modal-close">×</button>
+
+        <div class="modal-recorte-header">
+            <div>
+                <h3 class="modal-title modal-title-sin-margen">Ajustar foto de perfil</h3>
+                <p class="modal-text modal-text-sin-margen">
+                    Mueve la imagen dentro del encuadre y elige cómo quieres que se vea tu avatar.
+                </p>
+            </div>
+        </div>
+
+        <div class="modal-recorte-toolbar">
+            <div class="recorte-forma-selector">
+                <button type="button" class="btn-forma-recorte activo" id="btn-forma-circulo" data-forma="circulo">
+                    Circular
+                </button>
+                <button type="button" class="btn-forma-recorte" id="btn-forma-cuadrado" data-forma="cuadrado">
+                    Cuadrado
+                </button>
+            </div>
+
+            <div class="recorte-zoom-box">
+                <label for="slider-zoom-foto">Zoom</label>
+                <input type="range" id="slider-zoom-foto" min="1" max="3" step="0.01" value="1" />
+            </div>
+        </div>
+
+        <div class="recorte-layout">
+            <div class="recorte-preview-panel">
+                <div class="recorte-preview-frame recorte-circular" id="recorte-preview-frame">
+                    <img id="imagen-recorte-preview" class="imagen-recorte-preview" alt="Vista previa recorte" />
+                    <div class="recorte-overlay-guia"></div>
+                </div>
+
+                <p class="recorte-ayuda">
+                    Arrastra la imagen para recolocarla dentro del avatar.
+                </p>
+            </div>
+
+            <div class="recorte-miniaturas-panel">
+                <h4>Vista previa</h4>
+
+                <div class="mini-preview-box">
+                    <div class="mini-preview-avatar mini-preview-circular" id="mini-preview-avatar">
+                        <img id="mini-preview-img" class="mini-preview-img" alt="Mini vista previa" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="mensaje-modal-recorte" class="modal-alert hidden"></div>
+
+        <div class="perfil-actions">
+            <button id="cancelar-modal-recorte-foto" type="button" class="btn btn-secondary">
+                Cancelar
+            </button>
+            <button id="guardar-recorte-foto" type="button" class="btn btn-primary">
+                Guardar foto
             </button>
         </div>
     </div>

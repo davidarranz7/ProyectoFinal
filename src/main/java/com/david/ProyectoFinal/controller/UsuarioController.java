@@ -12,9 +12,11 @@ import com.david.ProyectoFinal.service.PedidoService;
 import com.david.ProyectoFinal.service.UsuarioService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
@@ -126,6 +128,20 @@ public class UsuarioController {
         comprobarAccesoUsuario(id, session);
         try {
             return ResponseEntity.ok(usuarioService.validarEmailPerfil(id, email));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping(value = "/{id}/foto", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> subirFotoPerfil(@PathVariable Long id,
+                                             @RequestParam("foto") MultipartFile foto,
+                                             HttpSession session) {
+        comprobarAccesoUsuario(id, session);
+
+        try {
+            UsuarioPerfilDTO usuarioActualizado = usuarioService.subirFotoPerfil(id, foto);
+            return ResponseEntity.ok(usuarioActualizado);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

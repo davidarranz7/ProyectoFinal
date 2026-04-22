@@ -50,4 +50,12 @@ public class UsuarioPerfilDTO {
     public void setRol(String rol) {
         this.rol = rol;
     }
+
+    public String getFotoPerfilUrl() {
+        return fotoPerfilUrl;
+    }
+
+    public void setFotoPerfilUrl(String fotoPerfilUrl) {
+        this.fotoPerfilUrl = fotoPerfilUrl;
+    }
 }

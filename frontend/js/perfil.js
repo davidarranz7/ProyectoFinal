@@ -20,7 +20,23 @@ const estadoValidacionPerfil = {
 const valoresOriginalesPerfil = {
     nombre: "",
     email: "",
-    rol: ""
+    rol: "",
+    fotoPerfilUrl: ""
+};
+
+const estadoRecorteFoto = {
+    archivoOriginal: null,
+    imageElement: null,
+    imageUrlTemporal: null,
+    escala: 1,
+    minEscala: 1,
+    maxEscala: 3,
+    offsetX: 0,
+    offsetY: 0,
+    arrastrando: false,
+    inicioX: 0,
+    inicioY: 0,
+    forma: "circulo"
 };
 
 async function iniciarPaginaPerfil() {
@@ -37,6 +53,7 @@ async function iniciarPaginaPerfil() {
     configurarTarjetas(sesion.id);
     configurarModalEliminarTarjeta(sesion.id);
     configurarValidacionEnVivoPerfil(sesion.id);
+    configurarFotoPerfil(sesion.id);
 
     configurarDirecciones(sesion.id);
     configurarModalEliminarDireccion(sesion.id);
@@ -131,6 +148,7 @@ async function cargarPerfil(usuarioId) {
         valoresOriginalesPerfil.nombre = usuario.nombre || "";
         valoresOriginalesPerfil.email = usuario.email || "";
         valoresOriginalesPerfil.rol = usuario.rol || "";
+        valoresOriginalesPerfil.fotoPerfilUrl = usuario.fotoPerfilUrl || "";
 
         estadoValidacionPerfil.nombreValido = true;
         estadoValidacionPerfil.emailValido = true;
@@ -141,6 +159,8 @@ async function cargarPerfil(usuarioId) {
 
         actualizarPanelLateral(usuario);
         actualizarNombreMenu(usuario.nombre);
+        actualizarAvatar(usuario.nombre, usuario.fotoPerfilUrl);
+
     } catch (error) {
         console.error("Error al cargar perfil:", error);
         mostrarMensaje("No se pudo cargar tu perfil.");
@@ -152,7 +172,6 @@ function actualizarPanelLateral(usuario) {
     const miniEmail = document.getElementById("mini-email");
     const miniRol = document.getElementById("mini-rol");
     const miniRolResumen = document.getElementById("mini-rol-resumen");
-    const avatarInicial = document.getElementById("avatar-inicial");
 
     if (nombreLateral) nombreLateral.textContent = usuario.nombre || "Usuario";
     if (miniEmail) miniEmail.textContent = usuario.email || "";
@@ -161,19 +180,40 @@ function actualizarPanelLateral(usuario) {
 
     if (miniRol) miniRol.textContent = tipoCuenta;
     if (miniRolResumen) miniRolResumen.textContent = tipoCuenta;
-
-    if (avatarInicial) {
-        const inicial = usuario.nombre && usuario.nombre.trim()
-            ? usuario.nombre.trim().charAt(0).toUpperCase()
-            : "U";
-        avatarInicial.textContent = inicial;
-    }
 }
 
 function actualizarNombreMenu(nombreNuevo) {
     const profileNameMenu = document.querySelector("#menu-container #profile-name");
     if (profileNameMenu) {
         profileNameMenu.textContent = nombreNuevo;
+    }
+}
+
+function actualizarAvatar(nombre, fotoPerfilUrl) {
+    const img = document.getElementById("perfil-foto-img");
+    const texto = document.getElementById("perfil-avatar-texto");
+
+    if (!img || !texto) return;
+
+    const inicial = nombre && nombre.trim()
+        ? nombre.trim().charAt(0).toUpperCase()
+        : "U";
+
+    if (fotoPerfilUrl && fotoPerfilUrl.trim() !== "") {
+        img.onerror = () => {
+            img.classList.add("hidden");
+            texto.textContent = inicial;
+            texto.classList.remove("hidden");
+        };
+
+        img.src = `${BASE_URL}${fotoPerfilUrl}?t=${Date.now()}`;
+        img.classList.remove("hidden");
+        texto.classList.add("hidden");
+    } else {
+        img.removeAttribute("src");
+        img.classList.add("hidden");
+        texto.textContent = inicial;
+        texto.classList.remove("hidden");
     }
 }
 
@@ -255,9 +295,11 @@ function configurarFormularioPerfil(usuarioId) {
                 valoresOriginalesPerfil.nombre = usuarioActualizado.nombre || "";
                 valoresOriginalesPerfil.email = usuarioActualizado.email || "";
                 valoresOriginalesPerfil.rol = usuarioActualizado.rol || "";
+                valoresOriginalesPerfil.fotoPerfilUrl = usuarioActualizado.fotoPerfilUrl || valoresOriginalesPerfil.fotoPerfilUrl;
 
                 actualizarPanelLateral(usuarioActualizado);
                 actualizarNombreMenu(usuarioActualizado.nombre);
+                actualizarAvatar(usuarioActualizado.nombre, valoresOriginalesPerfil.fotoPerfilUrl);
             }
 
             mostrarMensaje("Perfil actualizado correctamente.", "ok");
@@ -309,6 +351,7 @@ function restaurarValoresOriginalesPerfil() {
     asignarValor("email", valoresOriginalesPerfil.email);
     asignarValor("rol", valoresOriginalesPerfil.rol);
     asignarValor("tipoCuenta", formatearTipoCuenta(valoresOriginalesPerfil.rol));
+    actualizarAvatar(valoresOriginalesPerfil.nombre, valoresOriginalesPerfil.fotoPerfilUrl);
 }
 
 function configurarValidacionEnVivoPerfil(usuarioId) {
@@ -506,6 +549,471 @@ function actualizarEstadoBotonGuardarPerfil() {
     btnGuardarPerfil.disabled = !(datosMinimosOk && validacionRemotaOk);
 }
 
+/* FOTO PERFIL CON RECORTE */
+
+/* FOTO PERFIL CON RECORTE */
+
+function configurarFotoPerfil(usuarioId) {
+    const btnCambiarFoto = document.getElementById("btn-cambiar-foto");
+    const inputFoto = document.getElementById("input-foto-perfil");
+    const modalRecorte = document.getElementById("modal-recorte-foto");
+    const btnCerrarModalRecorte = document.getElementById("cerrar-modal-recorte-foto");
+    const btnCancelarModalRecorte = document.getElementById("cancelar-modal-recorte-foto");
+    const btnGuardarRecorte = document.getElementById("guardar-recorte-foto");
+    const sliderZoom = document.getElementById("slider-zoom-foto");
+    const previewFrame = document.getElementById("recorte-preview-frame");
+    const btnFormaCirculo = document.getElementById("btn-forma-circulo");
+    const btnFormaCuadrado = document.getElementById("btn-forma-cuadrado");
+
+    if (!btnCambiarFoto || !inputFoto || !modalRecorte || !previewFrame || !sliderZoom || !btnGuardarRecorte) {
+        return;
+    }
+
+    btnCambiarFoto.addEventListener("click", () => {
+        inputFoto.click();
+    });
+
+    inputFoto.addEventListener("change", async () => {
+        if (!inputFoto.files || inputFoto.files.length === 0) return;
+
+        const archivo = inputFoto.files[0];
+
+        if (!archivo.type.startsWith("image/")) {
+            mostrarMensaje("Debes seleccionar una imagen válida.");
+            inputFoto.value = "";
+            return;
+        }
+
+        await abrirModalRecorteConArchivo(archivo);
+    });
+
+    if (btnCerrarModalRecorte) {
+        btnCerrarModalRecorte.addEventListener("click", cerrarModalRecorteFoto);
+    }
+
+    if (btnCancelarModalRecorte) {
+        btnCancelarModalRecorte.addEventListener("click", cerrarModalRecorteFoto);
+    }
+
+    modalRecorte.addEventListener("click", (e) => {
+        if (e.target === modalRecorte) {
+            cerrarModalRecorteFoto();
+        }
+    });
+
+    sliderZoom.addEventListener("input", () => {
+        estadoRecorteFoto.escala = parseFloat(sliderZoom.value);
+        limitarOffsetsRecorte();
+        actualizarVistaRecorte();
+    });
+
+    if (btnFormaCirculo) {
+        btnFormaCirculo.addEventListener("click", () => cambiarFormaRecorte("circulo"));
+    }
+
+    if (btnFormaCuadrado) {
+        btnFormaCuadrado.addEventListener("click", () => cambiarFormaRecorte("cuadrado"));
+    }
+
+    previewFrame.addEventListener("mousedown", iniciarArrastreRecorte);
+    previewFrame.addEventListener("touchstart", iniciarArrastreRecorteTouch, { passive: false });
+
+    window.addEventListener("mousemove", moverRecorte);
+    window.addEventListener("mouseup", terminarArrastreRecorte);
+
+    window.addEventListener("touchmove", moverRecorteTouch, { passive: false });
+    window.addEventListener("touchend", terminarArrastreRecorte);
+
+    btnGuardarRecorte.addEventListener("click", async () => {
+        await guardarFotoRecortada(usuarioId);
+    });
+}
+
+async function abrirModalRecorteConArchivo(archivo) {
+    limpiarMensajeModalRecorte();
+    destruirImagenTemporalRecorte();
+
+    estadoRecorteFoto.archivoOriginal = archivo;
+    estadoRecorteFoto.imageElement = new Image();
+    estadoRecorteFoto.imageElement.crossOrigin = "anonymous";
+    estadoRecorteFoto.imageUrlTemporal = URL.createObjectURL(archivo);
+
+    try {
+        await cargarImagenRecorte(estadoRecorteFoto.imageElement, estadoRecorteFoto.imageUrlTemporal);
+
+        mostrarElemento(document.getElementById("modal-recorte-foto"));
+
+        requestAnimationFrame(() => {
+            prepararEstadoInicialRecorte();
+            cambiarFormaRecorte("circulo");
+            actualizarVistaRecorte();
+        });
+    } catch (error) {
+        console.error("Error cargando imagen para recorte:", error);
+        mostrarMensaje("No se pudo preparar la imagen seleccionada.");
+        destruirImagenTemporalRecorte();
+    }
+}
+
+function prepararEstadoInicialRecorte() {
+    const image = estadoRecorteFoto.imageElement;
+    if (!image) return;
+
+    const ladoMarco = obtenerLadoMarcoRecorte();
+
+    const escalaBase = Math.max(
+        ladoMarco / image.naturalWidth,
+        ladoMarco / image.naturalHeight
+    );
+
+    estadoRecorteFoto.escalaBase = escalaBase;
+    estadoRecorteFoto.minEscala = 1;
+    estadoRecorteFoto.maxEscala = 3;
+    estadoRecorteFoto.escala = 1;
+    estadoRecorteFoto.offsetX = 0;
+    estadoRecorteFoto.offsetY = 0;
+    estadoRecorteFoto.arrastrando = false;
+    estadoRecorteFoto.inicioX = 0;
+    estadoRecorteFoto.inicioY = 0;
+
+    const sliderZoom = document.getElementById("slider-zoom-foto");
+    if (sliderZoom) {
+        sliderZoom.min = "1";
+        sliderZoom.max = "3";
+        sliderZoom.step = "0.01";
+        sliderZoom.value = "1";
+    }
+}
+
+function cambiarFormaRecorte(forma) {
+    estadoRecorteFoto.forma = forma;
+
+    const frame = document.getElementById("recorte-preview-frame");
+    const miniPreview = document.getElementById("mini-preview-avatar");
+    const btnFormaCirculo = document.getElementById("btn-forma-circulo");
+    const btnFormaCuadrado = document.getElementById("btn-forma-cuadrado");
+
+    if (frame) {
+        frame.classList.toggle("recorte-circular", forma === "circulo");
+        frame.classList.toggle("recorte-cuadrado", forma === "cuadrado");
+    }
+
+    if (miniPreview) {
+        miniPreview.classList.toggle("mini-preview-circular", forma === "circulo");
+        miniPreview.classList.toggle("mini-preview-cuadrado", forma === "cuadrado");
+    }
+
+    if (btnFormaCirculo) {
+        btnFormaCirculo.classList.toggle("activo", forma === "circulo");
+    }
+
+    if (btnFormaCuadrado) {
+        btnFormaCuadrado.classList.toggle("activo", forma === "cuadrado");
+    }
+}
+
+function actualizarVistaRecorte() {
+    const previewImg = document.getElementById("imagen-recorte-preview");
+    const miniPreviewImg = document.getElementById("mini-preview-img");
+
+    if (!previewImg || !miniPreviewImg || !estadoRecorteFoto.imageElement) return;
+
+    const image = estadoRecorteFoto.imageElement;
+    const ladoMarco = obtenerLadoMarcoRecorte();
+    const escalaFinal = (estadoRecorteFoto.escalaBase || 1) * estadoRecorteFoto.escala;
+
+    const ancho = image.naturalWidth * escalaFinal;
+    const alto = image.naturalHeight * escalaFinal;
+
+    previewImg.src = estadoRecorteFoto.imageUrlTemporal;
+    previewImg.style.width = `${ancho}px`;
+    previewImg.style.height = `${alto}px`;
+    previewImg.style.left = `calc(50% + ${estadoRecorteFoto.offsetX}px)`;
+    previewImg.style.top = `calc(50% + ${estadoRecorteFoto.offsetY}px)`;
+    previewImg.style.transform = "translate(-50%, -50%)";
+
+    miniPreviewImg.src = estadoRecorteFoto.imageUrlTemporal;
+    miniPreviewImg.style.width = `${ancho}px`;
+    miniPreviewImg.style.height = `${alto}px`;
+    miniPreviewImg.style.left = `calc(50% + ${estadoRecorteFoto.offsetX}px)`;
+    miniPreviewImg.style.top = `calc(50% + ${estadoRecorteFoto.offsetY}px)`;
+    miniPreviewImg.style.transform = "translate(-50%, -50%)";
+
+    limitarOffsetsRecorte();
+}
+
+function iniciarArrastreRecorte(e) {
+    e.preventDefault();
+    estadoRecorteFoto.arrastrando = true;
+    estadoRecorteFoto.inicioX = e.clientX;
+    estadoRecorteFoto.inicioY = e.clientY;
+}
+
+function iniciarArrastreRecorteTouch(e) {
+    if (!e.touches || e.touches.length === 0) return;
+    e.preventDefault();
+    estadoRecorteFoto.arrastrando = true;
+    estadoRecorteFoto.inicioX = e.touches[0].clientX;
+    estadoRecorteFoto.inicioY = e.touches[0].clientY;
+}
+
+function moverRecorte(e) {
+    if (!estadoRecorteFoto.arrastrando) return;
+
+    const deltaX = e.clientX - estadoRecorteFoto.inicioX;
+    const deltaY = e.clientY - estadoRecorteFoto.inicioY;
+
+    estadoRecorteFoto.offsetX += deltaX;
+    estadoRecorteFoto.offsetY += deltaY;
+
+    estadoRecorteFoto.inicioX = e.clientX;
+    estadoRecorteFoto.inicioY = e.clientY;
+
+    limitarOffsetsRecorte();
+    actualizarVistaRecorte();
+}
+
+function moverRecorteTouch(e) {
+    if (!estadoRecorteFoto.arrastrando || !e.touches || e.touches.length === 0) return;
+
+    e.preventDefault();
+
+    const deltaX = e.touches[0].clientX - estadoRecorteFoto.inicioX;
+    const deltaY = e.touches[0].clientY - estadoRecorteFoto.inicioY;
+
+    estadoRecorteFoto.offsetX += deltaX;
+    estadoRecorteFoto.offsetY += deltaY;
+
+    estadoRecorteFoto.inicioX = e.touches[0].clientX;
+    estadoRecorteFoto.inicioY = e.touches[0].clientY;
+
+    limitarOffsetsRecorte();
+    actualizarVistaRecorte();
+}
+
+function terminarArrastreRecorte() {
+    estadoRecorteFoto.arrastrando = false;
+}
+
+function limitarOffsetsRecorte() {
+    if (!estadoRecorteFoto.imageElement) return;
+
+    const ladoMarco = obtenerLadoMarcoRecorte();
+    const escalaFinal = (estadoRecorteFoto.escalaBase || 1) * estadoRecorteFoto.escala;
+
+    const anchoVisible = estadoRecorteFoto.imageElement.naturalWidth * escalaFinal;
+    const altoVisible = estadoRecorteFoto.imageElement.naturalHeight * escalaFinal;
+
+    const maxOffsetX = Math.max(0, (anchoVisible - ladoMarco) / 2);
+    const maxOffsetY = Math.max(0, (altoVisible - ladoMarco) / 2);
+
+    estadoRecorteFoto.offsetX = clamp(estadoRecorteFoto.offsetX, -maxOffsetX, maxOffsetX);
+    estadoRecorteFoto.offsetY = clamp(estadoRecorteFoto.offsetY, -maxOffsetY, maxOffsetY);
+}
+
+function obtenerLadoMarcoRecorte() {
+    const frame = document.getElementById("recorte-preview-frame");
+    if (!frame) return 320;
+    return Math.min(frame.clientWidth, frame.clientHeight) || 320;
+}
+
+async function guardarFotoRecortada(usuarioId) {
+    const btnGuardar = document.getElementById("guardar-recorte-foto");
+
+    try {
+        limpiarMensajeModalRecorte();
+
+        if (btnGuardar) {
+            btnGuardar.disabled = true;
+            btnGuardar.textContent = "Guardando...";
+        }
+
+        const archivoRecortado = await generarArchivoRecortado();
+
+        const formData = new FormData();
+        formData.append("foto", archivoRecortado);
+
+        const response = await fetch(`${BASE_URL}/usuarios/${usuarioId}/foto`, {
+            method: "POST",
+            credentials: "include",
+            body: formData
+        });
+
+        const textoRespuesta = await response.text();
+
+        if (!response.ok) {
+            throw new Error(textoRespuesta || "No se pudo subir la foto");
+        }
+
+        const usuarioActualizado = textoRespuesta ? JSON.parse(textoRespuesta) : null;
+
+        if (usuarioActualizado) {
+            valoresOriginalesPerfil.fotoPerfilUrl = usuarioActualizado.fotoPerfilUrl || "";
+            actualizarAvatar(
+                usuarioActualizado.nombre || valoresOriginalesPerfil.nombre,
+                usuarioActualizado.fotoPerfilUrl
+            );
+        }
+
+        cerrarModalRecorteFoto();
+        mostrarMensaje("Foto de perfil actualizada correctamente.", "ok");
+    } catch (error) {
+        console.error("Error al guardar foto recortada:", error);
+        mostrarMensajeModalRecorte(error.message || "No se pudo guardar la foto.");
+    } finally {
+        if (btnGuardar) {
+            btnGuardar.disabled = false;
+            btnGuardar.textContent = "Guardar foto";
+        }
+    }
+}
+
+async function generarArchivoRecortado() {
+    if (!estadoRecorteFoto.imageElement) {
+        throw new Error("No hay imagen para recortar");
+    }
+
+    const size = 500;
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+
+    const ctx = canvas.getContext("2d");
+    const image = estadoRecorteFoto.imageElement;
+
+    const ladoMarco = obtenerLadoMarcoRecorte();
+    const escalaFinal = (estadoRecorteFoto.escalaBase || 1) * estadoRecorteFoto.escala;
+
+    const anchoDibujado = image.naturalWidth * escalaFinal;
+    const altoDibujado = image.naturalHeight * escalaFinal;
+
+    const ratio = size / ladoMarco;
+
+    const x = (size / 2) - ((anchoDibujado * ratio) / 2) + (estadoRecorteFoto.offsetX * ratio);
+    const y = (size / 2) - ((altoDibujado * ratio) / 2) + (estadoRecorteFoto.offsetY * ratio);
+
+    const anchoFinal = anchoDibujado * ratio;
+    const altoFinal = altoDibujado * ratio;
+
+    ctx.clearRect(0, 0, size, size);
+
+    if (estadoRecorteFoto.forma === "circulo") {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.clip();
+
+        ctx.clearRect(0, 0, size, size);
+        ctx.drawImage(image, x, y, anchoFinal, altoFinal);
+
+        ctx.restore();
+
+        const blob = await canvasToBlob(canvas, "image/png");
+        return new File([blob], "perfil-recortado.png", { type: "image/png" });
+    }
+
+    ctx.drawImage(image, x, y, anchoFinal, altoFinal);
+
+    const blob = await canvasToBlob(canvas, "image/jpeg");
+    return new File([blob], "perfil-recortado.jpg", { type: "image/jpeg" });
+}
+
+function cerrarModalRecorteFoto() {
+    ocultarElemento(document.getElementById("modal-recorte-foto"));
+    limpiarMensajeModalRecorte();
+    estadoRecorteFoto.arrastrando = false;
+    inputResetFotoPerfil();
+    destruirImagenTemporalRecorte();
+}
+
+function inputResetFotoPerfil() {
+    const inputFoto = document.getElementById("input-foto-perfil");
+    if (inputFoto) inputFoto.value = "";
+}
+
+function destruirImagenTemporalRecorte() {
+    if (estadoRecorteFoto.imageUrlTemporal) {
+        URL.revokeObjectURL(estadoRecorteFoto.imageUrlTemporal);
+    }
+
+    estadoRecorteFoto.archivoOriginal = null;
+    estadoRecorteFoto.imageElement = null;
+    estadoRecorteFoto.imageUrlTemporal = null;
+    estadoRecorteFoto.escala = 1;
+    estadoRecorteFoto.minEscala = 1;
+    estadoRecorteFoto.maxEscala = 3;
+    estadoRecorteFoto.offsetX = 0;
+    estadoRecorteFoto.offsetY = 0;
+    estadoRecorteFoto.arrastrando = false;
+    estadoRecorteFoto.inicioX = 0;
+    estadoRecorteFoto.inicioY = 0;
+    estadoRecorteFoto.escalaBase = 1;
+
+    const previewImg = document.getElementById("imagen-recorte-preview");
+    const miniPreviewImg = document.getElementById("mini-preview-img");
+
+    if (previewImg) {
+        previewImg.removeAttribute("src");
+        previewImg.style.width = "";
+        previewImg.style.height = "";
+        previewImg.style.left = "";
+        previewImg.style.top = "";
+        previewImg.style.transform = "";
+    }
+
+    if (miniPreviewImg) {
+        miniPreviewImg.removeAttribute("src");
+        miniPreviewImg.style.width = "";
+        miniPreviewImg.style.height = "";
+        miniPreviewImg.style.left = "";
+        miniPreviewImg.style.top = "";
+        miniPreviewImg.style.transform = "";
+    }
+}
+
+function mostrarMensajeModalRecorte(texto) {
+    const mensaje = document.getElementById("mensaje-modal-recorte");
+    if (!mensaje) return;
+
+    mensaje.textContent = texto;
+    mensaje.classList.remove("hidden", "ok", "error");
+    mensaje.classList.add("error");
+}
+
+function limpiarMensajeModalRecorte() {
+    const mensaje = document.getElementById("mensaje-modal-recorte");
+    if (!mensaje) return;
+
+    mensaje.textContent = "";
+    mensaje.classList.add("hidden");
+    mensaje.classList.remove("ok", "error");
+}
+
+function cargarImagenRecorte(img, src) {
+    return new Promise((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = reject;
+        img.src = src;
+    });
+}
+
+function canvasToBlob(canvas, tipo) {
+    return new Promise((resolve, reject) => {
+        canvas.toBlob((blob) => {
+            if (!blob) {
+                reject(new Error("No se pudo generar la imagen recortada"));
+                return;
+            }
+            resolve(blob);
+        }, tipo);
+    });
+}
+
+function clamp(valor, min, max) {
+    return Math.max(min, Math.min(max, valor));
+}
+
 function configurarFormularioPassword(usuarioId) {
     const formPassword = document.getElementById("formPassword");
     if (!formPassword) return;
@@ -564,7 +1072,6 @@ function configurarTarjetas(usuarioId) {
     const cerrarModalTarjeta = document.getElementById("cerrar-modal-tarjeta");
     const cancelarModalTarjeta = document.getElementById("cancelar-modal-tarjeta");
     const formTarjeta = document.getElementById("formTarjeta");
-    const btnCambiarFoto = document.getElementById("btn-cambiar-foto");
 
     function abrirModalTarjeta() {
         ocultarMensajeModalTarjeta();
@@ -584,12 +1091,6 @@ function configurarTarjetas(usuarioId) {
     if (modalTarjeta) {
         modalTarjeta.addEventListener("click", (e) => {
             if (e.target === modalTarjeta) cerrarModalTarjetaLocal();
-        });
-    }
-
-    if (btnCambiarFoto) {
-        btnCambiarFoto.addEventListener("click", () => {
-            mostrarMensaje("La funcionalidad de cambiar foto la hacemos después.", "ok");
         });
     }
 
