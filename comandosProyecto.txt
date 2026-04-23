@@ -1,0 +1,25 @@
+docker images
+docker ps
+docker ps -a
+docker run -d --name (nombre del contenedor) -p (puerto) (nombre de la imagen)
+docker images
+
+
+docker compose up --bu
+docker compose down -v --rmi allild // para eliminar
+
+
+mvnw.cmd clean package -DskipTests
+docker compose down
+docker rm -f (imagen)
+docker-compose build --no-cache
+docker-compose up
+
+docker compose stop frontend
+docker rm -f ropa-frontend
+docker compose build --no-cache frontend
+docker compose up -d frontend
+
+docker exec -it ropa_mariadb mariadb -u root -p
+
+luul xgdm zcer aode
