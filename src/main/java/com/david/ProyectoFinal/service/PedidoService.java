@@ -26,7 +26,6 @@ public class PedidoService {
     /// para acceder a los items de un pedido
     private final ItemPedidoRepository itemPedidoRepository;
 
-
     /// Constructor para inyectar las dependencias
 
     public PedidoService(PedidoRepository pedidoRepository, UsuarioRepository usuarioRepository, CarritoRepository carritoRepository, ItemCarritoRepository itemCarritoRepository, CarritoService carritoService, ItemPedidoRepository itemPedidoRepository) {
@@ -88,6 +87,7 @@ public class PedidoService {
             itemPedidoRepository.save(itemPedido);
         }
 
+        /// vaciar carrito después de procesar el pedido
         carritoService.vaciarCarrito(usuarioId);
 
         return pedidoGuardado;

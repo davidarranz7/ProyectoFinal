@@ -14,7 +14,7 @@ public class EmailTestController {
     @GetMapping("/test-email")
     public String probarEmail() {
         emailService.enviarCorreoSimple(
-                "arranzd5@gmail.com",
+                "gomezramosgisela@gmail.com",
                 "Prueba de correo SpotifyPro",
                 "Si estás leyendo esto, el envío de correo funciona correctamente."
         );

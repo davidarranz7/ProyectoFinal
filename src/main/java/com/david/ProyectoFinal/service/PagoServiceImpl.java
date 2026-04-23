@@ -1,6 +1,5 @@
 package com.david.ProyectoFinal.service;
 
-
 import com.david.ProyectoFinal.dto.PagoResponseDTO;
 import com.david.ProyectoFinal.dto.PagoRequestDTO;
 import com.david.ProyectoFinal.model.*;
@@ -20,14 +19,22 @@ public class PagoServiceImpl implements PagoService {
     private final ItemCarritoRepository itemCarritoRepository;
     private final PedidoRepository pedidoRepository;
     private final ItemPedidoRepository itemPedidoRepository;
+    private final EmailService emailService;
 
-    public PagoServiceImpl(PagoRepository pagoRepository, UsuarioRepository usuarioRepository, CarritoRepository carritoRepository, ItemCarritoRepository itemCarritoRepository, PedidoRepository pedidoRepository, ItemPedidoRepository itemPedidoRepository) {
+    public PagoServiceImpl(PagoRepository pagoRepository,
+                           UsuarioRepository usuarioRepository,
+                           CarritoRepository carritoRepository,
+                           ItemCarritoRepository itemCarritoRepository,
+                           PedidoRepository pedidoRepository,
+                           ItemPedidoRepository itemPedidoRepository,
+                           EmailService emailService) {
         this.pagoRepository = pagoRepository;
         this.usuarioRepository = usuarioRepository;
         this.carritoRepository = carritoRepository;
         this.itemCarritoRepository = itemCarritoRepository;
         this.pedidoRepository = pedidoRepository;
         this.itemPedidoRepository = itemPedidoRepository;
+        this.emailService = emailService;
     }
 
     public PagoResponseDTO procesarPago(PagoRequestDTO dto) {
@@ -158,6 +165,17 @@ public class PagoServiceImpl implements PagoService {
 
         Pago pagoGuardado = pagoRepository.save(pago);
 
+        String asunto = "Confirmación de pedido #" + pedidoGuardado.getId();
+        String contenido = construirContenidoCorreoPedido(usuario, pedidoGuardado, itemsPedido);
+
+        try {
+            emailService.enviarCorreoSimple(usuario.getEmail(), asunto, contenido);
+            System.out.println("CORREO DE PEDIDO ENVIADO A: " + usuario.getEmail());
+        } catch (Exception e) {
+            System.out.println("ERROR AL ENVIAR CORREO DE PEDIDO: " + e.getMessage());
+            e.printStackTrace();
+        }
+
         response.setPagoId(pagoGuardado.getId());
         response.setEstado(pagoGuardado.getEstado());
         response.setReferencia(pagoGuardado.getReferencia());
@@ -165,5 +183,45 @@ public class PagoServiceImpl implements PagoService {
         response.setPedidoId(pedidoGuardado.getId());
 
         return response;
+    }
+
+    private String construirContenidoCorreoPedido(Usuario usuario, Pedido pedido, List<ItemPedido> itemsPedido) {
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("Hola ").append(usuario.getNombre()).append(",\n\n");
+        sb.append("Hemos recibido tu pedido correctamente en TiendaModa.\n\n");
+        sb.append("Resumen del pedido:\n");
+        sb.append("Número de pedido: ").append(pedido.getId()).append("\n");
+        sb.append("Fecha: ").append(pedido.getFechaPedido()).append("\n");
+        sb.append("Estado: Confirmado\n");
+        sb.append("Método de pago: ").append(formatearMetodoPago(pedido.getMetodoPago())).append("\n\n");
+
+        sb.append("Productos comprados:\n");
+
+        for (ItemPedido item : itemsPedido) {
+            sb.append("- ")
+                    .append(item.getProducto().getNombre())
+                    .append(" | Cantidad: ").append(item.getCantidad())
+                    .append(" | Talla: ").append(item.getTalla() != null ? item.getTalla() : "Sin talla")
+                    .append(" | Precio unitario: ").append(item.getPrecioUnitario()).append(" €")
+                    .append("\n");
+        }
+
+        sb.append("\n");
+        sb.append("Total del pedido: ").append(pedido.getTotal()).append(" €\n\n");
+        sb.append("Gracias por confiar en TiendaModa.\n");
+        sb.append("Te avisaremos cuando haya novedades sobre tu pedido.\n\n");
+        sb.append("Un saludo,\n");
+        sb.append("Equipo de TiendaModa");
+
+        return sb.toString();
+    }
+
+    private String formatearMetodoPago(MetodoPago metodoPago) {
+        return switch (metodoPago) {
+            case TARJETA -> "Tarjeta";
+            case PAYPAL -> "PayPal";
+            case CONTRA_REEMBOLSO -> "Contra reembolso";
+        };
     }
 }
