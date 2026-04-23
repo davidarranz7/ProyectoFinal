@@ -125,7 +125,8 @@ public class UsuarioService {
                 usuario.getNombre(),
                 usuario.getEmail(),
                 usuario.getRol().name(),
-                usuario.getFotoPerfilUrl()
+                usuario.getFotoPerfilUrl(),
+                usuario.getFormaFotoPerfil()
         );
     }
 
@@ -166,11 +167,12 @@ public class UsuarioService {
                 usuarioActualizado.getNombre(),
                 usuarioActualizado.getEmail(),
                 usuarioActualizado.getRol().name(),
-                usuarioActualizado.getFotoPerfilUrl()
+                usuarioActualizado.getFotoPerfilUrl(),
+                usuarioActualizado.getFormaFotoPerfil()
         );
     }
 
-    public UsuarioPerfilDTO subirFotoPerfil(Long usuarioId, MultipartFile foto) {
+    public UsuarioPerfilDTO subirFotoPerfil(Long usuarioId, MultipartFile foto, String formaFotoPerfil) {
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
@@ -183,24 +185,38 @@ public class UsuarioService {
             throw new RuntimeException("El archivo debe ser una imagen válida");
         }
 
-        String nombreOriginal = foto.getOriginalFilename();
-        String extension = obtenerExtension(nombreOriginal);
-
-        if (extension.isBlank()) {
-            throw new RuntimeException("La imagen no tiene una extensión válida");
+        if (formaFotoPerfil == null || formaFotoPerfil.isBlank()) {
+            formaFotoPerfil = "cuadrado";
         }
 
-        try {
-            Path carpetaUploads = Paths.get(System.getProperty("user.dir"), "uploads", "perfiles");
-            Files.createDirectories(carpetaUploads);
+        if (!formaFotoPerfil.equals("cuadrado") && !formaFotoPerfil.equals("circulo")) {
+            throw new RuntimeException("La forma de la foto no es válida");
+        }
 
-            String nombreArchivo = "usuario_" + usuarioId + "_" + UUID.randomUUID() + "." + extension;
-            Path rutaArchivo = carpetaUploads.resolve(nombreArchivo);
+        String extension = obtenerExtensionSegunContentType(contentType);
+        String nombreCarpetaUsuario = limpiarNombreParaCarpeta(usuario.getNombre());
+
+        try {
+            Path carpetaUsuario = Paths.get(
+                    System.getProperty("user.dir"),
+                    "uploads",
+                    "fotosPerfil",
+                    nombreCarpetaUsuario
+            );
+
+            Files.createDirectories(carpetaUsuario);
+
+            eliminarFotosAnteriores(carpetaUsuario);
+
+            String nombreArchivo = "foto-perfil." + extension;
+            Path rutaArchivo = carpetaUsuario.resolve(nombreArchivo);
 
             Files.write(rutaArchivo, foto.getBytes());
 
-            String urlFoto = "/uploads/perfiles/" + nombreArchivo;
+            String urlFoto = "/uploads/fotosPerfil/" + nombreCarpetaUsuario + "/" + nombreArchivo;
+
             usuario.setFotoPerfilUrl(urlFoto);
+            usuario.setFormaFotoPerfil(formaFotoPerfil);
 
             Usuario usuarioActualizado = usuarioRepository.save(usuario);
 
@@ -209,7 +225,8 @@ public class UsuarioService {
                     usuarioActualizado.getNombre(),
                     usuarioActualizado.getEmail(),
                     usuarioActualizado.getRol().name(),
-                    usuarioActualizado.getFotoPerfilUrl()
+                    usuarioActualizado.getFotoPerfilUrl(),
+                    usuarioActualizado.getFormaFotoPerfil()
             );
 
         } catch (IOException e) {
@@ -218,12 +235,43 @@ public class UsuarioService {
         }
     }
 
-    private String obtenerExtension(String nombreArchivo) {
-        if (nombreArchivo == null || !nombreArchivo.contains(".")) {
-            return "";
+    private String limpiarNombreParaCarpeta(String nombreUsuario) {
+        if (nombreUsuario == null || nombreUsuario.isBlank()) {
+            return "usuario_sin_nombre";
         }
 
-        return nombreArchivo.substring(nombreArchivo.lastIndexOf('.') + 1).toLowerCase();
+        return nombreUsuario
+                .trim()
+                .toLowerCase()
+                .replaceAll("[^a-z0-9]", "_")
+                .replaceAll("_+", "_");
+    }
+
+    private String obtenerExtensionSegunContentType(String contentType) {
+        return switch (contentType.toLowerCase()) {
+            case "image/png" -> "png";
+            case "image/gif" -> "gif";
+            case "image/webp" -> "webp";
+            default -> "jpg";
+        };
+    }
+
+    private void eliminarFotosAnteriores(Path carpetaUsuario) throws IOException {
+        if (!Files.exists(carpetaUsuario)) {
+            return;
+        }
+
+        try (var archivos = Files.list(carpetaUsuario)) {
+            archivos
+                    .filter(Files::isRegularFile)
+                    .forEach(path -> {
+                        try {
+                            Files.deleteIfExists(path);
+                        } catch (IOException e) {
+                            throw new RuntimeException("No se pudo eliminar la foto anterior");
+                        }
+                    });
+        }
     }
 
     public void cambiarPassword(Long usuarioId, CambiarPasswordDTO dto) {

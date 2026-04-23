@@ -136,11 +136,12 @@ public class UsuarioController {
     @PostMapping(value = "/{id}/foto", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> subirFotoPerfil(@PathVariable Long id,
                                              @RequestParam("foto") MultipartFile foto,
+                                             @RequestParam("formaFotoPerfil") String formaFotoPerfil,
                                              HttpSession session) {
         comprobarAccesoUsuario(id, session);
 
         try {
-            UsuarioPerfilDTO usuarioActualizado = usuarioService.subirFotoPerfil(id, foto);
+            UsuarioPerfilDTO usuarioActualizado = usuarioService.subirFotoPerfil(id, foto, formaFotoPerfil);
             return ResponseEntity.ok(usuarioActualizado);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());

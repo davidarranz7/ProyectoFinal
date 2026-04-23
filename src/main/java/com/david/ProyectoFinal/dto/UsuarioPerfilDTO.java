@@ -7,16 +7,18 @@ public class UsuarioPerfilDTO {
     private String email;
     private String rol;
     private String fotoPerfilUrl;
+    private String formaFotoPerfil;
 
     public UsuarioPerfilDTO() {
     }
 
-    public UsuarioPerfilDTO(Long id, String nombre, String email, String rol, String fotoPerfilUrl) {
+    public UsuarioPerfilDTO(Long id, String nombre, String email, String rol, String fotoPerfilUrl, String formaFotoPerfil) {
         this.id = id;
         this.nombre = nombre;
         this.email = email;
         this.rol = rol;
         this.fotoPerfilUrl = fotoPerfilUrl;
+        this.formaFotoPerfil = formaFotoPerfil;
     }
 
     public Long getId() {
@@ -57,5 +59,13 @@ public class UsuarioPerfilDTO {
 
     public void setFotoPerfilUrl(String fotoPerfilUrl) {
         this.fotoPerfilUrl = fotoPerfilUrl;
+    }
+
+    public String getFormaFotoPerfil() {
+        return formaFotoPerfil;
+    }
+
+    public void setFormaFotoPerfil(String formaFotoPerfil) {
+        this.formaFotoPerfil = formaFotoPerfil;
     }
 }

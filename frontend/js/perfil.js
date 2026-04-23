@@ -21,7 +21,8 @@ const valoresOriginalesPerfil = {
     nombre: "",
     email: "",
     rol: "",
-    fotoPerfilUrl: ""
+    fotoPerfilUrl: "",
+    formaFotoPerfil: "cuadrado"
 };
 
 const estadoRecorteFoto = {
@@ -36,7 +37,7 @@ const estadoRecorteFoto = {
     arrastrando: false,
     inicioX: 0,
     inicioY: 0,
-    forma: "circulo"
+    forma: "cuadrado"
 };
 
 async function iniciarPaginaPerfil() {
@@ -149,6 +150,7 @@ async function cargarPerfil(usuarioId) {
         valoresOriginalesPerfil.email = usuario.email || "";
         valoresOriginalesPerfil.rol = usuario.rol || "";
         valoresOriginalesPerfil.fotoPerfilUrl = usuario.fotoPerfilUrl || "";
+        valoresOriginalesPerfil.formaFotoPerfil = usuario.formaFotoPerfil || "cuadrado";
 
         estadoValidacionPerfil.nombreValido = true;
         estadoValidacionPerfil.emailValido = true;
@@ -159,7 +161,11 @@ async function cargarPerfil(usuarioId) {
 
         actualizarPanelLateral(usuario);
         actualizarNombreMenu(usuario.nombre);
-        actualizarAvatar(usuario.nombre, usuario.fotoPerfilUrl);
+        actualizarAvatar(
+            usuario.nombre,
+            usuario.fotoPerfilUrl,
+            usuario.formaFotoPerfil || "cuadrado"
+        );
 
     } catch (error) {
         console.error("Error al cargar perfil:", error);
@@ -189,15 +195,19 @@ function actualizarNombreMenu(nombreNuevo) {
     }
 }
 
-function actualizarAvatar(nombre, fotoPerfilUrl) {
+function actualizarAvatar(nombre, fotoPerfilUrl, forma = "cuadrado") {
+    const avatar = document.getElementById("avatar-inicial");
     const img = document.getElementById("perfil-foto-img");
     const texto = document.getElementById("perfil-avatar-texto");
 
-    if (!img || !texto) return;
+    if (!avatar || !img || !texto) return;
 
     const inicial = nombre && nombre.trim()
         ? nombre.trim().charAt(0).toUpperCase()
         : "U";
+
+    avatar.classList.remove("avatar-circular", "avatar-cuadrado");
+    avatar.classList.add(forma === "circulo" ? "avatar-circular" : "avatar-cuadrado");
 
     if (fotoPerfilUrl && fotoPerfilUrl.trim() !== "") {
         img.onerror = () => {
@@ -299,7 +309,11 @@ function configurarFormularioPerfil(usuarioId) {
 
                 actualizarPanelLateral(usuarioActualizado);
                 actualizarNombreMenu(usuarioActualizado.nombre);
-                actualizarAvatar(usuarioActualizado.nombre, valoresOriginalesPerfil.fotoPerfilUrl);
+                actualizarAvatar(
+                    usuarioActualizado.nombre,
+                    valoresOriginalesPerfil.fotoPerfilUrl,
+                    valoresOriginalesPerfil.formaFotoPerfil || "cuadrado"
+                );
             }
 
             mostrarMensaje("Perfil actualizado correctamente.", "ok");
@@ -351,7 +365,11 @@ function restaurarValoresOriginalesPerfil() {
     asignarValor("email", valoresOriginalesPerfil.email);
     asignarValor("rol", valoresOriginalesPerfil.rol);
     asignarValor("tipoCuenta", formatearTipoCuenta(valoresOriginalesPerfil.rol));
-    actualizarAvatar(valoresOriginalesPerfil.nombre, valoresOriginalesPerfil.fotoPerfilUrl);
+    actualizarAvatar(
+        valoresOriginalesPerfil.nombre,
+        valoresOriginalesPerfil.fotoPerfilUrl,
+        valoresOriginalesPerfil.formaFotoPerfil || "cuadrado"
+    );
 }
 
 function configurarValidacionEnVivoPerfil(usuarioId) {
@@ -645,7 +663,7 @@ async function abrirModalRecorteConArchivo(archivo) {
 
         requestAnimationFrame(() => {
             prepararEstadoInicialRecorte();
-            cambiarFormaRecorte("circulo");
+            cambiarFormaRecorte(valoresOriginalesPerfil.formaFotoPerfil || "cuadrado");
             actualizarVistaRecorte();
         });
     } catch (error) {
@@ -715,8 +733,14 @@ function cambiarFormaRecorte(forma) {
 function actualizarVistaRecorte() {
     const previewImg = document.getElementById("imagen-recorte-preview");
     const miniPreviewImg = document.getElementById("mini-preview-img");
+    const previewFrame = document.getElementById("recorte-preview-frame");
+    const miniPreview = document.getElementById("mini-preview-avatar");
 
-    if (!previewImg || !miniPreviewImg || !estadoRecorteFoto.imageElement) return;
+    if (!previewImg || !miniPreviewImg || !previewFrame || !miniPreview || !estadoRecorteFoto.imageElement) {
+        return;
+    }
+
+    limitarOffsetsRecorte();
 
     const image = estadoRecorteFoto.imageElement;
     const ladoMarco = obtenerLadoMarcoRecorte();
@@ -732,14 +756,15 @@ function actualizarVistaRecorte() {
     previewImg.style.top = `calc(50% + ${estadoRecorteFoto.offsetY}px)`;
     previewImg.style.transform = "translate(-50%, -50%)";
 
-    miniPreviewImg.src = estadoRecorteFoto.imageUrlTemporal;
-    miniPreviewImg.style.width = `${ancho}px`;
-    miniPreviewImg.style.height = `${alto}px`;
-    miniPreviewImg.style.left = `calc(50% + ${estadoRecorteFoto.offsetX}px)`;
-    miniPreviewImg.style.top = `calc(50% + ${estadoRecorteFoto.offsetY}px)`;
-    miniPreviewImg.style.transform = "translate(-50%, -50%)";
+    const ladoMini = Math.min(miniPreview.clientWidth, miniPreview.clientHeight) || 110;
+    const ratioMini = ladoMini / ladoMarco;
 
-    limitarOffsetsRecorte();
+    miniPreviewImg.src = estadoRecorteFoto.imageUrlTemporal;
+    miniPreviewImg.style.width = `${ancho * ratioMini}px`;
+    miniPreviewImg.style.height = `${alto * ratioMini}px`;
+    miniPreviewImg.style.left = `calc(50% + ${estadoRecorteFoto.offsetX * ratioMini}px)`;
+    miniPreviewImg.style.top = `calc(50% + ${estadoRecorteFoto.offsetY * ratioMini}px)`;
+    miniPreviewImg.style.transform = "translate(-50%, -50%)";
 }
 
 function iniciarArrastreRecorte(e) {
@@ -832,6 +857,7 @@ async function guardarFotoRecortada(usuarioId) {
 
         const formData = new FormData();
         formData.append("foto", archivoRecortado);
+        formData.append("formaFotoPerfil", estadoRecorteFoto.forma || "cuadrado");
 
         const response = await fetch(`${BASE_URL}/usuarios/${usuarioId}/foto`, {
             method: "POST",
@@ -849,9 +875,12 @@ async function guardarFotoRecortada(usuarioId) {
 
         if (usuarioActualizado) {
             valoresOriginalesPerfil.fotoPerfilUrl = usuarioActualizado.fotoPerfilUrl || "";
+            valoresOriginalesPerfil.formaFotoPerfil = estadoRecorteFoto.forma || "cuadrado";
+
             actualizarAvatar(
                 usuarioActualizado.nombre || valoresOriginalesPerfil.nombre,
-                usuarioActualizado.fotoPerfilUrl
+                usuarioActualizado.fotoPerfilUrl,
+                estadoRecorteFoto.forma || "cuadrado"
             );
         }
 
@@ -949,6 +978,7 @@ function destruirImagenTemporalRecorte() {
     estadoRecorteFoto.inicioX = 0;
     estadoRecorteFoto.inicioY = 0;
     estadoRecorteFoto.escalaBase = 1;
+    estadoRecorteFoto.forma = "cuadrado";
 
     const previewImg = document.getElementById("imagen-recorte-preview");
     const miniPreviewImg = document.getElementById("mini-preview-img");

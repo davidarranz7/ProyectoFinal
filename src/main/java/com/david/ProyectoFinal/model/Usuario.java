@@ -23,6 +23,7 @@ public class Usuario {
     private Rol rol;
 
     private String fotoPerfilUrl;
+    private String formaFotoPerfil;
 
     /// Constructores
     /// Constructor vacío-> necesario para JPA para que pueda crear el objeto la base de datos
@@ -30,13 +31,14 @@ public class Usuario {
     public Usuario() {
     }
     /// Constructor con parámetros-> Todos los necesarios de un usuario
-    public Usuario(Long id, String nombre, String email, String password, Rol rol, String fotoPerfilUrl) {
+    public Usuario(Long id, String nombre, String email, String password, Rol rol, String fotoPerfilUrl, String formaFotoPerfil) {
         this.id = id;
         this.nombre = nombre;
         this.email = email;
         this.password = password;
         this.rol = rol;
         this.fotoPerfilUrl = fotoPerfilUrl;
+        this.formaFotoPerfil = formaFotoPerfil;
     }
 
     /// Getters y Setters
@@ -87,5 +89,13 @@ public class Usuario {
 
     public void setFotoPerfilUrl(String fotoPerfilUrl) {
         this.fotoPerfilUrl = fotoPerfilUrl;
+    }
+
+    public String getFormaFotoPerfil() {
+        return formaFotoPerfil;
+    }
+
+    public void setFormaFotoPerfil(String formaFotoPerfil) {
+        this.formaFotoPerfil = formaFotoPerfil;
     }
 }
