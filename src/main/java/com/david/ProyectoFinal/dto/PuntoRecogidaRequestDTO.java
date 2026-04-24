@@ -1,46 +1,24 @@
-package com.david.ProyectoFinal.model;
+package com.david.ProyectoFinal.dto;
 
-import jakarta.persistence.*;
-
-@Entity
-@Table(name = "establecimientos")
-public class Establecimiento {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class PuntoRecogidaRequestDTO {
 
     private String nombre;
     private String direccion;
     private String ciudad;
     private String provincia;
-
-    /// indica si el establecimiento está disponible para recogida
-    private Boolean disponible = true;
-
-    /// motivo opcional si no está disponible
+    private Boolean disponible;
     private String motivoNoDisponible;
 
-    @ManyToOne
-    @JoinColumn(name = "tienda_id", nullable = false)
-    private Tienda tienda;
-
-    public Establecimiento() {
+    public PuntoRecogidaRequestDTO() {
     }
 
-    public Establecimiento(Long id, String nombre, String direccion, String ciudad, String provincia, Boolean disponible, String motivoNoDisponible, Tienda tienda) {
-        this.id = id;
+    public PuntoRecogidaRequestDTO(String nombre, String direccion, String ciudad, String provincia, Boolean disponible, String motivoNoDisponible) {
         this.nombre = nombre;
         this.direccion = direccion;
         this.ciudad = ciudad;
         this.provincia = provincia;
         this.disponible = disponible;
         this.motivoNoDisponible = motivoNoDisponible;
-        this.tienda = tienda;
-    }
-
-    public Long getId() {
-        return id;
     }
 
     public String getNombre() {
@@ -49,10 +27,6 @@ public class Establecimiento {
 
     public void setNombre(String nombre) {
         this.nombre = nombre;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
     }
 
     public String getDireccion() {
@@ -93,13 +67,5 @@ public class Establecimiento {
 
     public void setMotivoNoDisponible(String motivoNoDisponible) {
         this.motivoNoDisponible = motivoNoDisponible;
-    }
-
-    public Tienda getTienda() {
-        return tienda;
-    }
-
-    public void setTienda(Tienda tienda) {
-        this.tienda = tienda;
     }
 }

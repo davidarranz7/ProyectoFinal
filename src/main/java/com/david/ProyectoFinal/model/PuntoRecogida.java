@@ -3,8 +3,8 @@ package com.david.ProyectoFinal.model;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "establecimientos")
-public class Establecimiento {
+@Table(name = "puntos_recogida")
+public class PuntoRecogida {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -15,20 +15,13 @@ public class Establecimiento {
     private String ciudad;
     private String provincia;
 
-    /// indica si el establecimiento está disponible para recogida
-    private Boolean disponible = true;
-
-    /// motivo opcional si no está disponible
+    private Boolean disponible;
     private String motivoNoDisponible;
 
-    @ManyToOne
-    @JoinColumn(name = "tienda_id", nullable = false)
-    private Tienda tienda;
-
-    public Establecimiento() {
+    public PuntoRecogida() {
     }
 
-    public Establecimiento(Long id, String nombre, String direccion, String ciudad, String provincia, Boolean disponible, String motivoNoDisponible, Tienda tienda) {
+    public PuntoRecogida(Long id, String nombre, String direccion, String ciudad, String provincia, Boolean disponible, String motivoNoDisponible) {
         this.id = id;
         this.nombre = nombre;
         this.direccion = direccion;
@@ -36,7 +29,6 @@ public class Establecimiento {
         this.provincia = provincia;
         this.disponible = disponible;
         this.motivoNoDisponible = motivoNoDisponible;
-        this.tienda = tienda;
     }
 
     public Long getId() {
@@ -47,59 +39,51 @@ public class Establecimiento {
         return nombre;
     }
 
-    public void setNombre(String nombre) {
-        this.nombre = nombre;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
     public String getDireccion() {
         return direccion;
-    }
-
-    public void setDireccion(String direccion) {
-        this.direccion = direccion;
     }
 
     public String getCiudad() {
         return ciudad;
     }
 
-    public void setCiudad(String ciudad) {
-        this.ciudad = ciudad;
-    }
-
     public String getProvincia() {
         return provincia;
-    }
-
-    public void setProvincia(String provincia) {
-        this.provincia = provincia;
     }
 
     public Boolean getDisponible() {
         return disponible;
     }
 
-    public void setDisponible(Boolean disponible) {
-        this.disponible = disponible;
-    }
-
     public String getMotivoNoDisponible() {
         return motivoNoDisponible;
     }
 
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public void setNombre(String nombre) {
+        this.nombre = nombre;
+    }
+
+    public void setDireccion(String direccion) {
+        this.direccion = direccion;
+    }
+
+    public void setCiudad(String ciudad) {
+        this.ciudad = ciudad;
+    }
+
+    public void setProvincia(String provincia) {
+        this.provincia = provincia;
+    }
+
+    public void setDisponible(Boolean disponible) {
+        this.disponible = disponible;
+    }
+
     public void setMotivoNoDisponible(String motivoNoDisponible) {
         this.motivoNoDisponible = motivoNoDisponible;
-    }
-
-    public Tienda getTienda() {
-        return tienda;
-    }
-
-    public void setTienda(Tienda tienda) {
-        this.tienda = tienda;
     }
 }

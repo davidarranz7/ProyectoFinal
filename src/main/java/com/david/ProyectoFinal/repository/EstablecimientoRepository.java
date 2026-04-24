@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 
-public interface EstablecimientoRepository extends JpaRepository<Establecimiento,Long> {
-    List<Establecimiento> findByTiendaNombreAndCiudadIgnoreCase(String nombreTienda, String ciudad);
+public interface EstablecimientoRepository extends JpaRepository<Establecimiento, Long> {
+
+    List<Establecimiento> findByTiendaNombreAndCiudadIgnoreCaseAndDisponibleTrue(String nombreTienda, String ciudad);
 }

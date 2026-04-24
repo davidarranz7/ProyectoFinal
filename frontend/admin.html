@@ -39,6 +39,11 @@
                 <span>Productos</span>
             </button>
 
+            <button class="admin-nav-btn" type="button" data-seccion="establecimientos">
+                <span class="admin-nav-icon">🏬</span>
+                <span>Establecimientos</span>
+            </button>
+
             <button class="admin-nav-btn" type="button" data-seccion="usuarios">
                 <span class="admin-nav-icon">👥</span>
                 <span>Usuarios</span>
@@ -236,6 +241,50 @@
             </div>
         </section>
 
+        <!-- ESTABLECIMIENTOS -->
+        <section class="admin-section" id="establecimientos">
+            <div class="admin-block">
+                <div class="admin-block-header">
+                    <div>
+                        <p class="admin-section-eyebrow">Tiendas físicas</p>
+                        <h2>Establecimientos</h2>
+                        <p class="admin-section-subtitle">
+                            Gestiona los establecimientos disponibles para recogida en tienda, crea nuevos locales, edítalos y controla su disponibilidad.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="toolbar-admin">
+                    <div class="toolbar-left">
+                        <div class="toolbar-search">
+                            <input
+                                    type="text"
+                                    id="buscador-establecimientos-admin"
+                                    placeholder="Buscar por nombre, ciudad, provincia o tienda..."
+                            />
+                        </div>
+                    </div>
+
+                    <div class="toolbar-right">
+                        <button class="btn btn-primary" type="button" id="btn-nuevo-establecimiento">
+                            Nuevo establecimiento
+                        </button>
+                    </div>
+                </div>
+
+                <div id="establecimientos-admin-estado" class="estado-panel-admin" style="display:none;"></div>
+
+                <div class="admin-list-wrap">
+                    <div id="contenedor-establecimientos-admin" class="admin-list-grid">
+                        <div class="empty-admin-state">
+                            <h3>Cargando establecimientos</h3>
+                            <p>Los establecimientos aparecerán aquí automáticamente.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- USUARIOS -->
         <section class="admin-section" id="usuarios">
             <div class="admin-block">
@@ -284,6 +333,7 @@
                                 <option value="CONFIRMADO">Confirmado</option>
                                 <option value="PREPARANDO">Preparando</option>
                                 <option value="ENVIADO">Enviado</option>
+                                <option value="LISTO_PARA_RECOGER">Listo para recoger</option>
                                 <option value="ENTREGADO">Entregado</option>
                                 <option value="CANCELADO">Cancelado</option>
                             </select>
@@ -510,6 +560,7 @@
                     <option value="CONFIRMADO">Confirmado</option>
                     <option value="PREPARANDO">Preparando</option>
                     <option value="ENVIADO">Enviado</option>
+                    <option value="LISTO_PARA_RECOGER">Listo para recoger</option>
                     <option value="ENTREGADO">Entregado</option>
                     <option value="CANCELADO">Cancelado</option>
                 </select>
@@ -518,6 +569,105 @@
             <div class="modal-admin-actions form-group-full">
                 <button type="button" class="btn btn-secondary" id="cancelar-modal-cambiar-estado-pedido">Cancelar</button>
                 <button type="submit" class="btn btn-primary" id="guardar-cambio-estado-pedido">Guardar cambio</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL NUEVO ESTABLECIMIENTO -->
+<div id="modal-crear-establecimiento" class="modal-admin-overlay" style="display:none;">
+    <div class="modal-admin modal-admin-large">
+        <div class="modal-admin-header">
+            <h3>Nuevo establecimiento</h3>
+            <button type="button" class="modal-admin-close" id="cerrar-modal-crear-establecimiento">×</button>
+        </div>
+
+        <form id="form-crear-establecimiento" class="form-admin-grid">
+            <div class="form-group">
+                <label for="crear-establecimiento-nombre">Nombre</label>
+                <input type="text" id="crear-establecimiento-nombre" required />
+            </div>
+
+            <div class="form-group">
+                <label for="crear-establecimiento-tienda">Tienda</label>
+                <input type="text" id="crear-establecimiento-tienda" placeholder="Ej: Zara" required />
+            </div>
+
+            <div class="form-group form-group-full">
+                <label for="crear-establecimiento-direccion">Dirección</label>
+                <input type="text" id="crear-establecimiento-direccion" required />
+            </div>
+
+            <div class="form-group">
+                <label for="crear-establecimiento-ciudad">Ciudad</label>
+                <input type="text" id="crear-establecimiento-ciudad" required />
+            </div>
+
+            <div class="form-group">
+                <label for="crear-establecimiento-provincia">Provincia</label>
+                <input type="text" id="crear-establecimiento-provincia" required />
+            </div>
+
+            <div class="form-group">
+                <label for="crear-establecimiento-disponible">Disponibilidad</label>
+                <select id="crear-establecimiento-disponible">
+                    <option value="true">Disponible</option>
+                    <option value="false">No disponible</option>
+                </select>
+            </div>
+
+            <div class="form-group form-group-full">
+                <label for="crear-establecimiento-motivo">Motivo no disponible</label>
+                <input type="text" id="crear-establecimiento-motivo" placeholder="Solo si no está disponible" />
+            </div>
+
+            <div class="modal-admin-actions form-group-full">
+                <button type="button" class="btn btn-secondary" id="cancelar-modal-crear-establecimiento">Cancelar</button>
+                <button type="submit" class="btn btn-primary" id="guardar-crear-establecimiento">Crear establecimiento</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL EDITAR ESTABLECIMIENTO -->
+<div id="modal-editar-establecimiento" class="modal-admin-overlay" style="display:none;">
+    <div class="modal-admin modal-admin-large">
+        <div class="modal-admin-header">
+            <h3>Editar establecimiento</h3>
+            <button type="button" class="modal-admin-close" id="cerrar-modal-editar-establecimiento">×</button>
+        </div>
+
+        <form id="form-editar-establecimiento" class="form-admin-grid">
+            <input type="hidden" id="editar-establecimiento-id" />
+
+            <div class="form-group">
+                <label for="editar-establecimiento-nombre">Nombre</label>
+                <input type="text" id="editar-establecimiento-nombre" required />
+            </div>
+
+            <div class="form-group">
+                <label for="editar-establecimiento-tienda">Tienda</label>
+                <input type="text" id="editar-establecimiento-tienda" required />
+            </div>
+
+            <div class="form-group form-group-full">
+                <label for="editar-establecimiento-direccion">Dirección</label>
+                <input type="text" id="editar-establecimiento-direccion" required />
+            </div>
+
+            <div class="form-group">
+                <label for="editar-establecimiento-ciudad">Ciudad</label>
+                <input type="text" id="editar-establecimiento-ciudad" required />
+            </div>
+
+            <div class="form-group">
+                <label for="editar-establecimiento-provincia">Provincia</label>
+                <input type="text" id="editar-establecimiento-provincia" required />
+            </div>
+
+            <div class="modal-admin-actions form-group-full">
+                <button type="button" class="btn btn-secondary" id="cancelar-modal-editar-establecimiento">Cancelar</button>
+                <button type="submit" class="btn btn-primary" id="guardar-editar-establecimiento">Guardar cambios</button>
             </div>
         </form>
     </div>

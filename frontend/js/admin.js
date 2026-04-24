@@ -38,11 +38,13 @@ function iniciarAdmin() {
     configurarNavegacion(refs);
     configurarScraping(refs);
     configurarProductos(refs, state);
+    configurarEstablecimientos(refs, state);
     configurarUsuarios(refs, state);
     configurarPedidos(refs, state);
     configurarModales(refs, state);
 
     actualizarEstadoScraping(refs, "Inactivo", "Sin procesos activos en este momento.", "neutral");
+    actualizarCampoMotivoEstablecimiento(refs);
 
     cargarTodo(refs, state);
 }
@@ -74,6 +76,36 @@ function obtenerReferencias() {
         btnStockSeleccionados: document.getElementById("btn-stock-seleccionados"),
         contenedorProductos: document.getElementById("contenedor-productos-admin"),
         estadoProductos: document.getElementById("productos-admin-estado"),
+
+        buscadorEstablecimientos: document.getElementById("buscador-establecimientos-admin"),
+        btnNuevoEstablecimiento: document.getElementById("btn-nuevo-establecimiento"),
+        contenedorEstablecimientos: document.getElementById("contenedor-establecimientos-admin"),
+        estadoEstablecimientos: document.getElementById("establecimientos-admin-estado"),
+
+        modalCrearEstablecimiento: document.getElementById("modal-crear-establecimiento"),
+        cerrarModalCrearEstablecimiento: document.getElementById("cerrar-modal-crear-establecimiento"),
+        cancelarModalCrearEstablecimiento: document.getElementById("cancelar-modal-crear-establecimiento"),
+        formCrearEstablecimiento: document.getElementById("form-crear-establecimiento"),
+        crearEstablecimientoNombre: document.getElementById("crear-establecimiento-nombre"),
+        crearEstablecimientoTienda: document.getElementById("crear-establecimiento-tienda"),
+        crearEstablecimientoDireccion: document.getElementById("crear-establecimiento-direccion"),
+        crearEstablecimientoCiudad: document.getElementById("crear-establecimiento-ciudad"),
+        crearEstablecimientoProvincia: document.getElementById("crear-establecimiento-provincia"),
+        crearEstablecimientoDisponible: document.getElementById("crear-establecimiento-disponible"),
+        crearEstablecimientoMotivo: document.getElementById("crear-establecimiento-motivo"),
+        guardarCrearEstablecimiento: document.getElementById("guardar-crear-establecimiento"),
+
+        modalEditarEstablecimiento: document.getElementById("modal-editar-establecimiento"),
+        cerrarModalEditarEstablecimiento: document.getElementById("cerrar-modal-editar-establecimiento"),
+        cancelarModalEditarEstablecimiento: document.getElementById("cancelar-modal-editar-establecimiento"),
+        formEditarEstablecimiento: document.getElementById("form-editar-establecimiento"),
+        editarEstablecimientoId: document.getElementById("editar-establecimiento-id"),
+        editarEstablecimientoNombre: document.getElementById("editar-establecimiento-nombre"),
+        editarEstablecimientoTienda: document.getElementById("editar-establecimiento-tienda"),
+        editarEstablecimientoDireccion: document.getElementById("editar-establecimiento-direccion"),
+        editarEstablecimientoCiudad: document.getElementById("editar-establecimiento-ciudad"),
+        editarEstablecimientoProvincia: document.getElementById("editar-establecimiento-provincia"),
+        guardarEditarEstablecimiento: document.getElementById("guardar-editar-establecimiento"),
 
         contenedorUsuarios: document.getElementById("contenedor-usuarios-admin"),
         estadoUsuarios: document.getElementById("usuarios-admin-estado"),
@@ -145,6 +177,8 @@ function crearEstadoInicial() {
     return {
         productos: [],
         productosFiltrados: [],
+        establecimientos: [],
+        establecimientosFiltrados: [],
         usuarios: [],
         pedidos: [],
         modoSeleccionProductos: false,
@@ -268,6 +302,32 @@ function configurarProductos(refs, state) {
     });
 }
 
+function configurarEstablecimientos(refs, state) {
+    refs.buscadorEstablecimientos?.addEventListener("input", () => {
+        aplicarFiltroEstablecimientos(refs, state);
+    });
+
+    refs.btnNuevoEstablecimiento?.addEventListener("click", () => {
+        refs.formCrearEstablecimiento?.reset();
+        actualizarCampoMotivoEstablecimiento(refs);
+        abrirModal(refs.modalCrearEstablecimiento);
+    });
+
+    refs.formCrearEstablecimiento?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        await guardarNuevoEstablecimiento(refs, state);
+    });
+
+    refs.crearEstablecimientoDisponible?.addEventListener("change", () => {
+        actualizarCampoMotivoEstablecimiento(refs);
+    });
+
+    refs.formEditarEstablecimiento?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        await guardarEdicionEstablecimiento(refs, state);
+    });
+}
+
 function configurarUsuarios(refs, state) {
     refs.formEditarUsuario?.addEventListener("submit", async (e) => {
         e.preventDefault();
@@ -303,13 +363,30 @@ function configurarModales(refs, state) {
         refs.stockActualProducto?.appendChild(crearTextoVacio("texto-box-vacio", "Selecciona un producto para ver el stock actual por talla."));
     });
 
+    configurarCerrarModal(
+        refs.modalCrearEstablecimiento,
+        refs.cerrarModalCrearEstablecimiento,
+        refs.cancelarModalCrearEstablecimiento,
+        () => {
+            refs.formCrearEstablecimiento?.reset();
+            actualizarCampoMotivoEstablecimiento(refs);
+        }
+    );
+
+    configurarCerrarModal(
+        refs.modalEditarEstablecimiento,
+        refs.cerrarModalEditarEstablecimiento,
+        refs.cancelarModalEditarEstablecimiento,
+        () => {
+            refs.formEditarEstablecimiento?.reset();
+        }
+    );
+
     configurarCerrarModal(refs.modalEditarUsuario, refs.cerrarModalEditarUsuario, refs.cancelarModalEditarUsuario, () => {
         refs.formEditarUsuario?.reset();
     });
 
-    configurarCerrarModal(refs.modalEliminarUsuario, refs.cerrarModalEliminarUsuario, refs.cancelarModalEliminarUsuario, () => {
-        state.usuarioIdPendienteEliminar = null;
-    });
+    configurararCerrarModalSeguraEliminarUsuario(refs, state);
 
     configurarCerrarModal(refs.modalDetalleUsuario, refs.cerrarModalDetalleUsuario, null, () => {
         limpiarContenedor(refs.contenidoDetalleUsuario);
@@ -333,6 +410,12 @@ function configurarModales(refs, state) {
     });
 }
 
+function configurararCerrarModalSeguraEliminarUsuario(refs, state) {
+    configurarCerrarModal(refs.modalEliminarUsuario, refs.cerrarModalEliminarUsuario, refs.cancelarModalEliminarUsuario, () => {
+        state.usuarioIdPendienteEliminar = null;
+    });
+}
+
 function configurarCerrarModal(modal, btnCerrar, btnCancelar, onClose) {
     btnCerrar?.addEventListener("click", () => cerrarModal(modal, onClose));
     btnCancelar?.addEventListener("click", () => cerrarModal(modal, onClose));
@@ -350,6 +433,7 @@ async function cargarTodo(refs, state) {
     await Promise.all([
         cargarMetricas(refs),
         cargarProductos(refs, state),
+        cargarEstablecimientos(refs, state),
         cargarUsuarios(refs, state),
         cargarPedidos(refs, state)
     ]);
@@ -405,6 +489,35 @@ async function cargarProductos(refs, state) {
         console.error("Error cargando productos:", error);
         mostrarEstado(refs.estadoProductos, "No se pudieron cargar los productos.", "error");
         renderizarEstadoVacio(refs.contenedorProductos, "Error al cargar", "No se pudo obtener el catálogo.");
+    }
+}
+
+async function cargarEstablecimientos(refs, state) {
+    try {
+        mostrarEstado(refs.estadoEstablecimientos, "Cargando establecimientos...", "info");
+
+        const response = await fetch(`${BASE_URL}/establecimientos`, {
+            method: "GET",
+            credentials: "include"
+        });
+
+        if (!response.ok) {
+            throw new Error("No se pudieron cargar los establecimientos");
+        }
+
+        state.establecimientos = await response.json();
+        state.establecimientosFiltrados = [...state.establecimientos];
+
+        ocultarEstado(refs.estadoEstablecimientos);
+        renderizarEstablecimientos(refs, state);
+    } catch (error) {
+        console.error("Error cargando establecimientos:", error);
+        mostrarEstado(refs.estadoEstablecimientos, "No se pudieron cargar los establecimientos.", "error");
+        renderizarEstadoVacio(
+            refs.contenedorEstablecimientos,
+            "Error al cargar",
+            "No se pudo obtener la lista de establecimientos."
+        );
     }
 }
 
@@ -848,6 +961,294 @@ async function guardarStockProductos(refs, state) {
 function actualizarBotonStockSeleccionados(refs, state) {
     if (!refs.btnStockSeleccionados) return;
     refs.btnStockSeleccionados.disabled = state.productosSeleccionados.size === 0;
+}
+
+/* =========================
+   ESTABLECIMIENTOS
+========================= */
+
+function aplicarFiltroEstablecimientos(refs, state) {
+    const termino = (refs.buscadorEstablecimientos?.value || "").trim().toLowerCase();
+
+    if (!termino) {
+        state.establecimientosFiltrados = [...state.establecimientos];
+    } else {
+        state.establecimientosFiltrados = state.establecimientos.filter((establecimiento) => {
+            const nombre = (establecimiento.nombre || "").toLowerCase();
+            const ciudad = (establecimiento.ciudad || "").toLowerCase();
+            const provincia = (establecimiento.provincia || "").toLowerCase();
+            const tienda = (establecimiento.tienda?.nombre || "").toLowerCase();
+            const direccion = (establecimiento.direccion || "").toLowerCase();
+
+            return (
+                nombre.includes(termino) ||
+                ciudad.includes(termino) ||
+                provincia.includes(termino) ||
+                tienda.includes(termino) ||
+                direccion.includes(termino)
+            );
+        });
+    }
+
+    renderizarEstablecimientos(refs, state);
+}
+
+function renderizarEstablecimientos(refs, state) {
+    limpiarContenedor(refs.contenedorEstablecimientos);
+
+    if (!Array.isArray(state.establecimientosFiltrados) || state.establecimientosFiltrados.length === 0) {
+        renderizarEstadoVacio(
+            refs.contenedorEstablecimientos,
+            "Sin establecimientos",
+            "No se encontraron establecimientos con los filtros actuales."
+        );
+        return;
+    }
+
+    state.establecimientosFiltrados.forEach((establecimiento) => {
+        refs.contenedorEstablecimientos.appendChild(
+            crearCardEstablecimiento(establecimiento, refs, state)
+        );
+    });
+}
+
+function crearCardEstablecimiento(establecimiento, refs, state) {
+    const article = el("article", { className: "item-admin-card" });
+
+    const avatar = el("div", {
+        className: "item-admin-avatar",
+        text: "🏬"
+    });
+
+    const body = el("div", { className: "item-admin-body" });
+    body.appendChild(el("h3", { text: establecimiento.nombre || "Sin nombre" }));
+
+    const meta = el("div", { className: "item-admin-meta" });
+    meta.appendChild(crearBadge(establecimiento.tienda?.nombre || "Sin tienda"));
+    meta.appendChild(
+        crearBadge(
+            establecimiento.disponible ? "Disponible" : "No disponible"
+        )
+    );
+    body.appendChild(meta);
+
+    body.appendChild(el("p", {
+        className: "item-admin-texto",
+        text: `Dirección: ${establecimiento.direccion || "Sin dirección"}`
+    }));
+
+    body.appendChild(el("p", {
+        className: "item-admin-texto",
+        text: `Ciudad: ${establecimiento.ciudad || "-"} · Provincia: ${establecimiento.provincia || "-"}`
+    }));
+
+    if (!establecimiento.disponible && establecimiento.motivoNoDisponible) {
+        body.appendChild(el("p", {
+            className: "item-admin-texto",
+            text: `Motivo: ${establecimiento.motivoNoDisponible}`
+        }));
+    }
+
+    const acciones = el("div", { className: "item-admin-acciones" });
+
+    const btnEditar = crearBoton("Editar", "btn btn-secondary", async () => {
+        await abrirEditarEstablecimiento(refs, establecimiento);
+    });
+
+    const btnDisponibilidad = crearBoton(
+        establecimiento.disponible ? "Bloquear" : "Reactivar",
+        establecimiento.disponible ? "btn btn-danger" : "btn btn-primary",
+        async () => {
+            await cambiarDisponibilidadEstablecimiento(refs, state, establecimiento);
+        }
+    );
+
+    acciones.append(btnEditar, btnDisponibilidad);
+    article.append(avatar, body, acciones);
+
+    return article;
+}
+
+function actualizarCampoMotivoEstablecimiento(refs) {
+    const disponible = refs.crearEstablecimientoDisponible?.value === "true";
+
+    if (!refs.crearEstablecimientoMotivo) return;
+
+    refs.crearEstablecimientoMotivo.disabled = disponible;
+
+    if (disponible) {
+        refs.crearEstablecimientoMotivo.value = "";
+    }
+}
+
+async function guardarNuevoEstablecimiento(refs, state) {
+    const nombre = refs.crearEstablecimientoNombre.value.trim();
+    const nombreTienda = refs.crearEstablecimientoTienda.value.trim();
+    const direccion = refs.crearEstablecimientoDireccion.value.trim();
+    const ciudad = refs.crearEstablecimientoCiudad.value.trim();
+    const provincia = refs.crearEstablecimientoProvincia.value.trim();
+    const disponible = refs.crearEstablecimientoDisponible.value === "true";
+    const motivoNoDisponible = refs.crearEstablecimientoMotivo.value.trim();
+
+    if (!nombre || !nombreTienda || !direccion || !ciudad || !provincia) {
+        mostrarMensaje(refs, "Completa todos los campos obligatorios.", "error");
+        return;
+    }
+
+    if (!disponible && !motivoNoDisponible) {
+        mostrarMensaje(refs, "Indica el motivo si el establecimiento no está disponible.", "error");
+        return;
+    }
+
+    try {
+        bloquearBoton(refs.guardarCrearEstablecimiento, "Creando...");
+
+        const payload = {
+            nombre,
+            direccion,
+            ciudad,
+            provincia,
+            nombreTienda,
+            disponible,
+            motivoNoDisponible: disponible ? null : motivoNoDisponible
+        };
+
+        const response = await fetch(`${BASE_URL}/establecimientos`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            credentials: "include",
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            let mensaje = "No se pudo crear el establecimiento.";
+            try {
+                const texto = await response.text();
+                if (texto) mensaje = texto;
+            } catch (_) {}
+            throw new Error(mensaje);
+        }
+
+        cerrarModal(refs.modalCrearEstablecimiento, () => {
+            refs.formCrearEstablecimiento.reset();
+            actualizarCampoMotivoEstablecimiento(refs);
+        });
+
+        mostrarMensaje(refs, "Establecimiento creado correctamente.", "ok");
+        await cargarEstablecimientos(refs, state);
+    } catch (error) {
+        console.error(error);
+        mostrarMensaje(refs, error.message || "No se pudo crear el establecimiento.", "error");
+    } finally {
+        restaurarBoton(refs.guardarCrearEstablecimiento, "Crear establecimiento");
+    }
+}
+
+async function abrirEditarEstablecimiento(refs, establecimiento) {
+    refs.editarEstablecimientoId.value = establecimiento.id || "";
+    refs.editarEstablecimientoNombre.value = establecimiento.nombre || "";
+    refs.editarEstablecimientoTienda.value = establecimiento.tienda?.nombre || "";
+    refs.editarEstablecimientoDireccion.value = establecimiento.direccion || "";
+    refs.editarEstablecimientoCiudad.value = establecimiento.ciudad || "";
+    refs.editarEstablecimientoProvincia.value = establecimiento.provincia || "";
+
+    abrirModal(refs.modalEditarEstablecimiento);
+}
+
+async function guardarEdicionEstablecimiento(refs, state) {
+    const id = refs.editarEstablecimientoId.value.trim();
+    const nombre = refs.editarEstablecimientoNombre.value.trim();
+    const nombreTienda = refs.editarEstablecimientoTienda.value.trim();
+    const direccion = refs.editarEstablecimientoDireccion.value.trim();
+    const ciudad = refs.editarEstablecimientoCiudad.value.trim();
+    const provincia = refs.editarEstablecimientoProvincia.value.trim();
+
+    if (!id || !nombre || !nombreTienda || !direccion || !ciudad || !provincia) {
+        mostrarMensaje(refs, "Completa todos los campos del establecimiento.", "error");
+        return;
+    }
+
+    try {
+        bloquearBoton(refs.guardarEditarEstablecimiento, "Guardando...");
+
+        const payload = {
+            nombre,
+            direccion,
+            ciudad,
+            provincia,
+            nombreTienda
+        };
+
+        const response = await fetch(`${BASE_URL}/establecimientos/${id}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            credentials: "include",
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            let mensaje = "No se pudo actualizar el establecimiento.";
+            try {
+                const texto = await response.text();
+                if (texto) mensaje = texto;
+            } catch (_) {}
+            throw new Error(mensaje);
+        }
+
+        cerrarModal(refs.modalEditarEstablecimiento, () => {
+            refs.formEditarEstablecimiento.reset();
+        });
+
+        mostrarMensaje(refs, "Establecimiento actualizado correctamente.", "ok");
+        await cargarEstablecimientos(refs, state);
+    } catch (error) {
+        console.error(error);
+        mostrarMensaje(refs, error.message || "No se pudo actualizar el establecimiento.", "error");
+    } finally {
+        restaurarBoton(refs.guardarEditarEstablecimiento, "Guardar cambios");
+    }
+}
+
+async function cambiarDisponibilidadEstablecimiento(refs, state, establecimiento) {
+    try {
+        let url = "";
+
+        if (establecimiento.disponible) {
+            const motivo = prompt("Indica el motivo de no disponibilidad:", "En obras");
+
+            if (motivo === null) return;
+
+            url = `${BASE_URL}/establecimientos/${establecimiento.id}/disponibilidad?disponible=false&motivoNoDisponible=${encodeURIComponent(motivo)}`;
+        } else {
+            url = `${BASE_URL}/establecimientos/${establecimiento.id}/disponibilidad?disponible=true`;
+        }
+
+        const response = await fetch(url, {
+            method: "PUT",
+            credentials: "include"
+        });
+
+        if (!response.ok) {
+            throw new Error("No se pudo cambiar la disponibilidad");
+        }
+
+        mostrarMensaje(
+            refs,
+            establecimiento.disponible
+                ? "Establecimiento bloqueado correctamente."
+                : "Establecimiento reactivado correctamente.",
+            "ok"
+        );
+
+        await cargarEstablecimientos(refs, state);
+    } catch (error) {
+        console.error(error);
+        mostrarMensaje(refs, "No se pudo actualizar la disponibilidad del establecimiento.", "error");
+    }
 }
 
 /* =========================
@@ -1429,6 +1830,7 @@ function obtenerClaseEstado(estado) {
         case "CONFIRMADO": return "estado-confirmado";
         case "PREPARANDO": return "estado-preparando";
         case "ENVIADO": return "estado-enviado";
+        case "LISTO_PARA_RECOGER": return "estado-preparando";
         case "ENTREGADO": return "estado-entregado";
         case "CANCELADO": return "estado-cancelado";
         default: return "estado-confirmado";
