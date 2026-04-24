@@ -1,13 +1,19 @@
 package com.david.ProyectoFinal.service;
 
+import com.david.ProyectoFinal.dto.GuardarTarjetaDTO;
 import com.david.ProyectoFinal.dto.PagoResponseDTO;
 import com.david.ProyectoFinal.dto.PagoRequestDTO;
 import com.david.ProyectoFinal.model.*;
 import com.david.ProyectoFinal.repository.*;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service
@@ -20,14 +26,10 @@ public class PagoServiceImpl implements PagoService {
     private final PedidoRepository pedidoRepository;
     private final ItemPedidoRepository itemPedidoRepository;
     private final EmailService emailService;
+    private final TarjetaRepository tarjetaRepository;
+    private final TarjetaService tarjetaService;
 
-    public PagoServiceImpl(PagoRepository pagoRepository,
-                           UsuarioRepository usuarioRepository,
-                           CarritoRepository carritoRepository,
-                           ItemCarritoRepository itemCarritoRepository,
-                           PedidoRepository pedidoRepository,
-                           ItemPedidoRepository itemPedidoRepository,
-                           EmailService emailService) {
+    public PagoServiceImpl(PagoRepository pagoRepository, UsuarioRepository usuarioRepository, CarritoRepository carritoRepository, ItemCarritoRepository itemCarritoRepository, PedidoRepository pedidoRepository, ItemPedidoRepository itemPedidoRepository, EmailService emailService, TarjetaRepository tarjetaRepository, TarjetaService tarjetaService) {
         this.pagoRepository = pagoRepository;
         this.usuarioRepository = usuarioRepository;
         this.carritoRepository = carritoRepository;
@@ -35,6 +37,8 @@ public class PagoServiceImpl implements PagoService {
         this.pedidoRepository = pedidoRepository;
         this.itemPedidoRepository = itemPedidoRepository;
         this.emailService = emailService;
+        this.tarjetaRepository = tarjetaRepository;
+        this.tarjetaService = tarjetaService;
     }
 
     public PagoResponseDTO procesarPago(PagoRequestDTO dto) {
@@ -66,37 +70,66 @@ public class PagoServiceImpl implements PagoService {
 
         // VALIDACIONES SEGÚN MÉTODO
         if (metodoPago == MetodoPago.TARJETA) {
-            String numeroTarjeta = dto.getNumeroTarjeta();
-            String nombreTitular = dto.getNombreTitular();
-            String fechaExpiracion = dto.getFechaExpiracion();
-            String cvv = dto.getCvv();
 
-            if (numeroTarjeta == null || numeroTarjeta.isBlank()) {
-                throw new RuntimeException("El número de tarjeta es obligatorio");
+            /// caso 1: usa una tarjeta ya guardada
+            if (dto.getTarjetaId() != null) {
+                Tarjeta tarjeta = tarjetaRepository.findById(dto.getTarjetaId())
+                        .orElseThrow(() -> new RuntimeException("Tarjeta no encontrada"));
+
+                if (!tarjeta.getUsuario().getId().equals(usuarioId)) {
+                    throw new RuntimeException("La tarjeta no pertenece al usuario");
+                }
             }
 
-            if (nombreTitular == null || nombreTitular.isBlank()) {
-                throw new RuntimeException("El nombre del titular es obligatorio");
-            }
+            /// caso 2: usa una tarjeta nueva
+            else {
+                String numeroTarjeta = dto.getNumeroTarjeta();
+                String nombreTitular = dto.getNombreTitular();
+                String fechaExpiracion = dto.getFechaExpiracion();
+                String cvv = dto.getCvv();
 
-            if (fechaExpiracion == null || fechaExpiracion.isBlank()) {
-                throw new RuntimeException("La fecha de expiración es obligatoria");
-            }
+                if (numeroTarjeta == null || numeroTarjeta.isBlank()) {
+                    throw new RuntimeException("El número de tarjeta es obligatorio");
+                }
 
-            if (cvv == null || cvv.isBlank()) {
-                throw new RuntimeException("El CVV es obligatorio");
-            }
+                if (nombreTitular == null || nombreTitular.isBlank()) {
+                    throw new RuntimeException("El nombre del titular es obligatorio");
+                }
 
-            if (numeroTarjeta.length() < 12) {
-                throw new RuntimeException("Número de tarjeta inválido");
-            }
+                if (fechaExpiracion == null || fechaExpiracion.isBlank()) {
+                    throw new RuntimeException("La fecha de expiración es obligatoria");
+                }
 
-            boolean aprobado = !numeroTarjeta.endsWith("0");
+                if (cvv == null || cvv.isBlank()) {
+                    throw new RuntimeException("El CVV es obligatorio");
+                }
 
-            if (!aprobado) {
-                response.setEstado(EstadoPago.RECHAZADO);
-                response.setMensaje("Pago rechazado (tarjeta inválida)");
-                return response;
+                if (numeroTarjeta.length() < 12) {
+                    throw new RuntimeException("Número de tarjeta inválido");
+                }
+
+                boolean aprobado = !numeroTarjeta.endsWith("0");
+
+                if (!aprobado) {
+                    response.setEstado(EstadoPago.RECHAZADO);
+                    response.setMensaje("Pago rechazado (tarjeta inválida)");
+                    return response;
+                }
+
+                /// si el usuario quiere guardar la tarjeta nueva
+                if (Boolean.TRUE.equals(dto.getGuardarTarjeta())) {
+                    if (dto.getTipoTarjeta() == null) {
+                        throw new RuntimeException("Debes indicar el tipo de tarjeta para guardarla");
+                    }
+
+                    GuardarTarjetaDTO guardarTarjetaDTO = new GuardarTarjetaDTO();
+                    guardarTarjetaDTO.setTitular(nombreTitular);
+                    guardarTarjetaDTO.setNumeroTarjeta(numeroTarjeta);
+                    guardarTarjetaDTO.setFechaExpiracion(fechaExpiracion);
+                    guardarTarjetaDTO.setTipo(dto.getTipoTarjeta());
+
+                    tarjetaService.guardarTarjeta(usuarioId, guardarTarjetaDTO);
+                }
             }
         }
 
@@ -166,13 +199,13 @@ public class PagoServiceImpl implements PagoService {
         Pago pagoGuardado = pagoRepository.save(pago);
 
         String asunto = "Confirmación de pedido #" + pedidoGuardado.getId();
-        String contenido = construirContenidoCorreoPedido(usuario, pedidoGuardado, itemsPedido);
+        String contenidoHtml = construirComprobanteHtml(usuario, pedidoGuardado, itemsPedido);
 
         try {
-            emailService.enviarCorreoSimple(usuario.getEmail(), asunto, contenido);
-            System.out.println("CORREO DE PEDIDO ENVIADO A: " + usuario.getEmail());
+            emailService.enviarCorreoHtml(usuario.getEmail(), asunto, contenidoHtml);
+            System.out.println("CORREO HTML DE PEDIDO ENVIADO A: " + usuario.getEmail());
         } catch (Exception e) {
-            System.out.println("ERROR AL ENVIAR CORREO DE PEDIDO: " + e.getMessage());
+            System.out.println("ERROR AL ENVIAR CORREO HTML DE PEDIDO: " + e.getMessage());
             e.printStackTrace();
         }
 
@@ -185,36 +218,62 @@ public class PagoServiceImpl implements PagoService {
         return response;
     }
 
-    private String construirContenidoCorreoPedido(Usuario usuario, Pedido pedido, List<ItemPedido> itemsPedido) {
+    private String construirComprobanteHtml(Usuario usuario, Pedido pedido, List<ItemPedido> itemsPedido) {
+        String plantilla = leerPlantillaHtml("templates/comprobante.html");
+
+        return plantilla
+                .replace("{{NOMBRE_USUARIO}}", usuario.getNombre())
+                .replace("{{NUMERO_PEDIDO}}", String.valueOf(pedido.getId()))
+                .replace("{{FECHA_PEDIDO}}", formatearFecha(pedido.getFechaPedido()))
+                .replace("{{ESTADO_PEDIDO}}", "Confirmado")
+                .replace("{{METODO_PAGO}}", formatearMetodoPago(pedido.getMetodoPago()))
+                .replace("{{PRODUCTOS_HTML}}", construirProductosHtml(itemsPedido))
+                .replace("{{TOTAL_PEDIDO}}", pedido.getTotal().toString());
+    }
+
+    private String construirProductosHtml(List<ItemPedido> itemsPedido) {
         StringBuilder sb = new StringBuilder();
 
-        sb.append("Hola ").append(usuario.getNombre()).append(",\n\n");
-        sb.append("Hemos recibido tu pedido correctamente en TiendaModa.\n\n");
-        sb.append("Resumen del pedido:\n");
-        sb.append("Número de pedido: ").append(pedido.getId()).append("\n");
-        sb.append("Fecha: ").append(pedido.getFechaPedido()).append("\n");
-        sb.append("Estado: Confirmado\n");
-        sb.append("Método de pago: ").append(formatearMetodoPago(pedido.getMetodoPago())).append("\n\n");
-
-        sb.append("Productos comprados:\n");
-
         for (ItemPedido item : itemsPedido) {
-            sb.append("- ")
+            sb.append("<table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" ")
+                    .append("style=\"border-collapse:collapse; margin-bottom:16px; background-color:#fafafa; border:1px solid #eaeaea; border-radius:10px;\">")
+                    .append("<tr>")
+                    .append("<td style=\"padding:18px;\">")
+
+                    .append("<p style=\"margin:0 0 10px 0; font-size:16px; font-weight:bold; color:#111111;\">")
                     .append(item.getProducto().getNombre())
-                    .append(" | Cantidad: ").append(item.getCantidad())
-                    .append(" | Talla: ").append(item.getTalla() != null ? item.getTalla() : "Sin talla")
-                    .append(" | Precio unitario: ").append(item.getPrecioUnitario()).append(" €")
-                    .append("\n");
+                    .append("</p>")
+
+                    .append("<p style=\"margin:4px 0; font-size:14px; color:#444444;\"><strong>Cantidad:</strong> ")
+                    .append(item.getCantidad())
+                    .append("</p>")
+
+                    .append("<p style=\"margin:4px 0; font-size:14px; color:#444444;\"><strong>Talla:</strong> ")
+                    .append(item.getTalla() != null ? item.getTalla().toString() : "Sin talla")
+                    .append("</p>")
+
+                    .append("<p style=\"margin:4px 0; font-size:14px; color:#444444;\"><strong>Precio unitario:</strong> ")
+                    .append(item.getPrecioUnitario())
+                    .append(" €</p>")
+
+                    .append("</td>")
+                    .append("</tr>")
+                    .append("</table>");
         }
 
-        sb.append("\n");
-        sb.append("Total del pedido: ").append(pedido.getTotal()).append(" €\n\n");
-        sb.append("Gracias por confiar en TiendaModa.\n");
-        sb.append("Te avisaremos cuando haya novedades sobre tu pedido.\n\n");
-        sb.append("Un saludo,\n");
-        sb.append("Equipo de TiendaModa");
-
         return sb.toString();
+    }
+    private String leerPlantillaHtml(String ruta) {
+        try (InputStream inputStream = new ClassPathResource(ruta).getInputStream()) {
+            return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new RuntimeException("No se pudo leer la plantilla HTML: " + ruta, e);
+        }
+    }
+
+    private String formatearFecha(LocalDateTime fecha) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+        return fecha.format(formatter);
     }
 
     private String formatearMetodoPago(MetodoPago metodoPago) {

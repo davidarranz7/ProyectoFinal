@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Comprobante de pedido</title>
+</head>
+<body style="margin:0; padding:0; background-color:#f5f5f5; font-family: Arial, Helvetica, sans-serif; color:#222222;">
+
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#f5f5f5; margin:0; padding:30px 0;">
+    <tr>
+        <td align="center">
+
+            <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="width:600px; max-width:600px; background-color:#ffffff; border-collapse:collapse; border-radius:12px; overflow:hidden;">
+
+                <tr>
+                    <td style="background-color:#111111; padding:28px 32px; text-align:center;">
+                        <h1 style="margin:0; color:#ffffff; font-size:28px; letter-spacing:1px;">TiendaModa</h1>
+                        <p style="margin:8px 0 0 0; color:#d9d9d9; font-size:14px;">Comprobante de pedido</p>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td style="padding:32px;">
+                        <p style="margin:0 0 20px 0; font-size:16px;">Hola <strong>{{NOMBRE_USUARIO}}</strong>,</p>
+
+                        <p style="margin:0 0 24px 0; font-size:15px; line-height:1.6;">
+                            Hemos recibido tu pedido correctamente. A continuación te dejamos el resumen de tu compra.
+                        </p>
+
+                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse; margin-bottom:28px; background-color:#f8f8f8; border-radius:10px;">
+                            <tr>
+                                <td style="padding:20px;">
+                                    <p style="margin:0 0 10px 0; font-size:18px; font-weight:bold;">Resumen del pedido</p>
+                                    <p style="margin:6px 0; font-size:14px;"><strong>Número de pedido:</strong> #{{NUMERO_PEDIDO}}</p>
+                                    <p style="margin:6px 0; font-size:14px;"><strong>Fecha:</strong> {{FECHA_PEDIDO}}</p>
+                                    <p style="margin:6px 0; font-size:14px;"><strong>Estado:</strong> {{ESTADO_PEDIDO}}</p>
+                                    <p style="margin:6px 0; font-size:14px;"><strong>Método de pago:</strong> {{METODO_PAGO}}</p>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <p style="margin:0 0 16px 0; font-size:18px; font-weight:bold;">Productos comprados</p>
+
+                        {{PRODUCTOS_HTML}}
+
+                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse; margin-top:24px; background-color:#111111; border-radius:10px;">
+                            <tr>
+                                <td style="padding:18px 22px; text-align:right;">
+                                    <p style="margin:0; color:#ffffff; font-size:14px;">Total del pedido</p>
+                                    <p style="margin:6px 0 0 0; color:#ffffff; font-size:26px; font-weight:bold;">{{TOTAL_PEDIDO}} €</p>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <p style="margin:28px 0 0 0; font-size:14px; line-height:1.7;">
+                            Gracias por confiar en <strong>TiendaModa</strong>.<br>
+                            Te avisaremos cuando haya novedades sobre tu pedido.
+                        </p>
+
+                        <p style="margin:24px 0 0 0; font-size:14px; line-height:1.7;">
+                            Un saludo,<br>
+                            <strong>Equipo de TiendaModa</strong>
+                        </p>
+                    </td>
+                </tr>
+
+            </table>
+
+        </td>
+    </tr>
+</table>
+
+</body>
+</html>

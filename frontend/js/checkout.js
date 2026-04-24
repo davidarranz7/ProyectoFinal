@@ -4,6 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 let itemsCarrito = [];
 let subtotalGlobal = 0;
+let tarjetasGuardadas = [];
 
 async function obtenerSesionActual() {
     try {
@@ -32,6 +33,7 @@ async function iniciarCheckout() {
     }
 
     await cargarResumenCheckout(sesion.id);
+    await cargarTarjetasGuardadas(sesion.id);
     configurarMetodoEnvio();
     configurarMetodoPago();
     configurarBotonConfirmar();
@@ -235,6 +237,98 @@ async function cargarTiendasRecogidaVigo(nombreTienda, selectTienda) {
     }
 }
 
+async function cargarTarjetasGuardadas(usuarioId) {
+    const bloqueTarjetas = document.getElementById("bloque-tarjetas-guardadas");
+    const listaTarjetas = document.getElementById("lista-tarjetas-guardadas");
+
+    if (!bloqueTarjetas || !listaTarjetas) return;
+
+    try {
+        const response = await fetch(`${BASE_URL}/tarjetas/usuario/${usuarioId}`, {
+            method: "GET",
+            credentials: "include"
+        });
+
+        if (!response.ok) {
+            throw new Error("No se pudieron cargar las tarjetas");
+        }
+
+        tarjetasGuardadas = await response.json();
+
+        listaTarjetas.innerHTML = "";
+
+        if (!tarjetasGuardadas || tarjetasGuardadas.length === 0) {
+            bloqueTarjetas.style.display = "none";
+            return;
+        }
+
+        bloqueTarjetas.style.display = "block";
+
+        tarjetasGuardadas.forEach(tarjeta => {
+            const label = document.createElement("label");
+            label.classList.add("opcion-radio");
+
+            label.innerHTML = `
+                <input type="radio" name="seleccionTarjeta" value="${tarjeta.id}">
+                <span>${tarjeta.tipo} - ${tarjeta.numeroEnmascarado} - ${tarjeta.titular} - ${tarjeta.fechaExpiracion}</span>
+            `;
+
+            listaTarjetas.appendChild(label);
+        });
+
+        document.querySelectorAll('input[name="seleccionTarjeta"]').forEach(radio => {
+            radio.addEventListener("change", actualizarFormularioTarjeta);
+        });
+
+        actualizarFormularioTarjeta();
+
+    } catch (error) {
+        console.error("Error al cargar tarjetas guardadas:", error);
+        bloqueTarjetas.style.display = "none";
+    }
+}
+
+function actualizarFormularioTarjeta() {
+    const seleccionTarjeta = document.querySelector('input[name="seleccionTarjeta"]:checked')?.value;
+
+    const numeroTarjeta = document.getElementById("numero-tarjeta");
+    const nombreTitular = document.getElementById("nombre-titular");
+    const fechaExpiracion = document.getElementById("fecha-expiracion");
+    const cvv = document.getElementById("cvv");
+    const tipoTarjeta = document.getElementById("tipo-tarjeta");
+    const guardarTarjeta = document.getElementById("guardar-tarjeta");
+    const bloqueGuardarTarjeta = document.getElementById("bloque-guardar-tarjeta");
+
+    const usarNueva = !seleccionTarjeta || seleccionTarjeta === "nueva";
+
+    numeroTarjeta.disabled = !usarNueva;
+    nombreTitular.disabled = !usarNueva;
+    fechaExpiracion.disabled = !usarNueva;
+    cvv.disabled = !usarNueva;
+
+    if (tipoTarjeta) {
+        tipoTarjeta.disabled = !usarNueva;
+    }
+
+    if (guardarTarjeta) {
+        guardarTarjeta.disabled = !usarNueva;
+    }
+
+    if (bloqueGuardarTarjeta) {
+        bloqueGuardarTarjeta.style.display = usarNueva ? "block" : "none";
+    }
+
+    if (!usarNueva) {
+        numeroTarjeta.value = "";
+        nombreTitular.value = "";
+        fechaExpiracion.value = "";
+        cvv.value = "";
+
+        if (tipoTarjeta) tipoTarjeta.value = "";
+        if (guardarTarjeta) guardarTarjeta.checked = false;
+    }
+}
+
 function configurarMetodoPago() {
     const radiosPago = document.querySelectorAll('input[name="metodoPago"]');
 
@@ -258,6 +352,7 @@ function actualizarBloquesPago() {
 
     if (metodoPagoSeleccionado === "tarjeta") {
         bloqueTarjeta.style.display = "block";
+        actualizarFormularioTarjeta();
     } else if (metodoPagoSeleccionado === "paypal") {
         bloquePaypal.style.display = "block";
     } else if (metodoPagoSeleccionado === "contra_reembolso") {
@@ -295,20 +390,38 @@ async function confirmarPedido() {
     };
 
     if (metodoPagoSeleccionado === "tarjeta") {
-        const numeroTarjeta = document.getElementById("numero-tarjeta").value.trim();
-        const nombreTitular = document.getElementById("nombre-titular").value.trim();
-        const fechaExpiracion = document.getElementById("fecha-expiracion").value.trim();
-        const cvv = document.getElementById("cvv").value.trim();
+        const seleccionTarjeta = document.querySelector('input[name="seleccionTarjeta"]:checked')?.value;
 
-        if (!numeroTarjeta || !nombreTitular || !fechaExpiracion || !cvv) {
-            mostrarMensaje("Completa todos los datos de la tarjeta");
-            return;
+        if (seleccionTarjeta && seleccionTarjeta !== "nueva") {
+            body.tarjetaId = Number(seleccionTarjeta);
+        } else {
+            const numeroTarjeta = document.getElementById("numero-tarjeta").value.trim();
+            const nombreTitular = document.getElementById("nombre-titular").value.trim();
+            const fechaExpiracion = document.getElementById("fecha-expiracion").value.trim();
+            const cvv = document.getElementById("cvv").value.trim();
+            const guardarTarjeta = document.getElementById("guardar-tarjeta")?.checked || false;
+            const tipoTarjeta = document.getElementById("tipo-tarjeta")?.value || "";
+
+            if (!numeroTarjeta || !nombreTitular || !fechaExpiracion || !cvv) {
+                mostrarMensaje("Completa todos los datos de la tarjeta");
+                return;
+            }
+
+            if (guardarTarjeta && !tipoTarjeta) {
+                mostrarMensaje("Selecciona el tipo de tarjeta si quieres guardarla");
+                return;
+            }
+
+            body.numeroTarjeta = numeroTarjeta;
+            body.nombreTitular = nombreTitular;
+            body.fechaExpiracion = fechaExpiracion;
+            body.cvv = cvv;
+            body.guardarTarjeta = guardarTarjeta;
+
+            if (guardarTarjeta) {
+                body.tipoTarjeta = tipoTarjeta;
+            }
         }
-
-        body.numeroTarjeta = numeroTarjeta;
-        body.nombreTitular = nombreTitular;
-        body.fechaExpiracion = fechaExpiracion;
-        body.cvv = cvv;
     }
 
     if (metodoPagoSeleccionado === "paypal") {

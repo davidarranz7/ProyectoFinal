@@ -109,6 +109,17 @@
             </label>
 
             <div id="bloque-tarjeta" class="bloque-metodo-pago">
+                <div id="bloque-tarjetas-guardadas" class="bloque-tarjetas-guardadas" style="display: none;">
+                    <p class="texto-ayuda">Selecciona una tarjeta guardada o usa una nueva.</p>
+
+                    <div id="lista-tarjetas-guardadas"></div>
+
+                    <label class="opcion-radio opcion-tarjeta-nueva">
+                        <input type="radio" name="seleccionTarjeta" value="nueva" checked>
+                        <span>Usar una tarjeta nueva</span>
+                    </label>
+                </div>
+
                 <div class="grupo-campos">
                     <input type="text" id="numero-tarjeta" placeholder="Número de tarjeta">
                     <input type="text" id="nombre-titular" placeholder="Nombre del titular">
@@ -117,6 +128,22 @@
                 <div class="grupo-campos">
                     <input type="text" id="fecha-expiracion" placeholder="MM/AA">
                     <input type="text" id="cvv" placeholder="CVV">
+                </div>
+
+                <div id="bloque-guardar-tarjeta" class="bloque-guardar-tarjeta">
+                    <div class="grupo-campos">
+                        <select id="tipo-tarjeta">
+                            <option value="">Selecciona el tipo de tarjeta</option>
+                            <option value="VISA">Visa</option>
+                            <option value="MASTERCARD">Mastercard</option>
+                            <option value="AMERICAN_EXPRESS">American Express</option>
+                        </select>
+                    </div>
+
+                    <label class="opcion-radio">
+                        <input type="checkbox" id="guardar-tarjeta">
+                        <span>Guardar esta tarjeta para próximas compras</span>
+                    </label>
                 </div>
             </div>
 
