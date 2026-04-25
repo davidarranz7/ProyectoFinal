@@ -2,7 +2,6 @@ package com.david.ProyectoFinal.controller;
 
 import com.david.ProyectoFinal.model.EstadoPedido;
 import com.david.ProyectoFinal.model.ItemPedido;
-import com.david.ProyectoFinal.model.MetodoPago;
 import com.david.ProyectoFinal.model.Pedido;
 import com.david.ProyectoFinal.service.PedidoService;
 import jakarta.servlet.http.HttpSession;
@@ -14,8 +13,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
-@RestController/// /// indicamos que es un controllador
-@RequestMapping("/pedidos")/// ruta base para todas las operaciones relacionadas con el carrito
+@RestController
+@RequestMapping("/pedidos")
 public class PedidoController {
 
     private final PedidoService pedidoService;
@@ -56,24 +55,16 @@ public class PedidoController {
         return ResponseEntity.ok(pedido);
     }
 
-    @PostMapping("/crear")/// ruta para crear un pedido a partir del carrito de un usuario
-    public Pedido crearPedido(@RequestParam Long usuarioId,
-                              @RequestParam MetodoPago metodoPago,
-                              HttpSession session){
-        comprobarAccesoUsuario(usuarioId, session);
-        return pedidoService.crearPedido(usuarioId, metodoPago);
-    }
-
-    @GetMapping("/usuario/{usuarioId}")/// ruta para obtener los pedidos de un usuario
+    @GetMapping("/usuario/{usuarioId}")
     public List<Pedido> obtenerPedidosPorUsuario(@PathVariable Long usuarioId,
-                                                 HttpSession session){
+                                                 HttpSession session) {
         comprobarAccesoUsuario(usuarioId, session);
         return pedidoService.obtenerPedidosPorUsuario(usuarioId);
     }
 
-    @PutMapping("/cancelar/{pedidoId}")/// ruta para cancelar un pedido
+    @PutMapping("/cancelar/{pedidoId}")
     public Pedido cancelarPedido(@PathVariable Long pedidoId,
-                                 HttpSession session){
+                                 HttpSession session) {
         Pedido pedido = pedidoService.obtenerPorId(pedidoId);
         comprobarAccesoPedido(pedido, session);
         return pedidoService.cancelarPedido(pedidoId);
@@ -87,7 +78,7 @@ public class PedidoController {
         return pedidoService.obtenerPedidosPorUsuarioYEstado(usuarioId, estado);
     }
 
-    @GetMapping("/{pedidoId}/items")/// ruta para obtener un pedido por su id
+    @GetMapping("/{pedidoId}/items")
     public List<ItemPedido> obtenerItemsDePedido(@PathVariable Long pedidoId,
                                                  HttpSession session) {
         Pedido pedido = pedidoService.obtenerPorId(pedidoId);
@@ -115,8 +106,26 @@ public class PedidoController {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/admin/confirmar-entrega")
+    public Pedido confirmarEntregaPorQr(@RequestParam String token) {
+        return pedidoService.confirmarEntregaPorToken(token);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/admin/{pedidoId}/items")
     public List<ItemPedido> obtenerItemsDePedidoComoAdmin(@PathVariable Long pedidoId) {
         return pedidoService.obtenerItemsDePedido(pedidoId);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/{pedidoId}/estados-validos")
+    public List<EstadoPedido> obtenerEstadosValidosSiguientes(@PathVariable Long pedidoId) {
+        return pedidoService.obtenerSiguientesEstadosValidos(pedidoId);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/estados-disponibles")
+    public List<EstadoPedido> obtenerTodosLosEstadosPedido() {
+        return pedidoService.obtenerTodosLosEstadosPedido();
     }
 }

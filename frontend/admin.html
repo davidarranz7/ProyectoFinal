@@ -44,6 +44,11 @@
                 <span>Establecimientos</span>
             </button>
 
+            <button class="admin-nav-btn" type="button" data-seccion="puntos-recogida">
+                <span class="admin-nav-icon">📍</span>
+                <span>Puntos de recogida</span>
+            </button>
+
             <button class="admin-nav-btn" type="button" data-seccion="usuarios">
                 <span class="admin-nav-icon">👥</span>
                 <span>Usuarios</span>
@@ -52,6 +57,11 @@
             <button class="admin-nav-btn" type="button" data-seccion="pedidos">
                 <span class="admin-nav-icon">📦</span>
                 <span>Pedidos</span>
+            </button>
+
+            <button class="admin-nav-btn" type="button" data-seccion="confirmacion-entrega">
+                <span class="admin-nav-icon">✅</span>
+                <span>Confirmar entrega</span>
             </button>
         </nav>
 
@@ -285,6 +295,50 @@
             </div>
         </section>
 
+        <!-- PUNTOS DE RECOGIDA -->
+        <section class="admin-section" id="puntos-recogida">
+            <div class="admin-block">
+                <div class="admin-block-header">
+                    <div>
+                        <p class="admin-section-eyebrow">Logística</p>
+                        <h2>Puntos de recogida</h2>
+                        <p class="admin-section-subtitle">
+                            Gestiona los puntos logísticos de recogida, crea nuevos puntos, edítalos y controla su disponibilidad por ciudad.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="toolbar-admin">
+                    <div class="toolbar-left">
+                        <div class="toolbar-search">
+                            <input
+                                    type="text"
+                                    id="buscador-puntos-recogida-admin"
+                                    placeholder="Buscar por nombre, ciudad, provincia o dirección..."
+                            />
+                        </div>
+                    </div>
+
+                    <div class="toolbar-right">
+                        <button class="btn btn-primary" type="button" id="btn-nuevo-punto-recogida">
+                            Nuevo punto de recogida
+                        </button>
+                    </div>
+                </div>
+
+                <div id="puntos-recogida-admin-estado" class="estado-panel-admin" style="display:none;"></div>
+
+                <div class="admin-list-wrap">
+                    <div id="contenedor-puntos-recogida-admin" class="admin-list-grid">
+                        <div class="empty-admin-state">
+                            <h3>Cargando puntos de recogida</h3>
+                            <p>Los puntos de recogida aparecerán aquí automáticamente.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- USUARIOS -->
         <section class="admin-section" id="usuarios">
             <div class="admin-block">
@@ -329,13 +383,6 @@
                         <div class="toolbar-filter">
                             <select id="filtro-estado-pedidos">
                                 <option value="TODOS">Todos los estados</option>
-                                <option value="PENDIENTE">Pendiente</option>
-                                <option value="CONFIRMADO">Confirmado</option>
-                                <option value="PREPARANDO">Preparando</option>
-                                <option value="ENVIADO">Enviado</option>
-                                <option value="LISTO_PARA_RECOGER">Listo para recoger</option>
-                                <option value="ENTREGADO">Entregado</option>
-                                <option value="CANCELADO">Cancelado</option>
                             </select>
                         </div>
                     </div>
@@ -350,6 +397,73 @@
                             <p>Los pedidos aparecerán aquí automáticamente.</p>
                         </div>
                     </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="admin-section" id="confirmacion-entrega">
+            <div class="admin-block">
+                <div class="admin-block-header">
+                    <div>
+                        <p class="admin-section-eyebrow">Validación</p>
+                        <h2>Confirmar entrega por QR</h2>
+                        <p class="admin-section-subtitle">
+                            Escanea el código QR del cliente para validar la entrega o introduce manualmente el token recibido.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="confirmacion-entrega-grid">
+                    <article class="confirmacion-entrega-card">
+                        <div class="confirmacion-entrega-header">
+                            <div>
+                                <h3>Escáner QR</h3>
+                                <p>Activa la cámara y enfoca el código QR del pedido.</p>
+                            </div>
+                        </div>
+
+                        <div id="qr-reader-entrega" class="qr-reader-entrega"></div>
+
+                        <div class="confirmacion-entrega-actions">
+                            <button class="btn btn-primary" type="button" id="btn-iniciar-escaner-entrega">
+                                Iniciar escáner
+                            </button>
+                            <button class="btn btn-secondary" type="button" id="btn-detener-escaner-entrega" disabled>
+                                Detener escáner
+                            </button>
+                        </div>
+                    </article>
+
+                    <article class="confirmacion-entrega-card">
+                        <div class="confirmacion-entrega-header">
+                            <div>
+                                <h3>Confirmación manual</h3>
+                                <p>Usa esta opción si necesitas pegar el token del QR manualmente.</p>
+                            </div>
+                        </div>
+
+                        <div class="form-admin-grid">
+                            <div class="form-group form-group-full">
+                                <label for="input-token-entrega">Token de confirmación</label>
+                                <input
+                                        type="text"
+                                        id="input-token-entrega"
+                                        placeholder="Pega aquí el token del QR"
+                                />
+                            </div>
+
+                            <div class="modal-admin-actions form-group-full">
+                                <button class="btn btn-primary" type="button" id="btn-confirmar-token-entrega">
+                                    Confirmar entrega
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="resultado-qr-entrega" class="resultado-qr-entrega">
+                            <h4>Resultado de validación</h4>
+                            <p>Cuando escanees o confirmes un token, el resultado aparecerá aquí.</p>
+                        </div>
+                    </article>
                 </div>
             </div>
         </section>
@@ -556,14 +670,14 @@
             <div class="form-group form-group-full">
                 <label for="nuevo-estado-pedido">Nuevo estado</label>
                 <select id="nuevo-estado-pedido" required>
-                    <option value="PENDIENTE">Pendiente</option>
-                    <option value="CONFIRMADO">Confirmado</option>
-                    <option value="PREPARANDO">Preparando</option>
-                    <option value="ENVIADO">Enviado</option>
-                    <option value="LISTO_PARA_RECOGER">Listo para recoger</option>
-                    <option value="ENTREGADO">Entregado</option>
-                    <option value="CANCELADO">Cancelado</option>
+                    <option value="">Cargando estados disponibles...</option>
                 </select>
+            </div>
+
+            <div class="form-group form-group-full">
+                <small id="texto-ayuda-estado-pedido">
+                    Solo se mostrarán los estados válidos para el flujo real de este pedido.
+                </small>
             </div>
 
             <div class="modal-admin-actions form-group-full">
@@ -673,7 +787,97 @@
     </div>
 </div>
 
+<!-- MODAL NUEVO PUNTO DE RECOGIDA -->
+<div id="modal-crear-punto-recogida" class="modal-admin-overlay" style="display:none;">
+    <div class="modal-admin modal-admin-large">
+        <div class="modal-admin-header">
+            <h3>Nuevo punto de recogida</h3>
+            <button type="button" class="modal-admin-close" id="cerrar-modal-crear-punto-recogida">×</button>
+        </div>
+
+        <form id="form-crear-punto-recogida" class="form-admin-grid">
+            <div class="form-group">
+                <label for="crear-punto-recogida-nombre">Nombre</label>
+                <input type="text" id="crear-punto-recogida-nombre" required />
+            </div>
+
+            <div class="form-group form-group-full">
+                <label for="crear-punto-recogida-direccion">Dirección</label>
+                <input type="text" id="crear-punto-recogida-direccion" required />
+            </div>
+
+            <div class="form-group">
+                <label for="crear-punto-recogida-ciudad">Ciudad</label>
+                <input type="text" id="crear-punto-recogida-ciudad" required />
+            </div>
+
+            <div class="form-group">
+                <label for="crear-punto-recogida-provincia">Provincia</label>
+                <input type="text" id="crear-punto-recogida-provincia" required />
+            </div>
+
+            <div class="form-group">
+                <label for="crear-punto-recogida-disponible">Disponibilidad</label>
+                <select id="crear-punto-recogida-disponible">
+                    <option value="true">Disponible</option>
+                    <option value="false">No disponible</option>
+                </select>
+            </div>
+
+            <div class="form-group form-group-full">
+                <label for="crear-punto-recogida-motivo">Motivo no disponible</label>
+                <input type="text" id="crear-punto-recogida-motivo" placeholder="Solo si no está disponible" />
+            </div>
+
+            <div class="modal-admin-actions form-group-full">
+                <button type="button" class="btn btn-secondary" id="cancelar-modal-crear-punto-recogida">Cancelar</button>
+                <button type="submit" class="btn btn-primary" id="guardar-crear-punto-recogida">Crear punto</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL EDITAR PUNTO DE RECOGIDA -->
+<div id="modal-editar-punto-recogida" class="modal-admin-overlay" style="display:none;">
+    <div class="modal-admin modal-admin-large">
+        <div class="modal-admin-header">
+            <h3>Editar punto de recogida</h3>
+            <button type="button" class="modal-admin-close" id="cerrar-modal-editar-punto-recogida">×</button>
+        </div>
+
+        <form id="form-editar-punto-recogida" class="form-admin-grid">
+            <input type="hidden" id="editar-punto-recogida-id" />
+
+            <div class="form-group">
+                <label for="editar-punto-recogida-nombre">Nombre</label>
+                <input type="text" id="editar-punto-recogida-nombre" required />
+            </div>
+
+            <div class="form-group form-group-full">
+                <label for="editar-punto-recogida-direccion">Dirección</label>
+                <input type="text" id="editar-punto-recogida-direccion" required />
+            </div>
+
+            <div class="form-group">
+                <label for="editar-punto-recogida-ciudad">Ciudad</label>
+                <input type="text" id="editar-punto-recogida-ciudad" required />
+            </div>
+
+            <div class="form-group">
+                <label for="editar-punto-recogida-provincia">Provincia</label>
+                <input type="text" id="editar-punto-recogida-provincia" required />
+            </div>
+
+            <div class="modal-admin-actions form-group-full">
+                <button type="button" class="btn btn-secondary" id="cancelar-modal-editar-punto-recogida">Cancelar</button>
+                <button type="submit" class="btn btn-primary" id="guardar-editar-punto-recogida">Guardar cambios</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script src="js/config.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script src="js/admin.js"></script>
 <script src="js/menu.js"></script>
 </body>

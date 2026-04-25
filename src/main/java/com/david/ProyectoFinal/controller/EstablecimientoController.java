@@ -12,6 +12,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/establecimientos")
 public class EstablecimientoController {
+
     private final EstablecimientoService establecimientoService;
 
     public EstablecimientoController(EstablecimientoService establecimientoService) {
@@ -22,6 +23,24 @@ public class EstablecimientoController {
     public List<Establecimiento> obtenerPorTiendaYCiudad(@PathVariable String nombreTienda,
                                                          @PathVariable String ciudad) {
         return establecimientoService.obtenerPorTiendaYCiudad(nombreTienda, ciudad);
+    }
+
+    @GetMapping("/tienda/{nombreTienda}/provincias")
+    public List<String> obtenerProvinciasDisponiblesPorTienda(@PathVariable String nombreTienda) {
+        return establecimientoService.obtenerProvinciasDisponiblesPorTienda(nombreTienda);
+    }
+
+    @GetMapping("/tienda/{nombreTienda}/provincia/{provincia}/ciudades")
+    public List<String> obtenerCiudadesDisponiblesPorTiendaYProvincia(@PathVariable String nombreTienda,
+                                                                      @PathVariable String provincia) {
+        return establecimientoService.obtenerCiudadesDisponiblesPorTiendaYProvincia(nombreTienda, provincia);
+    }
+
+    @GetMapping("/tienda/{nombreTienda}/provincia/{provincia}/ciudad/{ciudad}")
+    public List<Establecimiento> obtenerPorTiendaProvinciaYCiudad(@PathVariable String nombreTienda,
+                                                                  @PathVariable String provincia,
+                                                                  @PathVariable String ciudad) {
+        return establecimientoService.obtenerPorTiendaProvinciaYCiudad(nombreTienda, provincia, ciudad);
     }
 
     @PreAuthorize("hasRole('ADMIN')")

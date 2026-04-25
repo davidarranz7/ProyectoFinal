@@ -1,5 +1,7 @@
 package com.david.ProyectoFinal.service;
 
+import com.david.ProyectoFinal.dto.PuntoRecogidaRequestDTO;
+import com.david.ProyectoFinal.dto.PuntoRecogidaResponseDTO;
 import com.david.ProyectoFinal.model.PuntoRecogida;
 import com.david.ProyectoFinal.repository.PuntoRecogidaRepository;
 import org.springframework.stereotype.Service;
@@ -15,83 +17,156 @@ public class PuntoRecogidaService {
         this.puntoRecogidaRepository = puntoRecogidaRepository;
     }
 
-    public List<PuntoRecogida> obtenerTodos() {
-        return puntoRecogidaRepository.findAll();
+    public List<PuntoRecogidaResponseDTO> obtenerTodos() {
+        return puntoRecogidaRepository.findAll()
+                .stream()
+                .map(this::convertirAResponseDTO)
+                .toList();
     }
 
-    public List<PuntoRecogida> obtenerDisponibles() {
-        return puntoRecogidaRepository.findByDisponibleTrue();
+    public List<PuntoRecogidaResponseDTO> obtenerDisponibles() {
+        return puntoRecogidaRepository.findByDisponibleTrue()
+                .stream()
+                .map(this::convertirAResponseDTO)
+                .toList();
     }
 
-    public List<PuntoRecogida> obtenerDisponiblesPorCiudad(String ciudad) {
-        return puntoRecogidaRepository.findByCiudadIgnoreCaseAndDisponibleTrue(ciudad);
+    public List<String> obtenerProvinciasDisponibles() {
+        return puntoRecogidaRepository.findByDisponibleTrue()
+                .stream()
+                .map(PuntoRecogida::getProvincia)
+                .filter(provincia -> provincia != null && !provincia.isBlank())
+                .distinct()
+                .sorted(String.CASE_INSENSITIVE_ORDER)
+                .toList();
     }
 
-    public List<PuntoRecogida> obtenerPorCiudad(String ciudad) {
-        return puntoRecogidaRepository.findByCiudadIgnoreCase(ciudad);
+    public List<String> obtenerCiudadesDisponiblesPorProvincia(String provincia) {
+        return puntoRecogidaRepository.findByProvinciaIgnoreCaseAndDisponibleTrue(provincia)
+                .stream()
+                .map(PuntoRecogida::getCiudad)
+                .filter(ciudad -> ciudad != null && !ciudad.isBlank())
+                .distinct()
+                .sorted(String.CASE_INSENSITIVE_ORDER)
+                .toList();
     }
 
-    public PuntoRecogida obtenerPorId(Long id) {
+    public List<PuntoRecogidaResponseDTO> obtenerDisponiblesPorCiudad(String ciudad) {
+        return puntoRecogidaRepository.findByCiudadIgnoreCaseAndDisponibleTrue(ciudad)
+                .stream()
+                .map(this::convertirAResponseDTO)
+                .toList();
+    }
+
+    public List<PuntoRecogidaResponseDTO> obtenerDisponiblesPorProvinciaYCiudad(String provincia, String ciudad) {
+        return puntoRecogidaRepository.findByProvinciaIgnoreCaseAndCiudadIgnoreCaseAndDisponibleTrue(provincia, ciudad)
+                .stream()
+                .map(this::convertirAResponseDTO)
+                .toList();
+    }
+
+    public List<PuntoRecogidaResponseDTO> obtenerPorCiudad(String ciudad) {
+        return puntoRecogidaRepository.findByCiudadIgnoreCase(ciudad)
+                .stream()
+                .map(this::convertirAResponseDTO)
+                .toList();
+    }
+
+    public PuntoRecogida obtenerEntidadPorId(Long id) {
         return puntoRecogidaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Punto de recogida no encontrado"));
     }
 
-    public PuntoRecogida crear(PuntoRecogida puntoRecogida) {
-        validarPuntoRecogida(puntoRecogida);
+    public PuntoRecogidaResponseDTO obtenerPorId(Long id) {
+        PuntoRecogida puntoRecogida = obtenerEntidadPorId(id);
+        return convertirAResponseDTO(puntoRecogida);
+    }
 
-        if (puntoRecogida.getDisponible() == null) {
+    public PuntoRecogidaResponseDTO crear(PuntoRecogidaRequestDTO dto) {
+        validarPuntoRecogida(dto);
+
+        PuntoRecogida puntoRecogida = new PuntoRecogida();
+        puntoRecogida.setNombre(dto.getNombre().trim());
+        puntoRecogida.setDireccion(dto.getDireccion().trim());
+        puntoRecogida.setCiudad(dto.getCiudad().trim());
+        puntoRecogida.setProvincia(dto.getProvincia().trim());
+
+        if (dto.getDisponible() == null) {
             puntoRecogida.setDisponible(true);
+        } else {
+            puntoRecogida.setDisponible(dto.getDisponible());
         }
 
         if (Boolean.TRUE.equals(puntoRecogida.getDisponible())) {
             puntoRecogida.setMotivoNoDisponible(null);
+        } else {
+            puntoRecogida.setMotivoNoDisponible(
+                    dto.getMotivoNoDisponible() != null ? dto.getMotivoNoDisponible().trim() : null
+            );
         }
 
-        return puntoRecogidaRepository.save(puntoRecogida);
+        PuntoRecogida guardado = puntoRecogidaRepository.save(puntoRecogida);
+        return convertirAResponseDTO(guardado);
     }
 
-    public PuntoRecogida actualizar(Long id, PuntoRecogida datosActualizados) {
-        PuntoRecogida existente = obtenerPorId(id);
+    public PuntoRecogidaResponseDTO actualizar(Long id, PuntoRecogidaRequestDTO dto) {
+        PuntoRecogida existente = obtenerEntidadPorId(id);
 
-        validarPuntoRecogida(datosActualizados);
+        validarPuntoRecogida(dto);
 
-        existente.setNombre(datosActualizados.getNombre());
-        existente.setDireccion(datosActualizados.getDireccion());
-        existente.setCiudad(datosActualizados.getCiudad());
-        existente.setProvincia(datosActualizados.getProvincia());
+        existente.setNombre(dto.getNombre().trim());
+        existente.setDireccion(dto.getDireccion().trim());
+        existente.setCiudad(dto.getCiudad().trim());
+        existente.setProvincia(dto.getProvincia().trim());
 
-        return puntoRecogidaRepository.save(existente);
+        PuntoRecogida actualizado = puntoRecogidaRepository.save(existente);
+        return convertirAResponseDTO(actualizado);
     }
 
-    public PuntoRecogida cambiarDisponibilidad(Long id, Boolean disponible, String motivoNoDisponible) {
-        PuntoRecogida puntoRecogida = obtenerPorId(id);
+    public PuntoRecogidaResponseDTO cambiarDisponibilidad(Long id, Boolean disponible, String motivoNoDisponible) {
+        PuntoRecogida puntoRecogida = obtenerEntidadPorId(id);
 
         puntoRecogida.setDisponible(disponible);
 
         if (Boolean.TRUE.equals(disponible)) {
             puntoRecogida.setMotivoNoDisponible(null);
         } else {
-            puntoRecogida.setMotivoNoDisponible(motivoNoDisponible);
+            puntoRecogida.setMotivoNoDisponible(
+                    motivoNoDisponible != null ? motivoNoDisponible.trim() : null
+            );
         }
 
-        return puntoRecogidaRepository.save(puntoRecogida);
+        PuntoRecogida actualizado = puntoRecogidaRepository.save(puntoRecogida);
+        return convertirAResponseDTO(actualizado);
     }
 
-    private void validarPuntoRecogida(PuntoRecogida puntoRecogida) {
-        if (puntoRecogida.getNombre() == null || puntoRecogida.getNombre().isBlank()) {
+    private void validarPuntoRecogida(PuntoRecogidaRequestDTO dto) {
+        if (dto.getNombre() == null || dto.getNombre().isBlank()) {
             throw new RuntimeException("El nombre del punto de recogida es obligatorio");
         }
 
-        if (puntoRecogida.getDireccion() == null || puntoRecogida.getDireccion().isBlank()) {
+        if (dto.getDireccion() == null || dto.getDireccion().isBlank()) {
             throw new RuntimeException("La dirección es obligatoria");
         }
 
-        if (puntoRecogida.getCiudad() == null || puntoRecogida.getCiudad().isBlank()) {
+        if (dto.getCiudad() == null || dto.getCiudad().isBlank()) {
             throw new RuntimeException("La ciudad es obligatoria");
         }
 
-        if (puntoRecogida.getProvincia() == null || puntoRecogida.getProvincia().isBlank()) {
+        if (dto.getProvincia() == null || dto.getProvincia().isBlank()) {
             throw new RuntimeException("La provincia es obligatoria");
         }
+    }
+
+    private PuntoRecogidaResponseDTO convertirAResponseDTO(PuntoRecogida puntoRecogida) {
+        return new PuntoRecogidaResponseDTO(
+                puntoRecogida.getId(),
+                puntoRecogida.getNombre(),
+                puntoRecogida.getDireccion(),
+                puntoRecogida.getCiudad(),
+                puntoRecogida.getProvincia(),
+                puntoRecogida.getDisponible(),
+                puntoRecogida.getMotivoNoDisponible()
+        );
     }
 }

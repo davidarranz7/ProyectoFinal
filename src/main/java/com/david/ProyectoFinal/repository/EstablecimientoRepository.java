@@ -8,4 +8,12 @@ import java.util.List;
 public interface EstablecimientoRepository extends JpaRepository<Establecimiento, Long> {
 
     List<Establecimiento> findByTiendaNombreAndCiudadIgnoreCaseAndDisponibleTrue(String nombreTienda, String ciudad);
+
+    List<Establecimiento> findByTiendaNombreAndProvinciaIgnoreCaseAndDisponibleTrue(String nombreTienda, String provincia);
+
+    List<Establecimiento> findByTiendaNombreAndProvinciaIgnoreCaseAndCiudadIgnoreCaseAndDisponibleTrue(
+            String nombreTienda,
+            String provincia,
+            String ciudad
+    );
 }

@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface PedidoRepository extends JpaRepository<Pedido, Long> {
 
@@ -15,6 +16,8 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     List<Pedido> findByUsuarioIdAndEstado(Long usuarioId, EstadoPedido estado);
 
     List<Pedido> findByEstado(EstadoPedido estado);
+
+    Optional<Pedido> findByTokenConfirmacionEntrega(String tokenConfirmacionEntrega);
 
     @Modifying
     @Query("DELETE FROM Pedido p WHERE p.usuario.id = :usuarioId")

@@ -26,6 +26,40 @@ public class EstablecimientoService {
         return establecimientoRepository.findByTiendaNombreAndCiudadIgnoreCaseAndDisponibleTrue(nombreTienda, ciudad);
     }
 
+    public List<String> obtenerProvinciasDisponiblesPorTienda(String nombreTienda) {
+        return establecimientoRepository
+                .findAll()
+                .stream()
+                .filter(e -> e.getTienda() != null)
+                .filter(e -> e.getTienda().getNombre() != null)
+                .filter(e -> e.getDisponible() != null && e.getDisponible())
+                .filter(e -> e.getTienda().getNombre().equalsIgnoreCase(nombreTienda))
+                .map(Establecimiento::getProvincia)
+                .filter(provincia -> provincia != null && !provincia.isBlank())
+                .distinct()
+                .sorted(String.CASE_INSENSITIVE_ORDER)
+                .toList();
+    }
+
+    public List<String> obtenerCiudadesDisponiblesPorTiendaYProvincia(String nombreTienda, String provincia) {
+        return establecimientoRepository
+                .findByTiendaNombreAndProvinciaIgnoreCaseAndDisponibleTrue(nombreTienda, provincia)
+                .stream()
+                .map(Establecimiento::getCiudad)
+                .filter(ciudad -> ciudad != null && !ciudad.isBlank())
+                .distinct()
+                .sorted(String.CASE_INSENSITIVE_ORDER)
+                .toList();
+    }
+
+    public List<Establecimiento> obtenerPorTiendaProvinciaYCiudad(String nombreTienda, String provincia, String ciudad) {
+        return establecimientoRepository.findByTiendaNombreAndProvinciaIgnoreCaseAndCiudadIgnoreCaseAndDisponibleTrue(
+                nombreTienda,
+                provincia,
+                ciudad
+        );
+    }
+
     public List<Establecimiento> obtenerTodos() {
         return establecimientoRepository.findAll();
     }

@@ -36,15 +36,18 @@ function iniciarAdmin() {
     const state = crearEstadoInicial();
 
     configurarNavegacion(refs);
-    configurarScraping(refs);
+    configurarScraping(refs, state);
     configurarProductos(refs, state);
     configurarEstablecimientos(refs, state);
+    configurarPuntosRecogida(refs, state);
     configurarUsuarios(refs, state);
     configurarPedidos(refs, state);
+    configurarConfirmacionEntrega(refs, state);
     configurarModales(refs, state);
 
     actualizarEstadoScraping(refs, "Inactivo", "Sin procesos activos en este momento.", "neutral");
     actualizarCampoMotivoEstablecimiento(refs);
+    actualizarCampoMotivoPuntoRecogida(refs);
 
     cargarTodo(refs, state);
 }
@@ -107,12 +110,47 @@ function obtenerReferencias() {
         editarEstablecimientoProvincia: document.getElementById("editar-establecimiento-provincia"),
         guardarEditarEstablecimiento: document.getElementById("guardar-editar-establecimiento"),
 
+        buscadorPuntosRecogida: document.getElementById("buscador-puntos-recogida-admin"),
+        btnNuevoPuntoRecogida: document.getElementById("btn-nuevo-punto-recogida"),
+        contenedorPuntosRecogida: document.getElementById("contenedor-puntos-recogida-admin"),
+        estadoPuntosRecogida: document.getElementById("puntos-recogida-admin-estado"),
+
+        modalCrearPuntoRecogida: document.getElementById("modal-crear-punto-recogida"),
+        cerrarModalCrearPuntoRecogida: document.getElementById("cerrar-modal-crear-punto-recogida"),
+        cancelarModalCrearPuntoRecogida: document.getElementById("cancelar-modal-crear-punto-recogida"),
+        formCrearPuntoRecogida: document.getElementById("form-crear-punto-recogida"),
+        crearPuntoRecogidaNombre: document.getElementById("crear-punto-recogida-nombre"),
+        crearPuntoRecogidaDireccion: document.getElementById("crear-punto-recogida-direccion"),
+        crearPuntoRecogidaCiudad: document.getElementById("crear-punto-recogida-ciudad"),
+        crearPuntoRecogidaProvincia: document.getElementById("crear-punto-recogida-provincia"),
+        crearPuntoRecogidaDisponible: document.getElementById("crear-punto-recogida-disponible"),
+        crearPuntoRecogidaMotivo: document.getElementById("crear-punto-recogida-motivo"),
+        guardarCrearPuntoRecogida: document.getElementById("guardar-crear-punto-recogida"),
+
+        modalEditarPuntoRecogida: document.getElementById("modal-editar-punto-recogida"),
+        cerrarModalEditarPuntoRecogida: document.getElementById("cerrar-modal-editar-punto-recogida"),
+        cancelarModalEditarPuntoRecogida: document.getElementById("cancelar-modal-editar-punto-recogida"),
+        formEditarPuntoRecogida: document.getElementById("form-editar-punto-recogida"),
+        editarPuntoRecogidaId: document.getElementById("editar-punto-recogida-id"),
+        editarPuntoRecogidaNombre: document.getElementById("editar-punto-recogida-nombre"),
+        editarPuntoRecogidaDireccion: document.getElementById("editar-punto-recogida-direccion"),
+        editarPuntoRecogidaCiudad: document.getElementById("editar-punto-recogida-ciudad"),
+        editarPuntoRecogidaProvincia: document.getElementById("editar-punto-recogida-provincia"),
+        guardarEditarPuntoRecogida: document.getElementById("guardar-editar-punto-recogida"),
+
         contenedorUsuarios: document.getElementById("contenedor-usuarios-admin"),
         estadoUsuarios: document.getElementById("usuarios-admin-estado"),
 
         filtroEstadoPedidos: document.getElementById("filtro-estado-pedidos"),
         contenedorPedidos: document.getElementById("contenedor-pedidos-admin"),
         estadoPedidos: document.getElementById("pedidos-admin-estado"),
+
+        qrReaderEntrega: document.getElementById("qr-reader-entrega"),
+        btnIniciarEscanerEntrega: document.getElementById("btn-iniciar-escaner-entrega"),
+        btnDetenerEscanerEntrega: document.getElementById("btn-detener-escaner-entrega"),
+        inputTokenEntrega: document.getElementById("input-token-entrega"),
+        btnConfirmarTokenEntrega: document.getElementById("btn-confirmar-token-entrega"),
+        resultadoQrEntrega: document.getElementById("resultado-qr-entrega"),
 
         modalEditarProducto: document.getElementById("modal-editar-producto"),
         cerrarModalEditarProducto: document.getElementById("cerrar-modal-editar-producto"),
@@ -169,6 +207,7 @@ function obtenerReferencias() {
         formCambiarEstadoPedido: document.getElementById("form-cambiar-estado-pedido"),
         cambiarEstadoPedidoId: document.getElementById("cambiar-estado-pedido-id"),
         nuevoEstadoPedido: document.getElementById("nuevo-estado-pedido"),
+        textoAyudaEstadoPedido: document.getElementById("texto-ayuda-estado-pedido"),
         guardarCambioEstadoPedido: document.getElementById("guardar-cambio-estado-pedido")
     };
 }
@@ -179,14 +218,21 @@ function crearEstadoInicial() {
         productosFiltrados: [],
         establecimientos: [],
         establecimientosFiltrados: [],
+        puntosRecogida: [],
+        puntosRecogidaFiltrados: [],
         usuarios: [],
         pedidos: [],
+        estadosPedidoDisponibles: [],
         modoSeleccionProductos: false,
         productosSeleccionados: new Set(),
         productoIdPendienteEliminar: null,
         usuarioIdPendienteEliminar: null,
         productosStockObjetivo: [],
-        pedidoCambioEstado: null
+        pedidoCambioEstado: null,
+        qrScannerEntrega: null,
+        escanerEntregaActivo: false,
+        ultimoTokenEntregaLeido: null,
+        confirmandoEntrega: false
     };
 }
 
@@ -231,18 +277,18 @@ function activarBotonNav(refs, idSeccion) {
     });
 }
 
-function configurarScraping(refs) {
+function configurarScraping(refs, state) {
     refs.btnScrapingZara?.addEventListener("click", () =>
-        ejecutarScraping(refs, "/productos/scrapear/zara", "Zara", refs.btnScrapingZara, "Ejecutar")
+        ejecutarScraping(refs, state, "/productos/scrapear/zara", "Zara", refs.btnScrapingZara, "Ejecutar")
     );
     refs.btnScrapingBershka?.addEventListener("click", () =>
-        ejecutarScraping(refs, "/productos/scrapear/bershka", "Bershka", refs.btnScrapingBershka, "Ejecutar")
+        ejecutarScraping(refs, state, "/productos/scrapear/bershka", "Bershka", refs.btnScrapingBershka, "Ejecutar")
     );
     refs.btnScrapingPull?.addEventListener("click", () =>
-        ejecutarScraping(refs, "/productos/scrapear/pullandbear", "Pull&Bear", refs.btnScrapingPull, "Ejecutar")
+        ejecutarScraping(refs, state, "/productos/scrapear/pullandbear", "Pull&Bear", refs.btnScrapingPull, "Ejecutar")
     );
     refs.btnScrapingTodo?.addEventListener("click", () =>
-        ejecutarScraping(refs, "/productos/scrapear/total", "Scraping completo", refs.btnScrapingTodo, "Ejecutar todo")
+        ejecutarScraping(refs, state, "/productos/scrapear/total", "Scraping completo", refs.btnScrapingTodo, "Ejecutar todo")
     );
 }
 
@@ -328,6 +374,32 @@ function configurarEstablecimientos(refs, state) {
     });
 }
 
+function configurarPuntosRecogida(refs, state) {
+    refs.buscadorPuntosRecogida?.addEventListener("input", () => {
+        aplicarFiltroPuntosRecogida(refs, state);
+    });
+
+    refs.btnNuevoPuntoRecogida?.addEventListener("click", () => {
+        refs.formCrearPuntoRecogida?.reset();
+        actualizarCampoMotivoPuntoRecogida(refs);
+        abrirModal(refs.modalCrearPuntoRecogida);
+    });
+
+    refs.formCrearPuntoRecogida?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        await guardarNuevoPuntoRecogida(refs, state);
+    });
+
+    refs.crearPuntoRecogidaDisponible?.addEventListener("change", () => {
+        actualizarCampoMotivoPuntoRecogida(refs);
+    });
+
+    refs.formEditarPuntoRecogida?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        await guardarEdicionPuntoRecogida(refs, state);
+    });
+}
+
 function configurarUsuarios(refs, state) {
     refs.formEditarUsuario?.addEventListener("submit", async (e) => {
         e.preventDefault();
@@ -343,6 +415,27 @@ function configurarPedidos(refs, state) {
     refs.formCambiarEstadoPedido?.addEventListener("submit", async (e) => {
         e.preventDefault();
         await guardarCambioEstadoPedido(refs, state);
+    });
+}
+
+function configurarConfirmacionEntrega(refs, state) {
+    refs.btnIniciarEscanerEntrega?.addEventListener("click", async () => {
+        await iniciarEscanerEntrega(refs, state);
+    });
+
+    refs.btnDetenerEscanerEntrega?.addEventListener("click", async () => {
+        await detenerEscanerEntrega(refs, state);
+    });
+
+    refs.btnConfirmarTokenEntrega?.addEventListener("click", async () => {
+        await confirmarEntregaManual(refs, state);
+    });
+
+    refs.inputTokenEntrega?.addEventListener("keydown", async (e) => {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            await confirmarEntregaManual(refs, state);
+        }
     });
 }
 
@@ -382,6 +475,25 @@ function configurarModales(refs, state) {
         }
     );
 
+    configurarCerrarModal(
+        refs.modalCrearPuntoRecogida,
+        refs.cerrarModalCrearPuntoRecogida,
+        refs.cancelarModalCrearPuntoRecogida,
+        () => {
+            refs.formCrearPuntoRecogida?.reset();
+            actualizarCampoMotivoPuntoRecogida(refs);
+        }
+    );
+
+    configurarCerrarModal(
+        refs.modalEditarPuntoRecogida,
+        refs.cerrarModalEditarPuntoRecogida,
+        refs.cancelarModalEditarPuntoRecogida,
+        () => {
+            refs.formEditarPuntoRecogida?.reset();
+        }
+    );
+
     configurarCerrarModal(refs.modalEditarUsuario, refs.cerrarModalEditarUsuario, refs.cancelarModalEditarUsuario, () => {
         refs.formEditarUsuario?.reset();
     });
@@ -399,6 +511,7 @@ function configurarModales(refs, state) {
     configurarCerrarModal(refs.modalCambiarEstadoPedido, refs.cerrarModalCambiarEstadoPedido, refs.cancelarModalCambiarEstadoPedido, () => {
         refs.formCambiarEstadoPedido?.reset();
         state.pedidoCambioEstado = null;
+        limpiarOpcionesEstadosPedido(refs);
     });
 
     refs.confirmarEliminarProducto?.addEventListener("click", async () => {
@@ -432,8 +545,10 @@ function configurarCerrarModal(modal, btnCerrar, btnCancelar, onClose) {
 async function cargarTodo(refs, state) {
     await Promise.all([
         cargarMetricas(refs),
+        cargarEstadosPedidoDisponibles(refs, state),
         cargarProductos(refs, state),
         cargarEstablecimientos(refs, state),
+        cargarPuntosRecogida(refs, state),
         cargarUsuarios(refs, state),
         cargarPedidos(refs, state)
     ]);
@@ -463,6 +578,25 @@ async function cargarMetricas(refs) {
         }
     } catch (error) {
         console.error("Error cargando métricas:", error);
+    }
+}
+
+async function cargarEstadosPedidoDisponibles(refs, state) {
+    try {
+        const response = await fetch(`${BASE_URL}/pedidos/estados-disponibles`, {
+            method: "GET",
+            credentials: "include"
+        });
+
+        if (!response.ok) {
+            throw new Error("No se pudieron cargar los estados de pedido");
+        }
+
+        state.estadosPedidoDisponibles = await response.json();
+        renderizarFiltroEstadosPedido(refs, state);
+    } catch (error) {
+        console.error("Error cargando estados disponibles del pedido:", error);
+        renderizarFiltroEstadosPedidoFallback(refs);
     }
 }
 
@@ -517,6 +651,35 @@ async function cargarEstablecimientos(refs, state) {
             refs.contenedorEstablecimientos,
             "Error al cargar",
             "No se pudo obtener la lista de establecimientos."
+        );
+    }
+}
+
+async function cargarPuntosRecogida(refs, state) {
+    try {
+        mostrarEstado(refs.estadoPuntosRecogida, "Cargando puntos de recogida...", "info");
+
+        const response = await fetch(`${BASE_URL}/puntos-recogida`, {
+            method: "GET",
+            credentials: "include"
+        });
+
+        if (!response.ok) {
+            throw new Error("No se pudieron cargar los puntos de recogida");
+        }
+
+        state.puntosRecogida = await response.json();
+        state.puntosRecogidaFiltrados = [...state.puntosRecogida];
+
+        ocultarEstado(refs.estadoPuntosRecogida);
+        renderizarPuntosRecogida(refs, state);
+    } catch (error) {
+        console.error("Error cargando puntos de recogida:", error);
+        mostrarEstado(refs.estadoPuntosRecogida, "No se pudieron cargar los puntos de recogida.", "error");
+        renderizarEstadoVacio(
+            refs.contenedorPuntosRecogida,
+            "Error al cargar",
+            "No se pudo obtener la lista de puntos de recogida."
         );
     }
 }
@@ -580,7 +743,7 @@ async function cargarPedidos(refs, state) {
    SCRAPING
 ========================= */
 
-async function ejecutarScraping(refs, url, nombre, boton, textoOriginal) {
+async function ejecutarScraping(refs, state, url, nombre, boton, textoOriginal) {
     try {
         bloquearBoton(boton, "Ejecutando...");
         actualizarEstadoScraping(refs, "Ejecutando", `Lanzando ${nombre}...`, "info");
@@ -601,7 +764,7 @@ async function ejecutarScraping(refs, url, nombre, boton, textoOriginal) {
         actualizarEstadoScraping(refs, "Completado", `${nombre} finalizado. Productos procesados: ${total}`, "success");
         mostrarMensaje(refs, `${nombre} completado correctamente.`, "ok");
 
-        await cargarProductos(refs, crearEstadoPassthrough(stateLikeFromProducts(refs)));
+        await cargarProductos(refs, state);
         await cargarMetricas(refs);
     } catch (error) {
         console.error(`Error en ${nombre}:`, error);
@@ -1252,6 +1415,286 @@ async function cambiarDisponibilidadEstablecimiento(refs, state, establecimiento
 }
 
 /* =========================
+   PUNTOS DE RECOGIDA
+========================= */
+
+function aplicarFiltroPuntosRecogida(refs, state) {
+    const termino = (refs.buscadorPuntosRecogida?.value || "").trim().toLowerCase();
+
+    if (!termino) {
+        state.puntosRecogidaFiltrados = [...state.puntosRecogida];
+    } else {
+        state.puntosRecogidaFiltrados = state.puntosRecogida.filter((punto) => {
+            const nombre = (punto.nombre || "").toLowerCase();
+            const ciudad = (punto.ciudad || "").toLowerCase();
+            const provincia = (punto.provincia || "").toLowerCase();
+            const direccion = (punto.direccion || "").toLowerCase();
+
+            return (
+                nombre.includes(termino) ||
+                ciudad.includes(termino) ||
+                provincia.includes(termino) ||
+                direccion.includes(termino)
+            );
+        });
+    }
+
+    renderizarPuntosRecogida(refs, state);
+}
+
+function renderizarPuntosRecogida(refs, state) {
+    limpiarContenedor(refs.contenedorPuntosRecogida);
+
+    if (!Array.isArray(state.puntosRecogidaFiltrados) || state.puntosRecogidaFiltrados.length === 0) {
+        renderizarEstadoVacio(
+            refs.contenedorPuntosRecogida,
+            "Sin puntos de recogida",
+            "No se encontraron puntos de recogida con los filtros actuales."
+        );
+        return;
+    }
+
+    state.puntosRecogidaFiltrados.forEach((punto) => {
+        refs.contenedorPuntosRecogida.appendChild(
+            crearCardPuntoRecogida(punto, refs, state)
+        );
+    });
+}
+
+function crearCardPuntoRecogida(punto, refs, state) {
+    const article = el("article", { className: "item-admin-card" });
+
+    const avatar = el("div", {
+        className: "item-admin-avatar",
+        text: "📍"
+    });
+
+    const body = el("div", { className: "item-admin-body" });
+    body.appendChild(el("h3", { text: punto.nombre || "Sin nombre" }));
+
+    const meta = el("div", { className: "item-admin-meta" });
+    meta.appendChild(
+        crearBadge(
+            punto.disponible ? "Disponible" : "No disponible"
+        )
+    );
+    body.appendChild(meta);
+
+    body.appendChild(el("p", {
+        className: "item-admin-texto",
+        text: `Dirección: ${punto.direccion || "Sin dirección"}`
+    }));
+
+    body.appendChild(el("p", {
+        className: "item-admin-texto",
+        text: `Ciudad: ${punto.ciudad || "-"} · Provincia: ${punto.provincia || "-"}`
+    }));
+
+    if (!punto.disponible && punto.motivoNoDisponible) {
+        body.appendChild(el("p", {
+            className: "item-admin-texto",
+            text: `Motivo: ${punto.motivoNoDisponible}`
+        }));
+    }
+
+    const acciones = el("div", { className: "item-admin-acciones" });
+
+    const btnEditar = crearBoton("Editar", "btn btn-secondary", async () => {
+        await abrirEditarPuntoRecogida(refs, punto);
+    });
+
+    const btnDisponibilidad = crearBoton(
+        punto.disponible ? "Bloquear" : "Reactivar",
+        punto.disponible ? "btn btn-danger" : "btn btn-primary",
+        async () => {
+            await cambiarDisponibilidadPuntoRecogida(refs, state, punto);
+        }
+    );
+
+    acciones.append(btnEditar, btnDisponibilidad);
+    article.append(avatar, body, acciones);
+
+    return article;
+}
+
+function actualizarCampoMotivoPuntoRecogida(refs) {
+    const disponible = refs.crearPuntoRecogidaDisponible?.value === "true";
+
+    if (!refs.crearPuntoRecogidaMotivo) return;
+
+    refs.crearPuntoRecogidaMotivo.disabled = disponible;
+
+    if (disponible) {
+        refs.crearPuntoRecogidaMotivo.value = "";
+    }
+}
+
+async function guardarNuevoPuntoRecogida(refs, state) {
+    const nombre = refs.crearPuntoRecogidaNombre.value.trim();
+    const direccion = refs.crearPuntoRecogidaDireccion.value.trim();
+    const ciudad = refs.crearPuntoRecogidaCiudad.value.trim();
+    const provincia = refs.crearPuntoRecogidaProvincia.value.trim();
+    const disponible = refs.crearPuntoRecogidaDisponible.value === "true";
+    const motivoNoDisponible = refs.crearPuntoRecogidaMotivo.value.trim();
+
+    if (!nombre || !direccion || !ciudad || !provincia) {
+        mostrarMensaje(refs, "Completa todos los campos obligatorios del punto de recogida.", "error");
+        return;
+    }
+
+    if (!disponible && !motivoNoDisponible) {
+        mostrarMensaje(refs, "Indica el motivo si el punto de recogida no está disponible.", "error");
+        return;
+    }
+
+    try {
+        bloquearBoton(refs.guardarCrearPuntoRecogida, "Creando...");
+
+        const payload = {
+            nombre,
+            direccion,
+            ciudad,
+            provincia,
+            disponible,
+            motivoNoDisponible: disponible ? null : motivoNoDisponible
+        };
+
+        const response = await fetch(`${BASE_URL}/puntos-recogida`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            credentials: "include",
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            let mensaje = "No se pudo crear el punto de recogida.";
+            try {
+                const texto = await response.text();
+                if (texto) mensaje = texto;
+            } catch (_) {}
+            throw new Error(mensaje);
+        }
+
+        cerrarModal(refs.modalCrearPuntoRecogida, () => {
+            refs.formCrearPuntoRecogida.reset();
+            actualizarCampoMotivoPuntoRecogida(refs);
+        });
+
+        mostrarMensaje(refs, "Punto de recogida creado correctamente.", "ok");
+        await cargarPuntosRecogida(refs, state);
+    } catch (error) {
+        console.error(error);
+        mostrarMensaje(refs, error.message || "No se pudo crear el punto de recogida.", "error");
+    } finally {
+        restaurarBoton(refs.guardarCrearPuntoRecogida, "Crear punto");
+    }
+}
+
+async function abrirEditarPuntoRecogida(refs, punto) {
+    refs.editarPuntoRecogidaId.value = punto.id || "";
+    refs.editarPuntoRecogidaNombre.value = punto.nombre || "";
+    refs.editarPuntoRecogidaDireccion.value = punto.direccion || "";
+    refs.editarPuntoRecogidaCiudad.value = punto.ciudad || "";
+    refs.editarPuntoRecogidaProvincia.value = punto.provincia || "";
+
+    abrirModal(refs.modalEditarPuntoRecogida);
+}
+
+async function guardarEdicionPuntoRecogida(refs, state) {
+    const id = refs.editarPuntoRecogidaId.value.trim();
+    const nombre = refs.editarPuntoRecogidaNombre.value.trim();
+    const direccion = refs.editarPuntoRecogidaDireccion.value.trim();
+    const ciudad = refs.editarPuntoRecogidaCiudad.value.trim();
+    const provincia = refs.editarPuntoRecogidaProvincia.value.trim();
+
+    if (!id || !nombre || !direccion || !ciudad || !provincia) {
+        mostrarMensaje(refs, "Completa todos los campos del punto de recogida.", "error");
+        return;
+    }
+
+    try {
+        bloquearBoton(refs.guardarEditarPuntoRecogida, "Guardando...");
+
+        const payload = {
+            nombre,
+            direccion,
+            ciudad,
+            provincia
+        };
+
+        const response = await fetch(`${BASE_URL}/puntos-recogida/${id}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            credentials: "include",
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            let mensaje = "No se pudo actualizar el punto de recogida.";
+            try {
+                const texto = await response.text();
+                if (texto) mensaje = texto;
+            } catch (_) {}
+            throw new Error(mensaje);
+        }
+
+        cerrarModal(refs.modalEditarPuntoRecogida, () => {
+            refs.formEditarPuntoRecogida.reset();
+        });
+
+        mostrarMensaje(refs, "Punto de recogida actualizado correctamente.", "ok");
+        await cargarPuntosRecogida(refs, state);
+    } catch (error) {
+        console.error(error);
+        mostrarMensaje(refs, error.message || "No se pudo actualizar el punto de recogida.", "error");
+    } finally {
+        restaurarBoton(refs.guardarEditarPuntoRecogida, "Guardar cambios");
+    }
+}
+
+async function cambiarDisponibilidadPuntoRecogida(refs, state, punto) {
+    try {
+        let url = "";
+
+        if (punto.disponible) {
+            const motivo = prompt("Indica el motivo de no disponibilidad:", "No operativo temporalmente");
+
+            if (motivo === null) return;
+
+            url = `${BASE_URL}/puntos-recogida/${punto.id}/disponibilidad?disponible=false&motivoNoDisponible=${encodeURIComponent(motivo)}`;
+        } else {
+            url = `${BASE_URL}/puntos-recogida/${punto.id}/disponibilidad?disponible=true`;
+        }
+
+        const response = await fetch(url, {
+            method: "PUT",
+            credentials: "include"
+        });
+
+        if (!response.ok) {
+            throw new Error("No se pudo cambiar la disponibilidad");
+        }
+
+        mostrarMensaje(
+            refs,
+            punto.disponible
+                ? "Punto de recogida bloqueado correctamente."
+                : "Punto de recogida reactivado correctamente.",
+            "ok"
+        );
+
+        await cargarPuntosRecogida(refs, state);
+    } catch (error) {
+        console.error(error);
+        mostrarMensaje(refs, "No se pudo actualizar la disponibilidad del punto de recogida.", "error");
+    }
+}
+
+/* =========================
    USUARIOS
 ========================= */
 
@@ -1477,6 +1920,46 @@ async function abrirDetalleUsuario(refs, state, usuarioId) {
    PEDIDOS
 ========================= */
 
+function renderizarFiltroEstadosPedido(refs, state) {
+    if (!refs.filtroEstadoPedidos) return;
+
+    const valorActual = refs.filtroEstadoPedidos.value || "TODOS";
+    refs.filtroEstadoPedidos.innerHTML = "";
+
+    const optionTodos = document.createElement("option");
+    optionTodos.value = "TODOS";
+    optionTodos.textContent = "Todos los estados";
+    refs.filtroEstadoPedidos.appendChild(optionTodos);
+
+    if (Array.isArray(state.estadosPedidoDisponibles)) {
+        state.estadosPedidoDisponibles.forEach((estado) => {
+            const option = document.createElement("option");
+            option.value = estado;
+            option.textContent = formatearEstadoPedidoTexto(estado);
+            refs.filtroEstadoPedidos.appendChild(option);
+        });
+    }
+
+    const existeValor = Array.from(refs.filtroEstadoPedidos.options).some(opt => opt.value === valorActual);
+    refs.filtroEstadoPedidos.value = existeValor ? valorActual : "TODOS";
+}
+
+function renderizarFiltroEstadosPedidoFallback(refs) {
+    if (!refs.filtroEstadoPedidos) return;
+
+    refs.filtroEstadoPedidos.innerHTML = `
+        <option value="TODOS">Todos los estados</option>
+        <option value="PENDIENTE">Pendiente</option>
+        <option value="CONFIRMADO">Confirmado</option>
+        <option value="PREPARANDO">Preparando</option>
+        <option value="ENVIADO">Enviado</option>
+        <option value="LISTO_PARA_RECOGER">Listo para recoger</option>
+        <option value="PENDIENTE_CONFIRMACION_ENTREGA">Pendiente confirmación entrega</option>
+        <option value="ENTREGADO">Entregado</option>
+        <option value="CANCELADO">Cancelado</option>
+    `;
+}
+
 function renderizarPedidos(refs, state) {
     limpiarContenedor(refs.contenedorPedidos);
 
@@ -1501,6 +1984,7 @@ function crearCardPedido(pedido, refs, state) {
     const meta = el("div", { className: "item-admin-meta" });
     meta.appendChild(crearBadgeEstado(pedido.estado || "CONFIRMADO"));
     meta.appendChild(crearBadge(pedido.metodoPago || "Sin método"));
+    meta.appendChild(crearBadge(formatearMetodoEntregaTexto(pedido.metodoEntrega)));
     body.appendChild(meta);
 
     body.appendChild(el("p", {
@@ -1523,11 +2007,8 @@ function crearCardPedido(pedido, refs, state) {
         crearBoton("Ver detalle", "btn btn-secondary", async () => {
             await abrirDetallePedido(refs, state, pedido.id);
         }),
-        crearBoton("Cambiar estado", "btn btn-primary", () => {
-            state.pedidoCambioEstado = pedido;
-            refs.cambiarEstadoPedidoId.value = pedido.id;
-            refs.nuevoEstadoPedido.value = pedido.estado || "CONFIRMADO";
-            abrirModal(refs.modalCambiarEstadoPedido);
+        crearBoton("Cambiar estado", "btn btn-primary", async () => {
+            await abrirModalCambioEstadoPedido(refs, state, pedido);
         })
     );
 
@@ -1558,7 +2039,8 @@ async function abrirDetallePedido(refs, state, pedidoId) {
                 ["Fecha", formatearFecha(pedido?.fechaPedido)],
                 ["Total", formatearPrecio(pedido?.total)],
                 ["Método de pago", pedido?.metodoPago || "Sin método"],
-                ["Estado", pedido?.estado || "Sin estado"]
+                ["Método de entrega", formatearMetodoEntregaTexto(pedido?.metodoEntrega)],
+                ["Estado", formatearEstadoPedidoTexto(pedido?.estado || "Sin estado")]
             ]),
             crearDetalleCard("Cliente", [
                 ["Nombre", pedido?.usuario?.nombre || "Sin nombre"],
@@ -1595,6 +2077,93 @@ async function abrirDetallePedido(refs, state, pedidoId) {
     }
 }
 
+async function abrirModalCambioEstadoPedido(refs, state, pedido) {
+    try {
+        state.pedidoCambioEstado = pedido;
+        refs.cambiarEstadoPedidoId.value = pedido.id;
+
+        refs.nuevoEstadoPedido.innerHTML = `<option value="">Cargando estados disponibles...</option>`;
+        refs.nuevoEstadoPedido.disabled = true;
+        refs.guardarCambioEstadoPedido.disabled = true;
+
+        if (refs.textoAyudaEstadoPedido) {
+            refs.textoAyudaEstadoPedido.textContent =
+                `Estado actual: ${formatearEstadoPedidoTexto(pedido.estado)} · Método de entrega: ${formatearMetodoEntregaTexto(pedido.metodoEntrega)}`;
+        }
+
+        abrirModal(refs.modalCambiarEstadoPedido);
+
+        const response = await fetch(`${BASE_URL}/pedidos/${pedido.id}/estados-validos`, {
+            method: "GET",
+            credentials: "include"
+        });
+
+        if (!response.ok) {
+            throw new Error("No se pudieron cargar los estados válidos");
+        }
+
+        const estadosValidos = await response.json();
+        refs.nuevoEstadoPedido.innerHTML = "";
+
+        if (!Array.isArray(estadosValidos) || estadosValidos.length === 0) {
+            const option = document.createElement("option");
+            option.value = "";
+            option.textContent = "No hay cambios manuales disponibles";
+            refs.nuevoEstadoPedido.appendChild(option);
+            refs.nuevoEstadoPedido.disabled = true;
+            refs.guardarCambioEstadoPedido.disabled = true;
+
+            if (refs.textoAyudaEstadoPedido) {
+                refs.textoAyudaEstadoPedido.textContent =
+                    `Estado actual: ${formatearEstadoPedidoTexto(pedido.estado)}. Este pedido ya no admite cambios manuales desde el panel.`;
+            }
+
+            return;
+        }
+
+        const placeholder = document.createElement("option");
+        placeholder.value = "";
+        placeholder.textContent = "Selecciona un nuevo estado";
+        refs.nuevoEstadoPedido.appendChild(placeholder);
+
+        estadosValidos.forEach((estado) => {
+            const option = document.createElement("option");
+            option.value = estado;
+            option.textContent = formatearEstadoPedidoTexto(estado);
+            refs.nuevoEstadoPedido.appendChild(option);
+        });
+
+        refs.nuevoEstadoPedido.disabled = false;
+        refs.guardarCambioEstadoPedido.disabled = false;
+        refs.nuevoEstadoPedido.value = "";
+
+    } catch (error) {
+        console.error(error);
+        refs.nuevoEstadoPedido.innerHTML = `<option value="">Error al cargar estados</option>`;
+        refs.nuevoEstadoPedido.disabled = true;
+        refs.guardarCambioEstadoPedido.disabled = true;
+
+        if (refs.textoAyudaEstadoPedido) {
+            refs.textoAyudaEstadoPedido.textContent =
+                "No se pudieron cargar los estados válidos para este pedido.";
+        }
+
+        mostrarMensaje(refs, "No se pudieron cargar los estados válidos del pedido.", "error");
+    }
+}
+
+function limpiarOpcionesEstadosPedido(refs) {
+    if (!refs.nuevoEstadoPedido) return;
+    refs.nuevoEstadoPedido.innerHTML = `<option value="">Cargando estados disponibles...</option>`;
+    refs.nuevoEstadoPedido.disabled = true;
+    refs.guardarCambioEstadoPedido.disabled = false;
+
+    if (refs.textoAyudaEstadoPedido) {
+        refs.textoAyudaEstadoPedido.textContent =
+            "Solo se mostrarán los estados válidos para el flujo real de este pedido.";
+    }
+}
+
 async function guardarCambioEstadoPedido(refs, state) {
     const pedidoId = refs.cambiarEstadoPedidoId.value;
     const nuevoEstado = refs.nuevoEstadoPedido.value;
@@ -1624,6 +2193,7 @@ async function guardarCambioEstadoPedido(refs, state) {
         cerrarModal(refs.modalCambiarEstadoPedido, () => {
             refs.formCambiarEstadoPedido.reset();
             state.pedidoCambioEstado = null;
+            limpiarOpcionesEstadosPedido(refs);
         });
 
         mostrarMensaje(refs, "Estado del pedido actualizado correctamente.", "ok");
@@ -1633,6 +2203,217 @@ async function guardarCambioEstadoPedido(refs, state) {
         mostrarMensaje(refs, error.message || "No se pudo cambiar el estado del pedido.", "error");
     } finally {
         restaurarBoton(refs.guardarCambioEstadoPedido, "Guardar cambio");
+    }
+}
+
+async function iniciarEscanerEntrega(refs, state) {
+    if (!refs.qrReaderEntrega) {
+        mostrarMensaje(refs, "No se encontró el contenedor del escáner.", "error");
+        return;
+    }
+
+    if (state.escanerEntregaActivo) {
+        return;
+    }
+
+    if (typeof Html5Qrcode === "undefined") {
+        mostrarResultadoQrEntrega(refs, "error", "Lector QR no disponible", "No se pudo cargar la librería del escáner QR.");
+        mostrarMensaje(refs, "No se pudo cargar el lector QR.", "error");
+        return;
+    }
+
+    try {
+        refs.btnIniciarEscanerEntrega.disabled = true;
+        refs.btnIniciarEscanerEntrega.textContent = "Iniciando...";
+        refs.btnDetenerEscanerEntrega.disabled = true;
+
+        if (!state.qrScannerEntrega) {
+            state.qrScannerEntrega = new Html5Qrcode("qr-reader-entrega");
+        }
+
+        await state.qrScannerEntrega.start(
+            { facingMode: "environment" },
+            {
+                fps: 10,
+                qrbox: { width: 250, height: 250 }
+            },
+            async (decodedText) => {
+                const token = extraerTokenEntrega(decodedText);
+
+                if (!token || state.confirmandoEntrega || token === state.ultimoTokenEntregaLeido) {
+                    return;
+                }
+
+                state.ultimoTokenEntregaLeido = token;
+
+                if (refs.inputTokenEntrega) {
+                    refs.inputTokenEntrega.value = token;
+                }
+
+                await detenerEscanerEntrega(refs, state, false);
+                await confirmarEntregaPorToken(refs, state, token);
+            },
+            () => {}
+        );
+
+        state.escanerEntregaActivo = true;
+        refs.btnIniciarEscanerEntrega.disabled = true;
+        refs.btnIniciarEscanerEntrega.textContent = "Escáner activo";
+        refs.btnDetenerEscanerEntrega.disabled = false;
+
+        mostrarResultadoQrEntrega(refs, "info", "Escáner activo", "Enfoca el código QR del pedido para validar la entrega.");
+    } catch (error) {
+        console.error("Error al iniciar escáner:", error);
+        state.escanerEntregaActivo = false;
+        restaurarBotonEscanerEntrega(refs);
+        mostrarResultadoQrEntrega(refs, "error", "No se pudo iniciar la cámara", "Revisa los permisos del navegador o prueba con la confirmación manual.");
+        mostrarMensaje(refs, "No se pudo iniciar el escáner QR.", "error");
+    }
+}
+
+async function detenerEscanerEntrega(refs, state, mostrarResultado = true) {
+    try {
+        if (state.qrScannerEntrega && state.escanerEntregaActivo) {
+            await state.qrScannerEntrega.stop();
+            await state.qrScannerEntrega.clear();
+        }
+    } catch (error) {
+        console.error("Error al detener escáner:", error);
+    } finally {
+        state.escanerEntregaActivo = false;
+        restaurarBotonEscanerEntrega(refs);
+
+        if (mostrarResultado) {
+            mostrarResultadoQrEntrega(refs, "info", "Escáner detenido", "Puedes iniciar de nuevo el escáner o confirmar un token manualmente.");
+        }
+    }
+}
+
+function restaurarBotonEscanerEntrega(refs) {
+    if (refs.btnIniciarEscanerEntrega) {
+        refs.btnIniciarEscanerEntrega.disabled = false;
+        refs.btnIniciarEscanerEntrega.textContent = "Iniciar escáner";
+    }
+
+    if (refs.btnDetenerEscanerEntrega) {
+        refs.btnDetenerEscanerEntrega.disabled = true;
+        refs.btnDetenerEscanerEntrega.textContent = "Detener escáner";
+    }
+}
+
+async function confirmarEntregaManual(refs, state) {
+    const token = extraerTokenEntrega(refs.inputTokenEntrega?.value || "");
+    await confirmarEntregaPorToken(refs, state, token);
+}
+
+async function confirmarEntregaPorToken(refs, state, token) {
+    const tokenLimpio = extraerTokenEntrega(token);
+
+    if (!tokenLimpio) {
+        mostrarResultadoQrEntrega(refs, "error", "Token vacío", "Introduce o escanea un token válido para confirmar la entrega.");
+        mostrarMensaje(refs, "Introduce un token válido.", "error");
+        return;
+    }
+
+    if (state.confirmandoEntrega) {
+        return;
+    }
+
+    try {
+        state.confirmandoEntrega = true;
+        bloquearBoton(refs.btnConfirmarTokenEntrega, "Confirmando...");
+        mostrarResultadoQrEntrega(refs, "info", "Validando QR", "Comprobando el pedido asociado al código escaneado.");
+
+        const response = await fetch(`${BASE_URL}/pedidos/admin/confirmar-entrega?token=${encodeURIComponent(tokenLimpio)}`, {
+            method: "POST",
+            credentials: "include"
+        });
+
+        if (!response.ok) {
+            let mensaje = "No se pudo confirmar la entrega.";
+            try {
+                const texto = await response.text();
+                if (texto) mensaje = texto;
+            } catch (_) {}
+            throw new Error(mensaje);
+        }
+
+        const pedido = await response.json();
+
+        if (refs.inputTokenEntrega) {
+            refs.inputTokenEntrega.value = "";
+        }
+
+        state.ultimoTokenEntregaLeido = null;
+
+        mostrarResultadoQrEntrega(
+            refs,
+            "ok",
+            "Entrega confirmada",
+            `El pedido #${pedido.id} se ha marcado como entregado correctamente.`,
+            pedido
+        );
+
+        mostrarMensaje(refs, `Pedido #${pedido.id} entregado correctamente.`, "ok");
+
+        await cargarPedidos(refs, state);
+        await cargarMetricas(refs);
+    } catch (error) {
+        console.error("Error al confirmar entrega:", error);
+        state.ultimoTokenEntregaLeido = null;
+        mostrarResultadoQrEntrega(refs, "error", "No se pudo confirmar", error.message || "El código QR no es válido o el pedido no puede confirmarse.");
+        mostrarMensaje(refs, error.message || "No se pudo confirmar la entrega.", "error");
+    } finally {
+        state.confirmandoEntrega = false;
+        restaurarBoton(refs.btnConfirmarTokenEntrega, "Confirmar entrega");
+    }
+}
+
+function extraerTokenEntrega(valor) {
+    const texto = (valor || "").trim();
+
+    if (!texto) {
+        return "";
+    }
+
+    try {
+        const url = new URL(texto);
+        const token = url.searchParams.get("token");
+
+        if (token && token.trim()) {
+            return token.trim();
+        }
+    } catch (_) {}
+
+    const match = texto.match(/[?&]token=([^&]+)/);
+
+    if (match && match[1]) {
+        return decodeURIComponent(match[1]).trim();
+    }
+
+    return texto;
+}
+
+function mostrarResultadoQrEntrega(refs, tipo, titulo, texto, pedido) {
+    if (!refs.resultadoQrEntrega) return;
+
+    refs.resultadoQrEntrega.className = "resultado-qr-entrega";
+    refs.resultadoQrEntrega.classList.add(`resultado-qr-entrega-${tipo}`);
+
+    limpiarContenedor(refs.resultadoQrEntrega);
+
+    refs.resultadoQrEntrega.appendChild(el("h4", { text: titulo }));
+    refs.resultadoQrEntrega.appendChild(el("p", { text: texto }));
+
+    if (pedido) {
+        const resumen = el("div", { className: "resultado-qr-resumen" });
+
+        resumen.appendChild(crearParrafoDetalle(`Pedido: #${pedido.id}`));
+        resumen.appendChild(crearParrafoDetalle(`Estado: ${formatearEstadoPedidoTexto(pedido.estado)}`));
+        resumen.appendChild(crearParrafoDetalle(`Cliente: ${pedido.usuario?.nombre || "Sin nombre"}`));
+        resumen.appendChild(crearParrafoDetalle(`Total: ${formatearPrecio(pedido.total)}`));
+
+        refs.resultadoQrEntrega.appendChild(resumen);
     }
 }
 
@@ -1684,7 +2465,7 @@ function crearBadge(texto) {
 function crearBadgeEstado(estado) {
     const badge = el("span", {
         className: `item-admin-badge item-admin-badge-estado ${obtenerClaseEstado(estado)}`,
-        text: estado
+        text: formatearEstadoPedidoTexto(estado)
     });
     return badge;
 }
@@ -1831,32 +2612,32 @@ function obtenerClaseEstado(estado) {
         case "PREPARANDO": return "estado-preparando";
         case "ENVIADO": return "estado-enviado";
         case "LISTO_PARA_RECOGER": return "estado-preparando";
+        case "PENDIENTE_CONFIRMACION_ENTREGA": return "estado-enviado";
         case "ENTREGADO": return "estado-entregado";
         case "CANCELADO": return "estado-cancelado";
         default: return "estado-confirmado";
     }
 }
 
-/* =========================
-   HELPERS INTERNO SCRAPING
-========================= */
-
-function stateLikeFromProducts(refs) {
-    return {
-        productos: [],
-        productosFiltrados: [],
-        usuarios: [],
-        pedidos: [],
-        modoSeleccionProductos: false,
-        productosSeleccionados: new Set(),
-        productoIdPendienteEliminar: null,
-        usuarioIdPendienteEliminar: null,
-        productosStockObjetivo: [],
-        pedidoCambioEstado: null,
-        contenedorProductos: refs.contenedorProductos
-    };
+function formatearEstadoPedidoTexto(estado) {
+    switch (estado) {
+        case "PENDIENTE": return "Pendiente";
+        case "CONFIRMADO": return "Confirmado";
+        case "PREPARANDO": return "Preparando";
+        case "ENVIADO": return "Enviado";
+        case "LISTO_PARA_RECOGER": return "Listo para recoger";
+        case "PENDIENTE_CONFIRMACION_ENTREGA": return "Pendiente confirmación entrega";
+        case "ENTREGADO": return "Entregado";
+        case "CANCELADO": return "Cancelado";
+        default: return estado || "Sin estado";
+    }
 }
 
-function crearEstadoPassthrough(state) {
-    return state;
+function formatearMetodoEntregaTexto(metodoEntrega) {
+    switch (metodoEntrega) {
+        case "DOMICILIO": return "Domicilio";
+        case "RECOGIDA_TIENDA": return "Recogida en tienda";
+        case "PUNTO_RECOGIDA": return "Punto de recogida";
+        default: return "Sin método de entrega";
+    }
 }

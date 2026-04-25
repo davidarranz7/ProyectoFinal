@@ -23,6 +23,7 @@
 
         <div id="mensaje-checkout" class="mensaje-feedback oculto"></div>
 
+        <!-- MÉTODO DE ENVÍO -->
         <div class="bloque-checkout">
             <h2>Método de envío</h2>
 
@@ -46,50 +47,111 @@
             </p>
         </div>
 
+        <!-- ENVÍO A DOMICILIO -->
         <div class="bloque-checkout" id="bloque-domicilio">
             <h2>Datos de envío</h2>
 
-            <div class="grupo-campos">
-                <input type="text" id="nombre-envio" placeholder="Nombre completo">
-                <input type="text" id="direccion-envio" placeholder="Dirección">
+            <div id="bloque-direcciones-guardadas" class="bloque-direcciones-guardadas" style="display: none;">
+                <p class="texto-ayuda">
+                    Selecciona una dirección guardada o utiliza una nueva.
+                </p>
+
+                <div id="lista-direcciones-guardadas" class="lista-direcciones-guardadas"></div>
+
+                <label class="opcion-radio opcion-direccion-nueva">
+                    <input type="radio" name="seleccionDireccion" value="nueva" checked>
+                    <span>Usar una dirección nueva</span>
+                </label>
             </div>
 
-            <div class="grupo-campos">
-                <input type="text" id="provincia-envio" placeholder="Provincia">
-                <input type="text" id="ciudad-envio" placeholder="Ciudad">
-            </div>
+            <div id="bloque-direccion-nueva">
+                <div class="grupo-campos">
+                    <input type="text" id="alias-direccion" placeholder="Alias de la dirección (ej: Casa, Trabajo)">
+                    <input type="text" id="nombre-envio" placeholder="Nombre completo">
+                </div>
 
-            <div class="grupo-campos">
-                <input type="text" id="cp-envio" placeholder="Código postal">
+                <div class="grupo-campos">
+                    <input type="text" id="provincia-envio" placeholder="Provincia">
+                    <input type="text" id="ciudad-envio" placeholder="Ciudad">
+                </div>
+
+                <div class="grupo-campos">
+                    <input type="text" id="calle-envio" placeholder="Calle">
+                    <input type="text" id="numero-envio" placeholder="Número">
+                </div>
+
+                <div class="grupo-campos">
+                    <input type="text" id="piso-envio" placeholder="Piso (opcional)">
+                    <input type="text" id="puerta-envio" placeholder="Puerta (opcional)">
+                </div>
+
+                <div class="grupo-campos">
+                    <input type="text" id="cp-envio" placeholder="Código postal">
+                </div>
+
+                <div id="bloque-guardar-direccion" class="bloque-guardar-direccion">
+                    <label class="opcion-radio">
+                        <input type="checkbox" id="guardar-direccion">
+                        <span>Guardar esta dirección para próximas compras</span>
+                    </label>
+
+                    <label class="opcion-radio">
+                        <input type="checkbox" id="direccion-principal">
+                        <span>Marcar como dirección principal</span>
+                    </label>
+                </div>
             </div>
         </div>
 
+        <!-- RECOGIDA EN TIENDA -->
         <div class="bloque-checkout" id="bloque-tienda" style="display: none;">
             <h2>Recogida en tienda</h2>
             <p class="texto-ayuda">
-                Selecciona un establecimiento disponible en Vigo según la tienda de tus productos.
+                Selecciona provincia, ciudad y establecimiento disponible según la tienda de tus productos.
             </p>
 
-            <select id="select-tienda">
-                <option value="">Selecciona una tienda</option>
-            </select>
+            <div class="grupo-campos">
+                <select id="select-provincia-tienda">
+                    <option value="">Selecciona una provincia</option>
+                </select>
+
+                <select id="select-ciudad-tienda" disabled>
+                    <option value="">Selecciona una ciudad</option>
+                </select>
+            </div>
+
+            <div class="grupo-campos">
+                <select id="select-tienda">
+                    <option value="">Selecciona un establecimiento</option>
+                </select>
+            </div>
         </div>
 
+        <!-- PUNTO DE RECOGIDA -->
         <div class="bloque-checkout" id="bloque-punto" style="display: none;">
             <h2>Punto de recogida</h2>
             <p class="texto-ayuda">
-                Elige el punto de recogida que prefieras.
+                Elige provincia, ciudad y el punto de recogida que prefieras.
             </p>
 
-            <select id="select-punto-recogida">
-                <option value="">Selecciona un punto de recogida</option>
-                <option value="vigo-centro">Punto Vigo Centro</option>
-                <option value="gran-via">Punto Gran Vía</option>
-                <option value="calvario">Punto O Calvario</option>
-                <option value="travesia">Punto Travesía</option>
-            </select>
+            <div class="grupo-campos">
+                <select id="select-provincia-punto">
+                    <option value="">Selecciona una provincia</option>
+                </select>
+
+                <select id="select-ciudad-punto" disabled>
+                    <option value="">Selecciona una ciudad</option>
+                </select>
+            </div>
+
+            <div class="grupo-campos">
+                <select id="select-punto-recogida">
+                    <option value="">Selecciona un punto de recogida</option>
+                </select>
+            </div>
         </div>
 
+        <!-- MÉTODO DE PAGO -->
         <div class="bloque-checkout">
             <h2>Método de pago</h2>
 

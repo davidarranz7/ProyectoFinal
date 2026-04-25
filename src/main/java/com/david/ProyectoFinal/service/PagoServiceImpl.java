@@ -28,8 +28,22 @@ public class PagoServiceImpl implements PagoService {
     private final EmailService emailService;
     private final TarjetaRepository tarjetaRepository;
     private final TarjetaService tarjetaService;
+    private final DireccionRepository direccionRepository;
+    private final EstablecimientoRepository establecimientoRepository;
+    private final PuntoRecogidaRepository puntoRecogidaRepository;
 
-    public PagoServiceImpl(PagoRepository pagoRepository, UsuarioRepository usuarioRepository, CarritoRepository carritoRepository, ItemCarritoRepository itemCarritoRepository, PedidoRepository pedidoRepository, ItemPedidoRepository itemPedidoRepository, EmailService emailService, TarjetaRepository tarjetaRepository, TarjetaService tarjetaService) {
+    public PagoServiceImpl(PagoRepository pagoRepository,
+                           UsuarioRepository usuarioRepository,
+                           CarritoRepository carritoRepository,
+                           ItemCarritoRepository itemCarritoRepository,
+                           PedidoRepository pedidoRepository,
+                           ItemPedidoRepository itemPedidoRepository,
+                           EmailService emailService,
+                           TarjetaRepository tarjetaRepository,
+                           TarjetaService tarjetaService,
+                           DireccionRepository direccionRepository,
+                           EstablecimientoRepository establecimientoRepository,
+                           PuntoRecogidaRepository puntoRecogidaRepository) {
         this.pagoRepository = pagoRepository;
         this.usuarioRepository = usuarioRepository;
         this.carritoRepository = carritoRepository;
@@ -39,6 +53,9 @@ public class PagoServiceImpl implements PagoService {
         this.emailService = emailService;
         this.tarjetaRepository = tarjetaRepository;
         this.tarjetaService = tarjetaService;
+        this.direccionRepository = direccionRepository;
+        this.establecimientoRepository = establecimientoRepository;
+        this.puntoRecogidaRepository = puntoRecogidaRepository;
     }
 
     public PagoResponseDTO procesarPago(PagoRequestDTO dto) {
@@ -47,9 +64,14 @@ public class PagoServiceImpl implements PagoService {
 
         Long usuarioId = dto.getUsuarioId();
         MetodoPago metodoPago = dto.getMetodoPago();
+        MetodoEntrega metodoEntrega = dto.getMetodoEntrega();
 
         if (metodoPago == null) {
             throw new RuntimeException("El método de pago es obligatorio");
+        }
+
+        if (metodoEntrega == null) {
+            throw new RuntimeException("El método de entrega es obligatorio");
         }
 
         Usuario usuario = usuarioRepository.findById(usuarioId)
@@ -67,6 +89,50 @@ public class PagoServiceImpl implements PagoService {
         BigDecimal total = items.stream()
                 .map(item -> item.getProducto().getPrecio().multiply(BigDecimal.valueOf(item.getCantidad())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        /// VALIDACIONES SEGÚN MÉTODO DE ENTREGA
+        Direccion direccionEnvio = null;
+        Establecimiento establecimientoRecogida = null;
+        PuntoRecogida puntoRecogida = null;
+
+        if (metodoEntrega == MetodoEntrega.DOMICILIO) {
+            if (dto.getDireccionId() == null) {
+                throw new RuntimeException("Debes indicar una dirección para el envío a domicilio");
+            }
+
+            direccionEnvio = direccionRepository.findById(dto.getDireccionId())
+                    .orElseThrow(() -> new RuntimeException("Dirección no encontrada"));
+
+            if (direccionEnvio.getUsuario() == null || !direccionEnvio.getUsuario().getId().equals(usuarioId)) {
+                throw new RuntimeException("La dirección no pertenece al usuario");
+            }
+        }
+
+        if (metodoEntrega == MetodoEntrega.RECOGIDA_TIENDA) {
+            if (dto.getEstablecimientoId() == null) {
+                throw new RuntimeException("Debes indicar un establecimiento para la recogida en tienda");
+            }
+
+            establecimientoRecogida = establecimientoRepository.findById(dto.getEstablecimientoId())
+                    .orElseThrow(() -> new RuntimeException("Establecimiento no encontrado"));
+
+            if (!Boolean.TRUE.equals(establecimientoRecogida.getDisponible())) {
+                throw new RuntimeException("El establecimiento seleccionado no está disponible");
+            }
+        }
+
+        if (metodoEntrega == MetodoEntrega.PUNTO_RECOGIDA) {
+            if (dto.getPuntoRecogidaId() == null) {
+                throw new RuntimeException("Debes indicar un punto de recogida");
+            }
+
+            puntoRecogida = puntoRecogidaRepository.findById(dto.getPuntoRecogidaId())
+                    .orElseThrow(() -> new RuntimeException("Punto de recogida no encontrado"));
+
+            if (!Boolean.TRUE.equals(puntoRecogida.getDisponible())) {
+                throw new RuntimeException("El punto de recogida seleccionado no está disponible");
+            }
+        }
 
         // VALIDACIONES SEGÚN MÉTODO
         if (metodoPago == MetodoPago.TARJETA) {
@@ -163,6 +229,10 @@ public class PagoServiceImpl implements PagoService {
         pedido.setTotal(total);
         pedido.setMetodoPago(metodoPago);
         pedido.setEstado(EstadoPedido.CONFIRMADO);
+        pedido.setMetodoEntrega(metodoEntrega);
+        pedido.setDireccionEnvio(direccionEnvio);
+        pedido.setEstablecimientoRecogida(establecimientoRecogida);
+        pedido.setPuntoRecogida(puntoRecogida);
 
         Pedido pedidoGuardado = pedidoRepository.save(pedido);
 
@@ -263,6 +333,7 @@ public class PagoServiceImpl implements PagoService {
 
         return sb.toString();
     }
+
     private String leerPlantillaHtml(String ruta) {
         try (InputStream inputStream = new ClassPathResource(ruta).getInputStream()) {
             return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);

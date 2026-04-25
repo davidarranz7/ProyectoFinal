@@ -5,4 +5,11 @@ public interface EmailService {
     void enviarCorreoSimple(String destinatario, String asunto, String contenido);
 
     void enviarCorreoHtml(String destinatario, String asunto, String contenidoHtml);
+
+    void enviarCorreoHtmlConImagenInline(String destinatario,
+                                         String asunto,
+                                         String contenidoHtml,
+                                         byte[] imagenBytes,
+                                         String contentId,
+                                         String nombreArchivo);
 }

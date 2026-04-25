@@ -4,6 +4,7 @@ import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -43,6 +44,31 @@ public class EmailServiceImpl implements EmailService {
             mailSender.send(mensaje);
         } catch (MessagingException e) {
             throw new RuntimeException("Error al enviar correo HTML", e);
+        }
+    }
+
+    @Override
+    public void enviarCorreoHtmlConImagenInline(String destinatario,
+                                                String asunto,
+                                                String contenidoHtml,
+                                                byte[] imagenBytes,
+                                                String contentId,
+                                                String nombreArchivo) {
+        try {
+            MimeMessage mensaje = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mensaje, true, "UTF-8");
+
+            helper.setFrom(remitente);
+            helper.setTo(destinatario);
+            helper.setSubject(asunto);
+            helper.setText(contenidoHtml, true);
+
+            ByteArrayResource recursoImagen = new ByteArrayResource(imagenBytes);
+            helper.addInline(contentId, recursoImagen, "image/png");
+
+            mailSender.send(mensaje);
+        } catch (MessagingException e) {
+            throw new RuntimeException("Error al enviar correo HTML con imagen inline", e);
         }
     }
 }

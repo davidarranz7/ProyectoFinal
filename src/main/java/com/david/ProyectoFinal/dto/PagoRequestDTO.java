@@ -1,5 +1,6 @@
 package com.david.ProyectoFinal.dto;
 
+import com.david.ProyectoFinal.model.MetodoEntrega;
 import com.david.ProyectoFinal.model.MetodoPago;
 import com.david.ProyectoFinal.model.TipoTarjeta;
 
@@ -8,6 +9,18 @@ public class PagoRequestDTO {
 
     private Long usuarioId;
     private MetodoPago metodoPago;
+
+    /// método de entrega del pedido
+    private MetodoEntrega metodoEntrega;
+
+    /// si el pedido va a domicilio y usa una dirección ya guardada
+    private Long direccionId;
+
+    /// si el pedido es recogida en tienda
+    private Long establecimientoId;
+
+    /// si el pedido es recogida en punto de recogida
+    private Long puntoRecogidaId;
 
     /// si usa una tarjeta ya guardada
     private Long tarjetaId;
@@ -31,6 +44,10 @@ public class PagoRequestDTO {
 
     public PagoRequestDTO(Long usuarioId,
                           MetodoPago metodoPago,
+                          MetodoEntrega metodoEntrega,
+                          Long direccionId,
+                          Long establecimientoId,
+                          Long puntoRecogidaId,
                           Long tarjetaId,
                           Boolean guardarTarjeta,
                           String numeroTarjeta,
@@ -42,6 +59,10 @@ public class PagoRequestDTO {
                           Double importeEntrega) {
         this.usuarioId = usuarioId;
         this.metodoPago = metodoPago;
+        this.metodoEntrega = metodoEntrega;
+        this.direccionId = direccionId;
+        this.establecimientoId = establecimientoId;
+        this.puntoRecogidaId = puntoRecogidaId;
         this.tarjetaId = tarjetaId;
         this.guardarTarjeta = guardarTarjeta;
         this.numeroTarjeta = numeroTarjeta;
@@ -67,6 +88,38 @@ public class PagoRequestDTO {
 
     public void setMetodoPago(MetodoPago metodoPago) {
         this.metodoPago = metodoPago;
+    }
+
+    public MetodoEntrega getMetodoEntrega() {
+        return metodoEntrega;
+    }
+
+    public void setMetodoEntrega(MetodoEntrega metodoEntrega) {
+        this.metodoEntrega = metodoEntrega;
+    }
+
+    public Long getDireccionId() {
+        return direccionId;
+    }
+
+    public void setDireccionId(Long direccionId) {
+        this.direccionId = direccionId;
+    }
+
+    public Long getEstablecimientoId() {
+        return establecimientoId;
+    }
+
+    public void setEstablecimientoId(Long establecimientoId) {
+        this.establecimientoId = establecimientoId;
+    }
+
+    public Long getPuntoRecogidaId() {
+        return puntoRecogidaId;
+    }
+
+    public void setPuntoRecogidaId(Long puntoRecogidaId) {
+        this.puntoRecogidaId = puntoRecogidaId;
     }
 
     public Long getTarjetaId() {
