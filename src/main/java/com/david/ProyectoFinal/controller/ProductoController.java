@@ -106,11 +106,6 @@ public class ProductoController {
         return ResponseEntity.ok(productos);
     }
 
-    @GetMapping("/tienda/{nombre}")
-    public List<Producto> obtenerPorTienda(@PathVariable String nombre) {
-        return productoService.obtenerPorTienda(nombre);
-    }
-
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/talla-stock")
     public ResponseEntity<String> asignarTallaStock(@RequestBody ProductoTallaStockDTO dto){

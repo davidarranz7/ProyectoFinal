@@ -229,9 +229,46 @@
                                     placeholder="Buscar productos por nombre, categoría o tienda..."
                             />
                         </div>
+
+                        <div class="toolbar-filter">
+                            <select id="filtro-tienda-productos-admin">
+                                <option value="">Todas las tiendas</option>
+                                <option value="Zara">Zara</option>
+                                <option value="Bershka">Bershka</option>
+                                <option value="PullAndBear">Pull&amp;Bear</option>
+                            </select>
+                        </div>
+
+                        <div class="toolbar-filter">
+                            <select id="filtro-seccion-productos-admin">
+                                <option value="">Todas las secciones</option>
+                                <option value="HOMBRE">Hombre</option>
+                                <option value="MUJER">Mujer</option>
+                            </select>
+                        </div>
+
+                        <div class="toolbar-filter">
+                            <select id="filtro-categoria-productos-admin">
+                                <option value="">Todas las categorías</option>
+                                <option value="camiseta">Camisetas</option>
+                                <option value="pantalon">Pantalones</option>
+                                <option value="sudadera">Sudaderas</option>
+                                <option value="abrigo">Abrigos</option>
+                            </select>
+                        </div>
+
+                        <div class="toolbar-filter">
+                            <select id="filtro-orden-productos-admin">
+                                <option value="recientes">Más recientes</option>
+                                <option value="precio-asc">Precio: menor a mayor</option>
+                                <option value="precio-desc">Precio: mayor a menor</option>
+                                <option value="nombre-asc">Nombre A-Z</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div class="toolbar-right">
+                        <button class="btn btn-secondary" type="button" id="btn-limpiar-filtros-productos">Limpiar filtros</button>
                         <button class="btn btn-secondary" type="button" id="btn-modo-seleccion-productos">Modo selección</button>
                         <button class="btn btn-secondary" type="button" id="btn-seleccionar-todos-productos">Seleccionar todos</button>
                         <button class="btn btn-primary" type="button" id="btn-stock-seleccionados" disabled>Editar stock</button>

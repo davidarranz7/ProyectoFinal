@@ -74,6 +74,11 @@ function obtenerReferencias() {
         btnScrapingTodo: document.getElementById("btn-scraping-todo"),
 
         buscadorProductos: document.getElementById("buscador-productos-admin"),
+        filtroTiendaProductos: document.getElementById("filtro-tienda-productos-admin"),
+        filtroSeccionProductos: document.getElementById("filtro-seccion-productos-admin"),
+        filtroCategoriaProductos: document.getElementById("filtro-categoria-productos-admin"),
+        filtroOrdenProductos: document.getElementById("filtro-orden-productos-admin"),
+        btnLimpiarFiltrosProductos: document.getElementById("btn-limpiar-filtros-productos"),
         btnModoSeleccionProductos: document.getElementById("btn-modo-seleccion-productos"),
         btnSeleccionarTodosProductos: document.getElementById("btn-seleccionar-todos-productos"),
         btnStockSeleccionados: document.getElementById("btn-stock-seleccionados"),
@@ -223,16 +228,27 @@ function crearEstadoInicial() {
         usuarios: [],
         pedidos: [],
         estadosPedidoDisponibles: [],
+
         modoSeleccionProductos: false,
         productosSeleccionados: new Set(),
         productoIdPendienteEliminar: null,
         usuarioIdPendienteEliminar: null,
         productosStockObjetivo: [],
+
         pedidoCambioEstado: null,
+
         qrScannerEntrega: null,
         escanerEntregaActivo: false,
         ultimoTokenEntregaLeido: null,
-        confirmandoEntrega: false
+        confirmandoEntrega: false,
+
+        paginaProductos: 0,
+        sizeProductosAdmin: 20,
+        totalProductosCatalogo: 0,
+        ultimaPaginaProductos: false,
+        cargandoProductos: false,
+        timeoutBusquedaProductos: null,
+        observadorProductos: null
     };
 }
 
@@ -281,12 +297,15 @@ function configurarScraping(refs, state) {
     refs.btnScrapingZara?.addEventListener("click", () =>
         ejecutarScraping(refs, state, "/productos/scrapear/zara", "Zara", refs.btnScrapingZara, "Ejecutar")
     );
+
     refs.btnScrapingBershka?.addEventListener("click", () =>
         ejecutarScraping(refs, state, "/productos/scrapear/bershka", "Bershka", refs.btnScrapingBershka, "Ejecutar")
     );
+
     refs.btnScrapingPull?.addEventListener("click", () =>
         ejecutarScraping(refs, state, "/productos/scrapear/pullandbear", "Pull&Bear", refs.btnScrapingPull, "Ejecutar")
     );
+
     refs.btnScrapingTodo?.addEventListener("click", () =>
         ejecutarScraping(refs, state, "/productos/scrapear/total", "Scraping completo", refs.btnScrapingTodo, "Ejecutar todo")
     );
@@ -294,6 +313,25 @@ function configurarScraping(refs, state) {
 
 function configurarProductos(refs, state) {
     refs.buscadorProductos?.addEventListener("input", () => {
+        clearTimeout(state.timeoutBusquedaProductos);
+
+        state.timeoutBusquedaProductos = setTimeout(() => {
+            aplicarFiltroProductos(refs, state);
+        }, 350);
+    });
+
+    refs.filtroTiendaProductos?.addEventListener("change", () => aplicarFiltroProductos(refs, state));
+    refs.filtroSeccionProductos?.addEventListener("change", () => aplicarFiltroProductos(refs, state));
+    refs.filtroCategoriaProductos?.addEventListener("change", () => aplicarFiltroProductos(refs, state));
+    refs.filtroOrdenProductos?.addEventListener("change", () => aplicarFiltroProductos(refs, state));
+
+    refs.btnLimpiarFiltrosProductos?.addEventListener("click", () => {
+        if (refs.buscadorProductos) refs.buscadorProductos.value = "";
+        if (refs.filtroTiendaProductos) refs.filtroTiendaProductos.value = "";
+        if (refs.filtroSeccionProductos) refs.filtroSeccionProductos.value = "";
+        if (refs.filtroCategoriaProductos) refs.filtroCategoriaProductos.value = "";
+        if (refs.filtroOrdenProductos) refs.filtroOrdenProductos.value = "recientes";
+
         aplicarFiltroProductos(refs, state);
     });
 
@@ -316,7 +354,13 @@ function configurarProductos(refs, state) {
         }
 
         const visibles = state.productosFiltrados;
-        const todosSeleccionados = visibles.length > 0 && visibles.every((p) => state.productosSeleccionados.has(p.id));
+
+        if (!visibles.length) {
+            mostrarMensaje(refs, "No hay productos visibles para seleccionar.", "info");
+            return;
+        }
+
+        const todosSeleccionados = visibles.every((p) => state.productosSeleccionados.has(p.id));
 
         if (todosSeleccionados) {
             visibles.forEach((p) => state.productosSeleccionados.delete(p.id));
@@ -330,10 +374,12 @@ function configurarProductos(refs, state) {
 
     refs.btnStockSeleccionados?.addEventListener("click", () => {
         const seleccionados = state.productos.filter((p) => state.productosSeleccionados.has(p.id));
+
         if (!seleccionados.length) {
             mostrarMensaje(refs, "Selecciona al menos un producto.", "error");
             return;
         }
+
         abrirModalStock(refs, state, seleccionados);
     });
 
@@ -498,7 +544,9 @@ function configurarModales(refs, state) {
         refs.formEditarUsuario?.reset();
     });
 
-    configurararCerrarModalSeguraEliminarUsuario(refs, state);
+    configurarCerrarModal(refs.modalEliminarUsuario, refs.cerrarModalEliminarUsuario, refs.cancelarModalEliminarUsuario, () => {
+        state.usuarioIdPendienteEliminar = null;
+    });
 
     configurarCerrarModal(refs.modalDetalleUsuario, refs.cerrarModalDetalleUsuario, null, () => {
         limpiarContenedor(refs.contenidoDetalleUsuario);
@@ -523,12 +571,6 @@ function configurarModales(refs, state) {
     });
 }
 
-function configurararCerrarModalSeguraEliminarUsuario(refs, state) {
-    configurarCerrarModal(refs.modalEliminarUsuario, refs.cerrarModalEliminarUsuario, refs.cancelarModalEliminarUsuario, () => {
-        state.usuarioIdPendienteEliminar = null;
-    });
-}
-
 function configurarCerrarModal(modal, btnCerrar, btnCancelar, onClose) {
     btnCerrar?.addEventListener("click", () => cerrarModal(modal, onClose));
     btnCancelar?.addEventListener("click", () => cerrarModal(modal, onClose));
@@ -546,7 +588,7 @@ async function cargarTodo(refs, state) {
     await Promise.all([
         cargarMetricas(refs),
         cargarEstadosPedidoDisponibles(refs, state),
-        cargarProductos(refs, state),
+        cargarProductos(refs, state, true),
         cargarEstablecimientos(refs, state),
         cargarPuntosRecogida(refs, state),
         cargarUsuarios(refs, state),
@@ -557,14 +599,23 @@ async function cargarTodo(refs, state) {
 async function cargarMetricas(refs) {
     try {
         const [resProductos, resUsuarios, resPedidos] = await Promise.all([
-            fetch(`${BASE_URL}/productos`, { method: "GET", credentials: "include" }),
-            fetch(`${BASE_URL}/usuarios`, { method: "GET", credentials: "include" }),
-            fetch(`${BASE_URL}/pedidos`, { method: "GET", credentials: "include" })
+            fetch(`${BASE_URL}/productos/catalogo?page=0&size=1`, {
+                method: "GET",
+                credentials: "include"
+            }),
+            fetch(`${BASE_URL}/usuarios`, {
+                method: "GET",
+                credentials: "include"
+            }),
+            fetch(`${BASE_URL}/pedidos`, {
+                method: "GET",
+                credentials: "include"
+            })
         ]);
 
         if (resProductos.ok) {
-            const productos = await resProductos.json();
-            refs.totalProductos.textContent = Array.isArray(productos) ? productos.length : 0;
+            const dataProductos = await resProductos.json();
+            refs.totalProductos.textContent = obtenerTotalElementos(dataProductos);
         }
 
         if (resUsuarios.ok) {
@@ -600,11 +651,32 @@ async function cargarEstadosPedidoDisponibles(refs, state) {
     }
 }
 
-async function cargarProductos(refs, state) {
-    try {
-        mostrarEstado(refs.estadoProductos, "Cargando productos...", "info");
+async function cargarProductos(refs, state, reiniciar = true) {
+    if (state.cargandoProductos) return;
+    if (state.ultimaPaginaProductos && !reiniciar) return;
 
-        const response = await fetch(`${BASE_URL}/productos`, {
+    if (reiniciar) {
+        if (state.observadorProductos) {
+            state.observadorProductos.disconnect();
+            state.observadorProductos = null;
+        }
+
+        state.paginaProductos = 0;
+        state.ultimaPaginaProductos = false;
+        state.totalProductosCatalogo = 0;
+        state.productos = [];
+        state.productosFiltrados = [];
+        state.productosSeleccionados.clear();
+
+        mostrarEstado(refs.estadoProductos, "Cargando productos...", "info");
+        renderizarEstadoVacio(refs.contenedorProductos, "Cargando productos", "El catálogo aparecerá aquí automáticamente.");
+        actualizarBotonStockSeleccionados(refs, state);
+    }
+
+    try {
+        state.cargandoProductos = true;
+
+        const response = await fetch(construirUrlProductosAdmin(refs, state), {
             method: "GET",
             credentials: "include"
         });
@@ -613,16 +685,34 @@ async function cargarProductos(refs, state) {
             throw new Error("No se pudieron cargar los productos");
         }
 
-        state.productos = await response.json();
+        const data = await response.json();
+        const pagina = normalizarPaginaProductos(data, state);
+
+        state.totalProductosCatalogo = pagina.totalElementos;
+        state.ultimaPaginaProductos = pagina.ultimaPagina;
+        state.paginaProductos = pagina.paginaActual;
+
+        if (reiniciar) {
+            state.productos = [...pagina.productos];
+        } else {
+            state.productos = unirProductosSinDuplicados(state.productos, pagina.productos);
+        }
+
         state.productosFiltrados = [...state.productos];
 
         ocultarEstado(refs.estadoProductos);
         renderizarProductos(refs, state);
-        await cargarMetricas(refs);
     } catch (error) {
         console.error("Error cargando productos:", error);
         mostrarEstado(refs.estadoProductos, "No se pudieron cargar los productos.", "error");
-        renderizarEstadoVacio(refs.contenedorProductos, "Error al cargar", "No se pudo obtener el catálogo.");
+
+        if (reiniciar) {
+            renderizarEstadoVacio(refs.contenedorProductos, "Error al cargar", "No se pudo obtener el catálogo.");
+        } else {
+            state.paginaProductos = Math.max(0, state.paginaProductos - 1);
+        }
+    } finally {
+        state.cargandoProductos = false;
     }
 }
 
@@ -701,7 +791,6 @@ async function cargarUsuarios(refs, state) {
 
         ocultarEstado(refs.estadoUsuarios);
         renderizarUsuarios(refs, state);
-        await cargarMetricas(refs);
     } catch (error) {
         console.error("Error cargando usuarios:", error);
         mostrarEstado(refs.estadoUsuarios, "No se pudieron cargar los usuarios.", "error");
@@ -731,7 +820,6 @@ async function cargarPedidos(refs, state) {
 
         ocultarEstado(refs.estadoPedidos);
         renderizarPedidos(refs, state);
-        await cargarMetricas(refs);
     } catch (error) {
         console.error("Error cargando pedidos:", error);
         mostrarEstado(refs.estadoPedidos, "No se pudieron cargar los pedidos.", "error");
@@ -764,7 +852,7 @@ async function ejecutarScraping(refs, state, url, nombre, boton, textoOriginal) 
         actualizarEstadoScraping(refs, "Completado", `${nombre} finalizado. Productos procesados: ${total}`, "success");
         mostrarMensaje(refs, `${nombre} completado correctamente.`, "ok");
 
-        await cargarProductos(refs, state);
+        await cargarProductos(refs, state, true);
         await cargarMetricas(refs);
     } catch (error) {
         console.error(`Error en ${nombre}:`, error);
@@ -783,6 +871,7 @@ function actualizarEstadoScraping(refs, estado, detalle, tipo) {
 
     if (refs.chipScraping) {
         refs.chipScraping.className = "status-chip";
+
         if (tipo === "success") refs.chipScraping.classList.add("status-chip-success");
         else if (tipo === "error") refs.chipScraping.classList.add("status-chip-error");
         else if (tipo === "info") refs.chipScraping.classList.add("status-chip-info");
@@ -796,22 +885,60 @@ function actualizarEstadoScraping(refs, estado, detalle, tipo) {
    PRODUCTOS
 ========================= */
 
-function aplicarFiltroProductos(refs, state) {
-    const termino = (refs.buscadorProductos?.value || "").trim().toLowerCase();
+function construirUrlProductosAdmin(refs, state) {
+    const params = new URLSearchParams();
 
-    if (!termino) {
-        state.productosFiltrados = [...state.productos];
-    } else {
-        state.productosFiltrados = state.productos.filter((producto) => {
-            const nombre = (producto.nombre || "").toLowerCase();
-            const categoria = (producto.categoria?.nombre || "").toLowerCase();
-            const tienda = (producto.tienda?.nombre || "").toLowerCase();
+    params.append("page", state.paginaProductos);
+    params.append("size", state.sizeProductosAdmin);
 
-            return nombre.includes(termino) || categoria.includes(termino) || tienda.includes(termino);
-        });
+    const busqueda = (refs.buscadorProductos?.value || "").trim();
+    const tienda = refs.filtroTiendaProductos?.value || "";
+    const seccion = refs.filtroSeccionProductos?.value || "";
+    const categoria = refs.filtroCategoriaProductos?.value || "";
+    const orden = refs.filtroOrdenProductos?.value || "recientes";
+
+    if (tienda) params.append("tienda", tienda);
+    if (seccion) params.append("seccion", seccion);
+    if (categoria) params.append("categoria", categoria);
+    if (busqueda) params.append("busqueda", busqueda);
+    if (orden) params.append("orden", orden);
+
+    return `${BASE_URL}/productos/catalogo?${params.toString()}`;
+}
+
+async function aplicarFiltroProductos(refs, state) {
+    await cargarProductos(refs, state, true);
+}
+
+async function cargarMasProductosSiProcede(refs, state) {
+    if (state.cargandoProductos || state.ultimaPaginaProductos) return;
+
+    state.paginaProductos++;
+    await cargarProductos(refs, state, false);
+}
+
+function prepararScrollInfinitoProductos(refs, state) {
+    const sentinel = document.getElementById("sentinel-productos-admin");
+
+    if (!sentinel) return;
+
+    if (state.observadorProductos) {
+        state.observadorProductos.disconnect();
     }
 
-    renderizarProductos(refs, state);
+    state.observadorProductos = new IntersectionObserver(async (entries) => {
+        const entrada = entries[0];
+
+        if (entrada.isIntersecting) {
+            await cargarMasProductosSiProcede(refs, state);
+        }
+    }, {
+        root: null,
+        rootMargin: "450px",
+        threshold: 0.1
+    });
+
+    state.observadorProductos.observe(sentinel);
 }
 
 function renderizarProductos(refs, state) {
@@ -819,14 +946,38 @@ function renderizarProductos(refs, state) {
 
     if (!Array.isArray(state.productosFiltrados) || state.productosFiltrados.length === 0) {
         renderizarEstadoVacio(refs.contenedorProductos, "Sin resultados", "No se encontraron productos con los filtros actuales.");
+        actualizarBotonStockSeleccionados(refs, state);
         return;
     }
+
+    const resumen = el("div", {
+        className: "estado-panel-admin info",
+        text: `Mostrando ${state.productosFiltrados.length} de ${state.totalProductosCatalogo} productos`
+    });
+
+    refs.contenedorProductos.appendChild(resumen);
 
     state.productosFiltrados.forEach((producto) => {
         refs.contenedorProductos.appendChild(crearCardProducto(producto, refs, state));
     });
 
+    const sentinel = el("div", {
+        id: "sentinel-productos-admin",
+        className: "empty-admin-state"
+    });
+
+    if (state.cargandoProductos) {
+        sentinel.appendChild(el("p", { text: "Cargando más productos..." }));
+    } else if (state.ultimaPaginaProductos) {
+        sentinel.appendChild(el("p", { text: "No hay más productos para cargar." }));
+    } else {
+        sentinel.appendChild(el("p", { text: "Baja un poco más para cargar más productos..." }));
+    }
+
+    refs.contenedorProductos.appendChild(sentinel);
+
     actualizarBotonStockSeleccionados(refs, state);
+    prepararScrollInfinitoProductos(refs, state);
 }
 
 function crearCardProducto(producto, refs, state) {
@@ -851,15 +1002,20 @@ function crearCardProducto(producto, refs, state) {
     }
 
     const media = el("div", { className: "item-admin-media" });
+
     if (producto.urlImagen) {
         const img = el("img", {
             src: producto.urlImagen,
             alt: producto.nombre || "Producto"
         });
+
+        img.loading = "lazy";
+
         img.onerror = () => {
             limpiarContenedor(media);
             media.appendChild(el("span", { text: "Sin imagen" }));
         };
+
         media.appendChild(img);
     } else {
         media.appendChild(el("span", { text: "Sin imagen" }));
@@ -871,6 +1027,7 @@ function crearCardProducto(producto, refs, state) {
     const meta = el("div", { className: "item-admin-meta" });
     meta.appendChild(crearBadge(producto.tienda?.nombre || "Sin tienda"));
     meta.appendChild(crearBadge(producto.categoria?.nombre || "Sin categoría"));
+    meta.appendChild(crearBadge(producto.seccion || "Sin sección"));
     body.appendChild(meta);
 
     body.appendChild(el("p", {
@@ -977,7 +1134,9 @@ async function guardarEdicionProducto(refs, state) {
 
         cerrarModal(refs.modalEditarProducto, () => refs.formEditarProducto.reset());
         mostrarMensaje(refs, "Producto actualizado correctamente.", "ok");
-        await cargarProductos(refs, state);
+
+        await cargarProductos(refs, state, true);
+        await cargarMetricas(refs);
     } catch (error) {
         console.error(error);
         mostrarMensaje(refs, "No se pudo actualizar el producto.", "error");
@@ -1004,7 +1163,9 @@ async function eliminarProducto(refs, state) {
         });
 
         mostrarMensaje(refs, "Producto eliminado correctamente.", "ok");
-        await cargarProductos(refs, state);
+
+        await cargarProductos(refs, state, true);
+        await cargarMetricas(refs);
     } catch (error) {
         console.error(error);
         mostrarMensaje(refs, "No se pudo eliminar el producto.", "error");
@@ -1017,6 +1178,7 @@ async function abrirModalStock(refs, state, productos) {
     state.productosStockObjetivo = productos;
 
     limpiarContenedor(refs.stockResumenProductos);
+
     productos.forEach((producto) => {
         refs.stockResumenProductos.appendChild(el("span", {
             className: "resumen-stock-badge",
@@ -1025,6 +1187,7 @@ async function abrirModalStock(refs, state, productos) {
     });
 
     refs.stockCantidadProductos.value = "";
+
     document.querySelectorAll(".check-stock-talla").forEach((check) => {
         check.checked = false;
     });
@@ -1188,11 +1351,7 @@ function crearCardEstablecimiento(establecimiento, refs, state) {
 
     const meta = el("div", { className: "item-admin-meta" });
     meta.appendChild(crearBadge(establecimiento.tienda?.nombre || "Sin tienda"));
-    meta.appendChild(
-        crearBadge(
-            establecimiento.disponible ? "Disponible" : "No disponible"
-        )
-    );
+    meta.appendChild(crearBadge(establecimiento.disponible ? "Disponible" : "No disponible"));
     body.appendChild(meta);
 
     body.appendChild(el("p", {
@@ -1278,9 +1437,7 @@ async function guardarNuevoEstablecimiento(refs, state) {
 
         const response = await fetch(`${BASE_URL}/establecimientos`, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
+            headers: { "Content-Type": "application/json" },
             credentials: "include",
             body: JSON.stringify(payload)
         });
@@ -1346,9 +1503,7 @@ async function guardarEdicionEstablecimiento(refs, state) {
 
         const response = await fetch(`${BASE_URL}/establecimientos/${id}`, {
             method: "PUT",
-            headers: {
-                "Content-Type": "application/json"
-            },
+            headers: { "Content-Type": "application/json" },
             credentials: "include",
             body: JSON.stringify(payload)
         });
@@ -1473,11 +1628,7 @@ function crearCardPuntoRecogida(punto, refs, state) {
     body.appendChild(el("h3", { text: punto.nombre || "Sin nombre" }));
 
     const meta = el("div", { className: "item-admin-meta" });
-    meta.appendChild(
-        crearBadge(
-            punto.disponible ? "Disponible" : "No disponible"
-        )
-    );
+    meta.appendChild(crearBadge(punto.disponible ? "Disponible" : "No disponible"));
     body.appendChild(meta);
 
     body.appendChild(el("p", {
@@ -1561,9 +1712,7 @@ async function guardarNuevoPuntoRecogida(refs, state) {
 
         const response = await fetch(`${BASE_URL}/puntos-recogida`, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
+            headers: { "Content-Type": "application/json" },
             credentials: "include",
             body: JSON.stringify(payload)
         });
@@ -1626,9 +1775,7 @@ async function guardarEdicionPuntoRecogida(refs, state) {
 
         const response = await fetch(`${BASE_URL}/puntos-recogida/${id}`, {
             method: "PUT",
-            headers: {
-                "Content-Type": "application/json"
-            },
+            headers: { "Content-Type": "application/json" },
             credentials: "include",
             body: JSON.stringify(payload)
         });
@@ -1737,6 +1884,7 @@ function crearCardUsuario(usuario, refs, state) {
     }));
 
     const acciones = el("div", { className: "item-admin-acciones" });
+
     acciones.append(
         crearBoton("Ver detalle", "btn btn-secondary", async () => {
             await abrirDetalleUsuario(refs, state, usuario.id);
@@ -1802,7 +1950,9 @@ async function guardarEdicionUsuario(refs, state) {
 
         cerrarModal(refs.modalEditarUsuario, () => refs.formEditarUsuario.reset());
         mostrarMensaje(refs, "Usuario actualizado correctamente.", "ok");
+
         await cargarUsuarios(refs, state);
+        await cargarMetricas(refs);
     } catch (error) {
         console.error(error);
         mostrarMensaje(refs, "No se pudo actualizar el usuario.", "error");
@@ -1829,6 +1979,7 @@ async function eliminarUsuario(refs, state) {
         });
 
         mostrarMensaje(refs, "Usuario eliminado correctamente.", "ok");
+
         await cargarUsuarios(refs, state);
         await cargarMetricas(refs);
     } catch (error) {
@@ -1858,6 +2009,7 @@ async function abrirDetalleUsuario(refs, state, usuarioId) {
         limpiarContenedor(refs.contenidoDetalleUsuario);
 
         const top = el("div", { className: "detalle-grid-top" });
+
         const cardUsuario = crearDetalleCard("Datos del usuario", [
             ["Nombre", usuario?.nombre || "Sin nombre"],
             ["Email", usuario?.email || "Sin email"],
@@ -2003,6 +2155,7 @@ function crearCardPedido(pedido, refs, state) {
     }));
 
     const acciones = el("div", { className: "item-admin-acciones" });
+
     acciones.append(
         crearBoton("Ver detalle", "btn btn-secondary", async () => {
             await abrirDetallePedido(refs, state, pedido.id);
@@ -2154,6 +2307,7 @@ async function abrirModalCambioEstadoPedido(refs, state, pedido) {
 
 function limpiarOpcionesEstadosPedido(refs) {
     if (!refs.nuevoEstadoPedido) return;
+
     refs.nuevoEstadoPedido.innerHTML = `<option value="">Cargando estados disponibles...</option>`;
     refs.nuevoEstadoPedido.disabled = true;
     refs.guardarCambioEstadoPedido.disabled = false;
@@ -2197,7 +2351,9 @@ async function guardarCambioEstadoPedido(refs, state) {
         });
 
         mostrarMensaje(refs, "Estado del pedido actualizado correctamente.", "ok");
+
         await cargarPedidos(refs, state);
+        await cargarMetricas(refs);
     } catch (error) {
         console.error(error);
         mostrarMensaje(refs, error.message || "No se pudo cambiar el estado del pedido.", "error");
@@ -2205,6 +2361,10 @@ async function guardarCambioEstadoPedido(refs, state) {
         restaurarBoton(refs.guardarCambioEstadoPedido, "Guardar cambio");
     }
 }
+
+/* =========================
+   CONFIRMACIÓN ENTREGA QR
+========================= */
 
 async function iniciarEscanerEntrega(refs, state) {
     if (!refs.qrReaderEntrega) {
@@ -2418,6 +2578,80 @@ function mostrarResultadoQrEntrega(refs, tipo, titulo, texto, pedido) {
 }
 
 /* =========================
+   HELPERS PRODUCTOS PAGINADOS
+========================= */
+
+function normalizarPaginaProductos(data, state) {
+    if (Array.isArray(data)) {
+        return {
+            productos: data,
+            totalElementos: data.length,
+            paginaActual: 0,
+            ultimaPagina: true
+        };
+    }
+
+    const productos = Array.isArray(data.productos)
+        ? data.productos
+        : Array.isArray(data.content)
+            ? data.content
+            : Array.isArray(data.items)
+                ? data.items
+                : [];
+
+    const totalElementos = obtenerTotalElementos(data, productos.length);
+
+    const paginaActual =
+        data.paginaActual ??
+        data.number ??
+        data.page ??
+        state.paginaProductos;
+
+    const ultimaPagina =
+        data.ultimaPagina ??
+        data.last ??
+        data.esUltimaPagina ??
+        productos.length < state.sizeProductosAdmin;
+
+    return {
+        productos,
+        totalElementos,
+        paginaActual,
+        ultimaPagina
+    };
+}
+
+function obtenerTotalElementos(data, fallback = 0) {
+    if (!data || Array.isArray(data)) {
+        return Array.isArray(data) ? data.length : fallback;
+    }
+
+    return data.totalElementos ??
+        data.totalElements ??
+        data.total ??
+        data.totalProductos ??
+        fallback;
+}
+
+function unirProductosSinDuplicados(actuales, nuevos) {
+    const mapa = new Map();
+
+    actuales.forEach((producto) => {
+        if (producto && producto.id != null) {
+            mapa.set(producto.id, producto);
+        }
+    });
+
+    nuevos.forEach((producto) => {
+        if (producto && producto.id != null) {
+            mapa.set(producto.id, producto);
+        }
+    });
+
+    return Array.from(mapa.values());
+}
+
+/* =========================
    HELPERS UI
 ========================= */
 
@@ -2429,6 +2663,7 @@ function el(tag, options = {}) {
     if (options.html !== undefined) node.innerHTML = options.html;
 
     const attrs = ["id", "type", "value", "placeholder", "src", "alt"];
+
     attrs.forEach((attr) => {
         if (options[attr] !== undefined) node[attr] = options[attr];
     });
@@ -2438,6 +2673,7 @@ function el(tag, options = {}) {
 
 function limpiarContenedor(contenedor) {
     if (!contenedor) return;
+
     while (contenedor.firstChild) {
         contenedor.removeChild(contenedor.firstChild);
     }
@@ -2447,6 +2683,7 @@ function renderizarEstadoVacio(contenedor, titulo, texto) {
     limpiarContenedor(contenedor);
 
     const box = el("div", { className: "empty-admin-state" });
+
     box.append(
         el("h3", { text: titulo }),
         el("p", { text: texto })
@@ -2463,11 +2700,10 @@ function crearBadge(texto) {
 }
 
 function crearBadgeEstado(estado) {
-    const badge = el("span", {
+    return el("span", {
         className: `item-admin-badge item-admin-badge-estado ${obtenerClaseEstado(estado)}`,
         text: formatearEstadoPedidoTexto(estado)
     });
-    return badge;
 }
 
 function crearBoton(texto, className, onClick) {
@@ -2476,6 +2712,7 @@ function crearBoton(texto, className, onClick) {
         type: "button",
         text: texto
     });
+
     btn.addEventListener("click", onClick);
     return btn;
 }
@@ -2553,6 +2790,7 @@ function mostrarMensaje(refs, texto, tipo = "info") {
 
 function mostrarEstado(elemento, texto, tipo = "info") {
     if (!elemento) return;
+
     elemento.textContent = texto;
     elemento.className = "estado-panel-admin";
     elemento.classList.add(tipo);
@@ -2561,6 +2799,7 @@ function mostrarEstado(elemento, texto, tipo = "info") {
 
 function ocultarEstado(elemento) {
     if (!elemento) return;
+
     elemento.textContent = "";
     elemento.className = "estado-panel-admin";
     elemento.style.display = "none";
@@ -2568,6 +2807,7 @@ function ocultarEstado(elemento) {
 
 function bloquearBoton(boton, texto) {
     if (!boton) return;
+
     boton.disabled = true;
     boton.dataset.originalText = boton.textContent;
     boton.textContent = texto;
@@ -2575,6 +2815,7 @@ function bloquearBoton(boton, texto) {
 
 function restaurarBoton(boton, fallback) {
     if (!boton) return;
+
     boton.disabled = false;
     boton.textContent = boton.dataset.originalText || fallback;
 }
@@ -2591,7 +2832,9 @@ function inicialNombre(nombre) {
 
 function formatearFecha(fecha) {
     if (!fecha) return "Sin fecha";
+
     const d = new Date(fecha);
+
     if (Number.isNaN(d.getTime())) return fecha;
 
     return d.toLocaleString("es-ES", {

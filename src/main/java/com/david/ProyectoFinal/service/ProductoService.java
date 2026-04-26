@@ -253,10 +253,24 @@ public class ProductoService {
 
                 predicates.add(
                         criteriaBuilder.or(
-                                criteriaBuilder.like(criteriaBuilder.lower(root.get("nombre")), termino),
-                                criteriaBuilder.like(criteriaBuilder.lower(root.get("descripcion")), termino),
-                                criteriaBuilder.like(criteriaBuilder.lower(categoriaJoin.get("nombre")), termino),
-                                criteriaBuilder.like(criteriaBuilder.lower(tiendaJoin.get("nombre")), termino)
+                                criteriaBuilder.like(
+                                        criteriaBuilder.lower(
+                                                criteriaBuilder.coalesce(root.get("nombre"), "")
+                                        ),
+                                        termino
+                                ),
+                                criteriaBuilder.like(
+                                        criteriaBuilder.lower(
+                                                criteriaBuilder.coalesce(categoriaJoin.get("nombre"), "")
+                                        ),
+                                        termino
+                                ),
+                                criteriaBuilder.like(
+                                        criteriaBuilder.lower(
+                                                criteriaBuilder.coalesce(tiendaJoin.get("nombre"), "")
+                                        ),
+                                        termino
+                                )
                         )
                 );
             }
@@ -271,7 +285,9 @@ public class ProductoService {
                 .map(Producto::getId)
                 .toList();
 
-        Map<Long, List<ProductoTallaStock>> tallasPorProducto = productoTallaStockRepository.findByProductoIdIn(productoIds)
+        Map<Long, List<ProductoTallaStock>> tallasPorProducto = productoIds.isEmpty()
+                ? Map.of()
+                : productoTallaStockRepository.findByProductoIdIn(productoIds)
                 .stream()
                 .collect(Collectors.groupingBy(item -> item.getProducto().getId()));
 
