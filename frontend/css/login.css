@@ -71,7 +71,7 @@ body {
     position: relative;
     height: 100%;
     min-height: 0;
-    padding: 42px 42px 34px;
+    padding: 38px 42px 30px;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -108,7 +108,7 @@ body {
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-bottom: 22px;
+    margin-bottom: 18px;
 }
 
 .brand-logo {
@@ -131,7 +131,7 @@ body {
 }
 
 .login-header {
-    margin-bottom: 20px;
+    margin-bottom: 18px;
 }
 
 .login-header h1 {
@@ -143,7 +143,7 @@ body {
 .login-form {
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 12px;
 }
 
 .field {
@@ -214,7 +214,7 @@ body {
 
 .login-options {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: center;
     gap: 12px;
     flex-wrap: wrap;
@@ -233,7 +233,16 @@ body {
     accent-color: var(--accent);
 }
 
-.forgot-password {
+.login-recovery-links {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-top: -4px;
+}
+
+.login-recovery-links a {
     text-decoration: none;
     color: var(--accent);
     font-size: 0.84rem;
@@ -242,7 +251,7 @@ body {
     transition: color var(--transition);
 }
 
-.forgot-password::after {
+.login-recovery-links a::after {
     content: "";
     position: absolute;
     left: 0;
@@ -253,11 +262,11 @@ body {
     transition: width var(--transition);
 }
 
-.forgot-password:hover {
+.login-recovery-links a:hover {
     color: var(--accent-2);
 }
 
-.forgot-password:hover::after {
+.login-recovery-links a:hover::after {
     width: 100%;
 }
 
@@ -276,7 +285,7 @@ body {
     transition: transform var(--transition), box-shadow var(--transition), filter var(--transition);
     position: relative;
     overflow: hidden;
-    margin-top: 4px;
+    margin-top: 2px;
 }
 
 .login-btn::before {
@@ -306,7 +315,7 @@ body {
 }
 
 .register-text {
-    margin-top: 4px;
+    margin-top: 2px;
     text-align: center;
     color: var(--text-soft);
     font-size: 0.88rem;
@@ -361,6 +370,7 @@ body {
         opacity: 0;
         transform: translateY(12px) scale(0.98);
     }
+
     to {
         opacity: 1;
         transform: translateY(0) scale(1);
@@ -465,27 +475,34 @@ body {
         align-items: flex-start;
         gap: 8px;
     }
+
+    .login-recovery-links {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        margin-top: -2px;
+    }
 }
 
 @media (max-height: 520px) {
     .login-box {
-        padding: 28px 34px 24px;
+        padding: 26px 34px 22px;
     }
 
     .brand {
-        margin-bottom: 14px;
+        margin-bottom: 12px;
     }
 
     .login-header {
-        margin-bottom: 14px;
+        margin-bottom: 12px;
     }
 
     .login-header h1 {
-        font-size: 1.7rem;
+        font-size: 1.65rem;
     }
 
     .login-form {
-        gap: 10px;
+        gap: 9px;
     }
 
     .field input {
@@ -498,5 +515,10 @@ body {
 
     .register-text {
         font-size: 0.82rem;
+    }
+
+    .login-recovery-links a,
+    .remember {
+        font-size: 0.8rem;
     }
 }

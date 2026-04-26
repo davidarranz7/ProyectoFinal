@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recuperar usuario</title>
+    <link rel="stylesheet" href="css/recuperar-usuario.css">
+</head>
+<body>
+
+<main class="recovery-page">
+    <section class="recovery-card">
+
+        <div class="recovery-header">
+            <h1>TiendaModa</h1>
+            <p>Recuperación de usuario</p>
+        </div>
+
+        <div class="recovery-content">
+            <form id="form-recuperar-usuario" class="recovery-form">
+                <h2>¿Olvidaste tu usuario?</h2>
+
+                <p class="recovery-description">
+                    Introduce el email asociado a tu cuenta. Si existe una cuenta registrada,
+                    te enviaremos un correo con tu nombre de usuario.
+                </p>
+
+                <div class="form-group">
+                    <label for="email">Email de la cuenta</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+
+                <button type="submit" id="btn-recuperar-usuario">
+                    Enviar mi usuario
+                </button>
+
+                <p id="mensaje-recuperacion-usuario" class="mensaje-recuperacion"></p>
+
+                <a href="login.html" class="volver-login">
+                    Volver al inicio de sesión
+                </a>
+            </form>
+        </div>
+
+    </section>
+</main>
+
+<script src="js/config.js"></script>
+<script src="js/recuperar-usuario.js"></script>
+</body>
+</html>
