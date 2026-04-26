@@ -12,4 +12,6 @@ public interface ProductoTallaStockRepository extends JpaRepository<ProductoTall
     List<ProductoTallaStock> findByProductoId(Long productoId);
 
     Optional<ProductoTallaStock> findByProductoIdAndTalla(Long productoId, Talla talla);
+
+    List<ProductoTallaStock> findByProductoIdIn(List<Long> productoIds);
 }

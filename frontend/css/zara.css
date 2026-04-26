@@ -46,7 +46,7 @@ body::before {
 
 .zara-container {
     width: min(1400px, 92%);
-    margin: 30px auto 56px;
+    margin: 110px auto 56px;
     display: grid;
     grid-template-columns: 270px 1fr;
     gap: 36px;
@@ -55,7 +55,7 @@ body::before {
 
 .sidebar-filtros {
     position: sticky;
-    top: 24px;
+    top: 96px;
     padding: 10px 0;
     background: transparent;
     border: none;
@@ -155,6 +155,38 @@ body::before {
     transform: scaleX(1);
 }
 
+/* ORDENAR */
+.filtro-orden {
+    padding-top: 6px;
+}
+
+#orden-catalogo {
+    width: 100%;
+    min-height: 46px;
+    padding: 0 14px;
+    border: 1px solid rgba(17, 17, 17, 0.22);
+    background: rgba(255, 255, 255, 0.88);
+    color: #111;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    outline: none;
+    cursor: pointer;
+    backdrop-filter: blur(8px);
+    transition: border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+}
+
+#orden-catalogo:hover {
+    border-color: rgba(17, 17, 17, 0.45);
+    background: rgba(255, 255, 255, 0.96);
+}
+
+#orden-catalogo:focus {
+    border-color: #111;
+    box-shadow: 0 0 0 4px rgba(17, 17, 17, 0.08);
+}
+
 .contenido-productos {
     display: flex;
     flex-direction: column;
@@ -186,8 +218,7 @@ body::before {
     transform: scale(1.05);
 }
 
-.zara-header h1,
-.zara-header p {
+.zara-header-content {
     position: relative;
     z-index: 1;
 }
@@ -198,16 +229,21 @@ body::before {
     letter-spacing: 0.34em;
     margin-bottom: 12px;
     color: white;
-    align-self: flex-start;
 }
 
 .zara-header p {
-    position: absolute;
-    left: 44px;
-    bottom: 32px;
     font-size: 13px;
     letter-spacing: 0.34em;
     color: rgba(255,255,255,0.90);
+    margin-bottom: 16px;
+}
+
+.zara-subtext {
+    max-width: 620px;
+    color: rgba(255,255,255,0.78);
+    font-size: 14px;
+    line-height: 1.7;
+    letter-spacing: 0.08em;
 }
 
 .grid-zara {
@@ -228,6 +264,9 @@ body::before {
     display: flex;
     flex-direction: column;
     height: 100%;
+    opacity: 0;
+    transform: translateY(18px);
+    animation: aparecerProducto 0.45s ease forwards;
 }
 
 .tarjeta-zara:hover {
@@ -276,6 +315,18 @@ body::before {
     filter: brightness(0.96);
 }
 
+.img-wrapper span {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    place-items: center;
+    color: rgba(17,17,17,0.45);
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    background: rgba(255,255,255,0.7);
+}
+
 .btn-fav {
     position: absolute;
     top: 12px;
@@ -298,6 +349,10 @@ body::before {
     background: #111;
     color: white;
     transform: scale(1.06);
+}
+
+.btn-fav.activo {
+    color: red;
 }
 
 .info-producto {
@@ -368,6 +423,7 @@ body::before {
     box-shadow: 0 10px 30px rgba(0,0,0,0.08);
 }
 
+/* MODAL LOGIN */
 .modal {
     position: fixed;
     inset: 0;
@@ -470,104 +526,7 @@ body::before {
     background: #f5f5f5;
 }
 
-@keyframes modalEntrada {
-    from {
-        opacity: 0;
-        transform: translateY(12px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@media (max-width: 1100px) {
-    .zara-container {
-        grid-template-columns: 1fr;
-    }
-
-    .sidebar-filtros {
-        position: static;
-        padding: 18px 0 8px;
-    }
-
-    .filtro-seccion ul {
-        gap: 8px;
-    }
-
-    .zara-header {
-        min-height: 360px;
-        padding: 28px;
-    }
-
-    .zara-header p {
-        left: 28px;
-        bottom: 22px;
-    }
-}
-
-@media (max-width: 768px) {
-    #menu-container {
-        min-height: 64px;
-    }
-
-    .zara-container {
-        width: min(94%, 94%);
-        margin: 18px auto 40px;
-        gap: 24px;
-    }
-
-    .grid-zara {
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    }
-
-    .img-wrapper {
-        height: 290px;
-    }
-
-    .info-producto {
-        min-height: 170px;
-    }
-
-    .nombre-prenda {
-        min-height: 56px;
-    }
-
-    .producto-footer {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .btn-carrito {
-        width: 100%;
-    }
-
-    .modal-panel {
-        padding: 32px 22px 22px;
-    }
-
-    .modal-actions {
-        flex-direction: column;
-    }
-
-    .modal-btn {
-        width: 100%;
-    }
-}
-
-.producto-card {
-    opacity: 0;
-    transform: translateY(18px);
-    animation: aparecerProducto 0.45s ease forwards;
-}
-
-@keyframes aparecerProducto {
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
+/* MINI MENÚ TALLAS */
 .mini-menu-talla {
     position: absolute;
     left: 10px;
@@ -591,43 +550,6 @@ body::before {
     opacity: 1;
     transform: translateY(0) scale(1);
     pointer-events: auto;
-}
-
-.select-talla {
-    width: 100%;
-    border: 1px solid rgba(17,17,17,0.18);
-    background: white;
-    color: #111;
-    padding: 11px 12px;
-    font-size: 0.72rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    outline: none;
-    cursor: pointer;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.select-talla:focus {
-    border-color: #111;
-    box-shadow: 0 0 0 3px rgba(17,17,17,0.08);
-}
-
-.btn-confirmar-carrito {
-    width: 100%;
-    border: 1px solid #111;
-    background: #111;
-    color: white;
-    padding: 11px 14px;
-    font-size: 0.68rem;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.btn-confirmar-carrito:hover {
-    background: #333;
-    border-color: #333;
 }
 
 .lista-tallas {
@@ -686,6 +608,25 @@ body::before {
     margin: 2px 0 0;
 }
 
+.btn-confirmar-carrito {
+    width: 100%;
+    border: 1px solid #111;
+    background: #111;
+    color: white;
+    padding: 11px 14px;
+    font-size: 0.68rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-confirmar-carrito:hover {
+    background: #333;
+    border-color: #333;
+}
+
+/* TOAST */
 .toast-carrito {
     position: fixed;
     top: 95px;
@@ -698,7 +639,6 @@ body::before {
     text-transform: uppercase;
     box-shadow: 0 12px 30px rgba(0,0,0,0.18);
     z-index: 6000;
-
     opacity: 0;
     transform: translateY(-10px);
     pointer-events: none;
@@ -710,7 +650,107 @@ body::before {
     transform: translateY(0);
 }
 
+/* ANIMACIONES */
+@keyframes modalEntrada {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes aparecerProducto {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* RESPONSIVE */
+@media (max-width: 1100px) {
+    .zara-container {
+        grid-template-columns: 1fr;
+        margin-top: 96px;
+    }
+
+    .sidebar-filtros {
+        position: static;
+        padding: 18px 0 8px;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 24px;
+    }
+
+    .filtro-seccion + .filtro-seccion {
+        margin-top: 0;
+    }
+
+    .filtro-seccion ul {
+        gap: 8px;
+    }
+
+    .zara-header {
+        min-height: 360px;
+        padding: 28px;
+    }
+}
+
 @media (max-width: 768px) {
+    #menu-container {
+        min-height: 64px;
+    }
+
+    .zara-container {
+        width: min(94%, 94%);
+        margin: 90px auto 40px;
+        gap: 24px;
+    }
+
+    .sidebar-filtros {
+        grid-template-columns: 1fr;
+        gap: 22px;
+    }
+
+    .grid-zara {
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    }
+
+    .img-wrapper {
+        height: 290px;
+    }
+
+    .info-producto {
+        min-height: 170px;
+    }
+
+    .nombre-prenda {
+        min-height: 56px;
+    }
+
+    .producto-footer {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .btn-carrito {
+        width: 100%;
+    }
+
+    .modal-panel {
+        padding: 32px 22px 22px;
+    }
+
+    .modal-actions {
+        flex-direction: column;
+    }
+
+    .modal-btn {
+        width: 100%;
+    }
+
     .toast-carrito {
         top: 82px;
         right: 12px;

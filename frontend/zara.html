@@ -10,67 +10,79 @@
 </head>
 <body>
 
-    <div id="menu-container"></div>
+<div id="menu-container"></div>
 
-    <main class="zara-container">
-<aside class="sidebar-filtros">
+<main class="zara-container">
+    <aside class="sidebar-filtros">
 
-    <div class="filtro-seccion">
-        <h3>Género</h3>
-        <ul>
-            <li>
-                <label class="filtro-item">
-                    <input type="checkbox" class="filtro-check" data-tipo="genero" value="hombre">
-                    <span class="filtro-label-texto">Hombre</span>
-                    <span class="filtro-linea"></span>
-                </label>
-            </li>
-            <li>
-                <label class="filtro-item">
-                    <input type="checkbox" class="filtro-check" data-tipo="genero" value="mujer">
-                    <span class="filtro-label-texto">Mujer</span>
-                    <span class="filtro-linea"></span>
-                </label>
-            </li>
-        </ul>
-    </div>
+        <div class="filtro-seccion">
+            <h3>Género</h3>
+            <ul>
+                <li>
+                    <label class="filtro-item">
+                        <input type="checkbox" class="filtro-check" data-tipo="genero" value="hombre">
+                        <span class="filtro-label-texto">Hombre</span>
+                        <span class="filtro-linea"></span>
+                    </label>
+                </li>
+                <li>
+                    <label class="filtro-item">
+                        <input type="checkbox" class="filtro-check" data-tipo="genero" value="mujer">
+                        <span class="filtro-label-texto">Mujer</span>
+                        <span class="filtro-linea"></span>
+                    </label>
+                </li>
+            </ul>
+        </div>
 
-    <div class="filtro-seccion">
-        <h3>Categoría</h3>
-        <ul>
-            <li>
-                <label class="filtro-item">
-                    <input type="checkbox" class="filtro-check" data-tipo="categoria" value="camiseta">
-                    <span class="filtro-label-texto">Camisetas</span>
-                    <span class="filtro-linea"></span>
-                </label>
-            </li>
-            <li>
-                <label class="filtro-item">
-                    <input type="checkbox" class="filtro-check" data-tipo="categoria" value="pantalon">
-                    <span class="filtro-label-texto">Pantalones</span>
-                    <span class="filtro-linea"></span>
-                </label>
-            </li>
-            <li>
-                <label class="filtro-item">
-                    <input type="checkbox" class="filtro-check" data-tipo="categoria" value="sudadera">
-                    <span class="filtro-label-texto">Sudaderas</span>
-                    <span class="filtro-linea"></span>
-                </label>
-            </li>
-            <li>
-                <label class="filtro-item">
-                    <input type="checkbox" class="filtro-check" data-tipo="categoria" value="abrigo">
-                    <span class="filtro-label-texto">Abrigos</span>
-                    <span class="filtro-linea"></span>
-                </label>
-            </li>
-        </ul>
-    </div>
+        <div class="filtro-seccion">
+            <h3>Categoría</h3>
+            <ul>
+                <li>
+                    <label class="filtro-item">
+                        <input type="checkbox" class="filtro-check" data-tipo="categoria" value="camiseta">
+                        <span class="filtro-label-texto">Camisetas</span>
+                        <span class="filtro-linea"></span>
+                    </label>
+                </li>
+                <li>
+                    <label class="filtro-item">
+                        <input type="checkbox" class="filtro-check" data-tipo="categoria" value="pantalon">
+                        <span class="filtro-label-texto">Pantalones</span>
+                        <span class="filtro-linea"></span>
+                    </label>
+                </li>
+                <li>
+                    <label class="filtro-item">
+                        <input type="checkbox" class="filtro-check" data-tipo="categoria" value="sudadera">
+                        <span class="filtro-label-texto">Sudaderas</span>
+                        <span class="filtro-linea"></span>
+                    </label>
+                </li>
+                <li>
+                    <label class="filtro-item">
+                        <input type="checkbox" class="filtro-check" data-tipo="categoria" value="abrigo">
+                        <span class="filtro-label-texto">Abrigos</span>
+                        <span class="filtro-linea"></span>
+                    </label>
+                </li>
+            </ul>
+        </div>
 
-</aside>
-        <section class="contenido-productos">
+        <div class="filtro-seccion filtro-orden">
+            <h3>Ordenar</h3>
+            <select id="orden-catalogo">
+                <option value="recientes">Más recientes</option>
+                <option value="precioAsc">Precio: menor a mayor</option>
+                <option value="precioDesc">Precio: mayor a menor</option>
+                <option value="nombreAsc">Nombre: A-Z</option>
+                <option value="nombreDesc">Nombre: Z-A</option>
+            </select>
+        </div>
+
+    </aside>
+
+    <section class="contenido-productos">
         <header class="zara-header">
             <div class="zara-header-content">
                 <h1>ZARA</h1>
@@ -81,34 +93,34 @@
             </div>
         </header>
 
-            <div class="grid-zara" id="grid-productos"></div>
-        </section>
-    </main>
+        <div class="grid-zara" id="grid-productos"></div>
+    </section>
+</main>
 
-        <div id="modal-login" class="modal">
-            <div class="modal-overlay"></div>
+<div id="modal-login" class="modal">
+    <div class="modal-overlay"></div>
 
-            <div class="modal-panel">
-                <button id="cerrar-modal" class="modal-close" type="button">×</button>
+    <div class="modal-panel">
+        <button id="cerrar-modal" class="modal-close" type="button">×</button>
 
-                <span class="modal-tag">ACCESO REQUERIDO</span>
-                <h2>Inicia sesión para continuar</h2>
-                    <p id="modal-mensaje">
-                        Debes iniciar sesión para continuar.
-                    </p>
+        <span class="modal-tag">ACCESO REQUERIDO</span>
+        <h2>Inicia sesión para continuar</h2>
+        <p id="modal-mensaje">
+            Debes iniciar sesión para continuar.
+        </p>
 
-                <div class="modal-actions">
-                    <button id="abrir-login-modal" class="modal-btn modal-btn-dark" type="button">Iniciar sesión</button>
-                    <button id="cerrar-modal-secundario" class="modal-btn modal-btn-light" type="button">
-                        Seguir explorando
-                    </button>
-                </div>
-            </div>
+        <div class="modal-actions">
+            <button id="abrir-login-modal" class="modal-btn modal-btn-dark" type="button">Iniciar sesión</button>
+            <button id="cerrar-modal-secundario" class="modal-btn modal-btn-light" type="button">
+                Seguir explorando
+            </button>
         </div>
+    </div>
+</div>
 
-    <script src="js/config.js"></script>
-    <script src="js/menu.js"></script>
-    <script src="js/zara.js"></script>
-    <div id="toast-carrito" class="toast-carrito">Añadido al carrito</div>
+<script src="js/config.js"></script>
+<script src="js/menu.js"></script>
+<script src="js/zara.js"></script>
+<div id="toast-carrito" class="toast-carrito">Añadido al carrito</div>
 </body>
 </html>
