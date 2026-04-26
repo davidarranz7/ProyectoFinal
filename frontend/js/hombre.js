@@ -1,35 +1,37 @@
-function mezclarArray(array) {
-    return array.sort(() => Math.random() - 0.5);
-}
-
 let productosHombre = [];
 let favoritosIds = new Set();
 let sesionActual = null;
 
-let indiceActual = 0;
+let paginaActual = 0;
+let ultimaPagina = false;
+let cargandoProductos = false;
+let totalProductosCatalogo = 0;
+let ordenCatalogo = "recientes";
+
 const PRODUCTOS_POR_CARGA = 8;
+const SECCION_ACTUAL = "HOMBRE";
 
 const modal = document.getElementById("modal-login");
 const cerrarModal = document.getElementById("cerrar-modal");
 const cerrarModalSecundario = document.getElementById("cerrar-modal-secundario");
 const modalMensaje = document.getElementById("modal-mensaje");
 const abrirLoginModal = document.getElementById("abrir-login-modal");
+const selectOrdenCatalogo = document.getElementById("orden-catalogo");
+
+const formateadorEuro = new Intl.NumberFormat("es-ES", {
+    style: "currency",
+    currency: "EUR"
+});
 
 function mostrarToastCarrito(mensaje = "Añadido al carrito") {
-    const toast = document.getElementById("toast-carrito");
-    if (!toast) return;
-
-    toast.textContent = mensaje;
-    toast.classList.add("activo");
-
-    clearTimeout(toast._timeoutId);
-
-    toast._timeoutId = setTimeout(() => {
-        toast.classList.remove("activo");
-    }, 2200);
+    mostrarToast(mensaje);
 }
 
 function mostrarToastFavorito(mensaje = "Favorito actualizado") {
+    mostrarToast(mensaje);
+}
+
+function mostrarToast(mensaje) {
     const toast = document.getElementById("toast-carrito");
     if (!toast) return;
 
@@ -43,28 +45,28 @@ function mostrarToastFavorito(mensaje = "Favorito actualizado") {
     }, 2200);
 }
 
-cerrarModal.addEventListener("click", () => {
+cerrarModal?.addEventListener("click", () => {
     modal.style.display = "none";
 });
 
-cerrarModalSecundario.addEventListener("click", () => {
+cerrarModalSecundario?.addEventListener("click", () => {
     modal.style.display = "none";
 });
 
-modal.addEventListener("click", (event) => {
+modal?.addEventListener("click", (event) => {
     if (event.target.classList.contains("modal-overlay")) {
         modal.style.display = "none";
     }
 });
 
 document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && modal.style.display === "flex") {
+    if (event.key === "Escape" && modal?.style.display === "flex") {
         modal.style.display = "none";
         cerrarTodosLosMenusTalla();
     }
 });
 
-abrirLoginModal.addEventListener("click", () => {
+abrirLoginModal?.addEventListener("click", () => {
     modal.style.display = "none";
 
     if (typeof window.abrirLogin === "function") {
@@ -147,343 +149,506 @@ function actualizarEstadoVisualFavorito(btnFav, productoId) {
     }
 }
 
+function obtenerFiltrosCatalogo() {
+    const categorias = Array.from(
+        document.querySelectorAll('input[data-tipo="categoria"]:checked')
+    ).map(input => input.value);
+
+    return {
+        categorias
+    };
+}
+
+function construirUrlCatalogo() {
+    const filtros = obtenerFiltrosCatalogo();
+
+    const params = new URLSearchParams();
+    params.append("seccion", SECCION_ACTUAL);
+    params.append("page", paginaActual);
+    params.append("size", PRODUCTOS_POR_CARGA);
+    params.append("orden", ordenCatalogo);
+
+    filtros.categorias.forEach(categoria => {
+        params.append("categoria", categoria);
+    });
+
+    return `${BASE_URL}/productos/catalogo?${params.toString()}`;
+}
+
+async function cargarProductosCatalogo(reiniciar = false) {
+    if (cargandoProductos) {
+        return;
+    }
+
+    if (ultimaPagina && !reiniciar) {
+        return;
+    }
+
+    if (reiniciar) {
+        paginaActual = 0;
+        ultimaPagina = false;
+        productosHombre = [];
+        mostrarCargandoProductos();
+    }
+
+    cargandoProductos = true;
+
+    try {
+        const response = await fetch(construirUrlCatalogo(), {
+            method: "GET",
+            credentials: "include"
+        });
+
+        if (!response.ok) {
+            throw new Error("No se pudieron cargar los productos");
+        }
+
+        const data = await response.json();
+        const productos = Array.isArray(data.productos) ? data.productos : [];
+
+        totalProductosCatalogo = data.totalElementos ?? productos.length;
+        ultimaPagina = data.ultimaPagina === true;
+        paginaActual = data.paginaActual ?? paginaActual;
+
+        if (reiniciar) {
+            productosHombre = [...productos];
+        } else {
+            productosHombre = [...productosHombre, ...productos];
+        }
+
+        renderizarProductos(productos, reiniciar);
+
+    } catch (error) {
+        console.error("Error al cargar productos:", error);
+
+        if (!reiniciar && paginaActual > 0) {
+            paginaActual--;
+        }
+
+        mostrarErrorProductos();
+    } finally {
+        cargandoProductos = false;
+    }
+}
+
+function mostrarCargandoProductos() {
+    const grid = document.getElementById("grid-productos");
+    const contador = document.getElementById("contador-productos");
+
+    if (contador) {
+        contador.textContent = "MAN COLLECTION / CARGANDO...";
+    }
+
+    if (grid) {
+        grid.innerHTML = `<p class="sin-resultados">Cargando productos...</p>`;
+    }
+}
+
+function mostrarErrorProductos() {
+    const grid = document.getElementById("grid-productos");
+    const contador = document.getElementById("contador-productos");
+
+    if (contador) {
+        contador.textContent = "MAN COLLECTION / ERROR";
+    }
+
+    if (grid && productosHombre.length === 0) {
+        grid.innerHTML = `<p class="sin-resultados">No se pudieron cargar los productos.</p>`;
+    }
+}
+
 function renderizarProductos(productos, reiniciar = true) {
     const grid = document.getElementById("grid-productos");
     const contador = document.getElementById("contador-productos");
 
-    if (reiniciar) {
-        grid.innerHTML = "";
-        indiceActual = 0;
+    if (!grid || !contador) {
+        return;
     }
 
-    contador.textContent = `MAN COLLECTION / ${productos.length} PRODUCTOS`;
+    if (reiniciar) {
+        grid.innerHTML = "";
+    }
 
-    if (productos.length === 0) {
+    contador.textContent = `MAN COLLECTION / ${totalProductosCatalogo} PRODUCTOS`;
+
+    if (productos.length === 0 && reiniciar) {
         grid.innerHTML = `<p class="sin-resultados">No hay productos que coincidan con los filtros seleccionados.</p>`;
         return;
     }
 
-    const siguientes = productos.slice(indiceActual, indiceActual + PRODUCTOS_POR_CARGA);
+    productos.forEach(producto => {
+        grid.appendChild(crearCardProducto(producto));
+    });
+}
 
-    siguientes.forEach(producto => {
-        const card = document.createElement("article");
-        card.className = "tarjeta-hombre";
+function crearCardProducto(producto) {
+    const card = document.createElement("article");
+    card.className = "tarjeta-hombre";
 
-        card.innerHTML = `
-            <div class="img-wrapper">
-                <button class="btn-fav" type="button">❤</button>
+    const imgWrapper = document.createElement("div");
+    imgWrapper.className = "img-wrapper";
 
-                <a href="fichaProducto.html?id=${producto.id}">
-                    <img src="${producto.urlImagen}" alt="${producto.nombre}" loading="lazy">
-                </a>
-            </div>
+    const btnFav = document.createElement("button");
+    btnFav.className = "btn-fav";
+    btnFav.type = "button";
+    btnFav.textContent = "❤";
 
-            <div class="info-producto">
-                <a href="fichaProducto.html?id=${producto.id}" class="link-producto">
-                    <h3 class="nombre-prenda">${producto.nombre}</h3>
-                </a>
+    const linkImagen = document.createElement("a");
+    linkImagen.href = `fichaProducto.html?id=${producto.id}`;
 
-                <div class="producto-footer">
-                    <p class="p-final">${producto.precio} €</p>
-                    <button class="btn-carrito" type="button">Añadir</button>
-                </div>
+    if (esUrlImagenValida(producto.urlImagen)) {
+        const img = document.createElement("img");
+        img.src = producto.urlImagen;
+        img.alt = producto.nombre || "Producto";
+        img.loading = "lazy";
 
-                <div class="mini-menu-talla">
-                    <div class="lista-tallas"></div>
-                    <p class="mensaje-stock">Selecciona una talla</p>
-                    <button class="btn-confirmar-carrito" type="button">Confirmar</button>
-                </div>
-            </div>
-        `;
+        img.onerror = () => {
+            img.style.display = "none";
+            const sinImagen = document.createElement("span");
+            sinImagen.textContent = "Sin imagen";
+            linkImagen.appendChild(sinImagen);
+        };
 
-        grid.appendChild(card);
+        linkImagen.appendChild(img);
+    } else {
+        const sinImagen = document.createElement("span");
+        sinImagen.textContent = "Sin imagen";
+        linkImagen.appendChild(sinImagen);
+    }
 
-        const btnFav = card.querySelector(".btn-fav");
-        const btnCarrito = card.querySelector(".btn-carrito");
-        const miniMenuTalla = card.querySelector(".mini-menu-talla");
-        const listaTallas = card.querySelector(".lista-tallas");
-        const mensajeStock = card.querySelector(".mensaje-stock");
-        const btnConfirmarCarrito = card.querySelector(".btn-confirmar-carrito");
+    imgWrapper.append(btnFav, linkImagen);
 
-        let tallaSeleccionada = null;
+    const infoProducto = document.createElement("div");
+    infoProducto.className = "info-producto";
 
-        actualizarEstadoVisualFavorito(btnFav, producto.id);
+    const linkProducto = document.createElement("a");
+    linkProducto.href = `fichaProducto.html?id=${producto.id}`;
+    linkProducto.className = "link-producto";
 
-        if (producto.tallaStocks && producto.tallaStocks.length > 0) {
-            producto.tallaStocks.forEach(tallaStock => {
-                const botonTalla = document.createElement("button");
-                botonTalla.type = "button";
-                botonTalla.className = "btn-talla";
-                botonTalla.textContent = tallaStock.talla;
-                botonTalla.dataset.talla = tallaStock.talla;
-                botonTalla.dataset.stock = tallaStock.stock;
+    const nombre = document.createElement("h3");
+    nombre.className = "nombre-prenda";
+    nombre.textContent = producto.nombre || "Producto sin nombre";
 
-                if (tallaStock.stock <= 0) {
-                    botonTalla.classList.add("agotada");
-                    botonTalla.disabled = true;
-                    botonTalla.title = "Agotado";
-                }
+    linkProducto.appendChild(nombre);
 
-                botonTalla.addEventListener("mouseenter", () => {
-                    if (tallaStock.stock <= 0) {
-                        mensajeStock.textContent = "Agotado";
-                    } else if (tallaStock.stock <= 5) {
-                        mensajeStock.textContent = "Pocas unidades";
-                    } else {
-                        mensajeStock.textContent = "Disponible";
-                    }
-                });
+    const productoFooter = document.createElement("div");
+    productoFooter.className = "producto-footer";
 
-                botonTalla.addEventListener("mouseleave", () => {
-                    const botonSeleccionado = listaTallas.querySelector(".btn-talla.seleccionada");
+    const precio = document.createElement("p");
+    precio.className = "p-final";
+    precio.textContent = formatearPrecioProducto(producto.precio);
 
-                    if (!botonSeleccionado) {
-                        mensajeStock.textContent = "Selecciona una talla";
-                        return;
-                    }
+    const btnCarrito = document.createElement("button");
+    btnCarrito.className = "btn-carrito";
+    btnCarrito.type = "button";
+    btnCarrito.textContent = "Añadir";
 
-                    const stockSeleccionado = Number(botonSeleccionado.dataset.stock);
+    productoFooter.append(precio, btnCarrito);
 
-                    if (stockSeleccionado <= 0) {
-                        mensajeStock.textContent = "Agotado";
-                    } else if (stockSeleccionado <= 5) {
-                        mensajeStock.textContent = "Pocas unidades";
-                    } else {
-                        mensajeStock.textContent = "Disponible";
-                    }
-                });
+    const miniMenuTalla = document.createElement("div");
+    miniMenuTalla.className = "mini-menu-talla";
 
-                if (tallaStock.stock > 0) {
-                    botonTalla.addEventListener("click", () => {
-                        const yaSeleccionada = botonTalla.classList.contains("seleccionada");
+    const listaTallas = document.createElement("div");
+    listaTallas.className = "lista-tallas";
 
-                        listaTallas.querySelectorAll(".btn-talla").forEach(btn => {
-                            btn.classList.remove("seleccionada");
-                        });
+    const mensajeStock = document.createElement("p");
+    mensajeStock.className = "mensaje-stock";
+    mensajeStock.textContent = "Selecciona una talla";
 
-                        if (yaSeleccionada) {
-                            tallaSeleccionada = null;
-                            mensajeStock.textContent = "Selecciona una talla";
-                        } else {
-                            botonTalla.classList.add("seleccionada");
-                            tallaSeleccionada = tallaStock.talla;
+    const btnConfirmarCarrito = document.createElement("button");
+    btnConfirmarCarrito.className = "btn-confirmar-carrito";
+    btnConfirmarCarrito.type = "button";
+    btnConfirmarCarrito.textContent = "Confirmar";
 
-                            if (tallaStock.stock <= 5) {
-                                mensajeStock.textContent = "Pocas unidades";
-                            } else {
-                                mensajeStock.textContent = "Disponible";
-                            }
-                        }
-                    });
-                }
+    miniMenuTalla.append(listaTallas, mensajeStock, btnConfirmarCarrito);
+    infoProducto.append(linkProducto, productoFooter, miniMenuTalla);
+    card.append(imgWrapper, infoProducto);
 
-                listaTallas.appendChild(botonTalla);
-            });
-        } else {
-            mensajeStock.textContent = "No hay tallas disponibles";
+    let tallaSeleccionada = null;
+
+    actualizarEstadoVisualFavorito(btnFav, producto.id);
+    configurarTallasProducto(producto, listaTallas, mensajeStock, (talla) => {
+        tallaSeleccionada = talla;
+    });
+
+    miniMenuTalla.addEventListener("click", (event) => {
+        event.stopPropagation();
+    });
+
+    btnFav.addEventListener("click", async (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        await alternarFavorito(producto, btnFav);
+    });
+
+    btnCarrito.addEventListener("click", async (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+
+        const sesion = await obtenerSesionActual();
+
+        if (!sesion || !sesion.id) {
+            mostrarModalLogin("Debes iniciar sesión para añadir productos al carrito.");
+            return;
         }
 
-        miniMenuTalla.addEventListener("click", (event) => {
-            event.stopPropagation();
-        });
+        const estabaAbierto = miniMenuTalla.classList.contains("activo");
 
-        btnFav.addEventListener("click", async (event) => {
-            event.preventDefault();
-            event.stopPropagation();
+        cerrarTodosLosMenusTalla();
 
-            const sesion = await obtenerSesionActual();
+        if (!estabaAbierto) {
+            miniMenuTalla.classList.add("activo");
+        }
+    });
 
-            if (!sesion || !sesion.id) {
-                modalMensaje.textContent = "Debes iniciar sesión para añadir productos a favoritos.";
-                modal.style.display = "flex";
-                return;
-            }
+    btnConfirmarCarrito.addEventListener("click", async (event) => {
+        event.preventDefault();
+        event.stopPropagation();
 
-            try {
-                const yaEsFavorito = favoritosIds.has(Number(producto.id));
+        const sesion = await obtenerSesionActual();
 
-                if (yaEsFavorito) {
-                    const response = await fetch(
-                        `${BASE_URL}/favoritos?usuarioId=${sesion.id}&productoId=${producto.id}`,
-                        {
-                            method: "DELETE",
-                            credentials: "include"
-                        }
-                    );
+        if (!sesion || !sesion.id) {
+            mensajeStock.textContent = "Debes iniciar sesión";
+            return;
+        }
 
-                    if (!response.ok) {
-                        throw new Error("No se pudo eliminar de favoritos");
-                    }
+        if (!tallaSeleccionada) {
+            mensajeStock.textContent = "Selecciona una talla";
+            return;
+        }
 
-                    favoritosIds.delete(Number(producto.id));
-                    actualizarEstadoVisualFavorito(btnFav, producto.id);
-                    mostrarToastFavorito("Eliminado de favoritos");
-                } else {
-                    const response = await fetch(
-                        `${BASE_URL}/favoritos?usuarioId=${sesion.id}&productoId=${producto.id}`,
-                        {
-                            method: "POST",
-                            credentials: "include"
-                        }
-                    );
-
-                    if (!response.ok) {
-                        throw new Error("No se pudo añadir a favoritos");
-                    }
-
-                    favoritosIds.add(Number(producto.id));
-                    actualizarEstadoVisualFavorito(btnFav, producto.id);
-                    mostrarToastFavorito("Añadido a favoritos");
-                }
-
-            } catch (error) {
-                console.error("Error al actualizar favoritos:", error);
-            }
-        });
-
-        btnCarrito.addEventListener("click", async (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-
-            const sesion = await obtenerSesionActual();
-
-            if (!sesion || !sesion.id) {
-                modalMensaje.textContent = "Debes iniciar sesión para añadir productos al carrito.";
-                modal.style.display = "flex";
-                return;
-            }
-
-            const estabaAbierto = miniMenuTalla.classList.contains("activo");
-
-            cerrarTodosLosMenusTalla();
-
-            if (!estabaAbierto) {
-                miniMenuTalla.classList.add("activo");
-            }
-        });
-
-        btnConfirmarCarrito.addEventListener("click", async (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-
-            const sesion = await obtenerSesionActual();
-
-            if (!sesion || !sesion.id) {
-                mensajeStock.textContent = "Debes iniciar sesión";
-                return;
-            }
-
-            if (!tallaSeleccionada) {
-                mensajeStock.textContent = "Selecciona una talla";
-                return;
-            }
-
-            try {
-                const response = await fetch(
-                    `${BASE_URL}/carrito/agregar?usuarioId=${sesion.id}&productoId=${producto.id}&talla=${tallaSeleccionada}&cantidad=1`,
-                    {
-                        method: "POST",
-                        credentials: "include"
-                    }
-                );
-
-                if (!response.ok) {
-                    throw new Error("No se pudo añadir al carrito");
-                }
-
-                miniMenuTalla.classList.remove("activo");
-                listaTallas.querySelectorAll(".btn-talla").forEach(btn => {
-                    btn.classList.remove("seleccionada");
-                });
-                tallaSeleccionada = null;
-                mensajeStock.textContent = "Selecciona una talla";
-                mostrarToastCarrito("Añadido al carrito");
-
-                if (typeof window.actualizarContadorCarrito === "function") {
-                    window.actualizarContadorCarrito();
-                }
-            } catch (error) {
-                console.error("Error al añadir al carrito:", error);
-                mensajeStock.textContent = "Error al añadir";
-            }
+        await agregarProductoAlCarrito(producto, tallaSeleccionada, miniMenuTalla, listaTallas, mensajeStock, () => {
+            tallaSeleccionada = null;
         });
     });
 
-    indiceActual += PRODUCTOS_POR_CARGA;
+    return card;
 }
 
-function obtenerProductosFiltrados() {
-    const categoriasSeleccionadas = Array.from(
-        document.querySelectorAll('input[data-tipo="categoria"]:checked')
-    ).map(c => c.value.toLowerCase());
+function configurarTallasProducto(producto, listaTallas, mensajeStock, onSeleccionarTalla) {
+    const tallas = Array.isArray(producto.tallaStocks) ? producto.tallaStocks : [];
 
-    let filtrados = [...productosHombre];
-
-    filtrados = filtrados.filter(p =>
-        p.seccion && p.seccion.toLowerCase().includes("hombre")
-    );
-
-    if (categoriasSeleccionadas.length > 0) {
-        filtrados = filtrados.filter(p =>
-            p.categoria &&
-            p.categoria.nombre &&
-            categoriasSeleccionadas.some(cat =>
-                p.categoria.nombre.toLowerCase().includes(cat)
-            )
-        );
+    if (tallas.length === 0) {
+        mensajeStock.textContent = "No hay tallas disponibles";
+        return;
     }
 
-    return filtrados;
+    tallas.forEach(tallaStock => {
+        const botonTalla = document.createElement("button");
+        botonTalla.type = "button";
+        botonTalla.className = "btn-talla";
+        botonTalla.textContent = tallaStock.talla;
+        botonTalla.dataset.talla = tallaStock.talla;
+        botonTalla.dataset.stock = tallaStock.stock;
+
+        if (tallaStock.stock <= 0) {
+            botonTalla.classList.add("agotada");
+            botonTalla.disabled = true;
+            botonTalla.title = "Agotado";
+        }
+
+        botonTalla.addEventListener("mouseenter", () => {
+            actualizarMensajeStock(mensajeStock, tallaStock.stock);
+        });
+
+        botonTalla.addEventListener("mouseleave", () => {
+            const botonSeleccionado = listaTallas.querySelector(".btn-talla.seleccionada");
+
+            if (!botonSeleccionado) {
+                mensajeStock.textContent = "Selecciona una talla";
+                return;
+            }
+
+            actualizarMensajeStock(mensajeStock, Number(botonSeleccionado.dataset.stock));
+        });
+
+        if (tallaStock.stock > 0) {
+            botonTalla.addEventListener("click", () => {
+                const yaSeleccionada = botonTalla.classList.contains("seleccionada");
+
+                listaTallas.querySelectorAll(".btn-talla").forEach(btn => {
+                    btn.classList.remove("seleccionada");
+                });
+
+                if (yaSeleccionada) {
+                    onSeleccionarTalla(null);
+                    mensajeStock.textContent = "Selecciona una talla";
+                } else {
+                    botonTalla.classList.add("seleccionada");
+                    onSeleccionarTalla(tallaStock.talla);
+                    actualizarMensajeStock(mensajeStock, tallaStock.stock);
+                }
+            });
+        }
+
+        listaTallas.appendChild(botonTalla);
+    });
+}
+
+function actualizarMensajeStock(mensajeStock, stock) {
+    if (stock <= 0) {
+        mensajeStock.textContent = "Agotado";
+    } else if (stock <= 5) {
+        mensajeStock.textContent = "Pocas unidades";
+    } else {
+        mensajeStock.textContent = "Disponible";
+    }
+}
+
+async function alternarFavorito(producto, btnFav) {
+    const sesion = await obtenerSesionActual();
+
+    if (!sesion || !sesion.id) {
+        mostrarModalLogin("Debes iniciar sesión para añadir productos a favoritos.");
+        return;
+    }
+
+    try {
+        const yaEsFavorito = favoritosIds.has(Number(producto.id));
+
+        if (yaEsFavorito) {
+            const response = await fetch(
+                `${BASE_URL}/favoritos?usuarioId=${sesion.id}&productoId=${producto.id}`,
+                {
+                    method: "DELETE",
+                    credentials: "include"
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error("No se pudo eliminar de favoritos");
+            }
+
+            favoritosIds.delete(Number(producto.id));
+            actualizarEstadoVisualFavorito(btnFav, producto.id);
+            mostrarToastFavorito("Eliminado de favoritos");
+        } else {
+            const response = await fetch(
+                `${BASE_URL}/favoritos?usuarioId=${sesion.id}&productoId=${producto.id}`,
+                {
+                    method: "POST",
+                    credentials: "include"
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error("No se pudo añadir a favoritos");
+            }
+
+            favoritosIds.add(Number(producto.id));
+            actualizarEstadoVisualFavorito(btnFav, producto.id);
+            mostrarToastFavorito("Añadido a favoritos");
+        }
+
+    } catch (error) {
+        console.error("Error al actualizar favoritos:", error);
+        mostrarToastFavorito("Error al actualizar favoritos");
+    }
+}
+
+async function agregarProductoAlCarrito(producto, tallaSeleccionada, miniMenuTalla, listaTallas, mensajeStock, onResetTalla) {
+    const sesion = await obtenerSesionActual();
+
+    if (!sesion || !sesion.id) {
+        mensajeStock.textContent = "Debes iniciar sesión";
+        return;
+    }
+
+    try {
+        const response = await fetch(
+            `${BASE_URL}/carrito/agregar?usuarioId=${sesion.id}&productoId=${producto.id}&talla=${tallaSeleccionada}&cantidad=1`,
+            {
+                method: "POST",
+                credentials: "include"
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error("No se pudo añadir al carrito");
+        }
+
+        miniMenuTalla.classList.remove("activo");
+
+        listaTallas.querySelectorAll(".btn-talla").forEach(btn => {
+            btn.classList.remove("seleccionada");
+        });
+
+        onResetTalla();
+        mensajeStock.textContent = "Selecciona una talla";
+        mostrarToastCarrito("Añadido al carrito");
+
+        if (typeof window.actualizarContadorCarrito === "function") {
+            window.actualizarContadorCarrito();
+        }
+    } catch (error) {
+        console.error("Error al añadir al carrito:", error);
+        mensajeStock.textContent = "Error al añadir";
+    }
+}
+
+function mostrarModalLogin(mensaje) {
+    if (modalMensaje) {
+        modalMensaje.textContent = mensaje;
+    }
+
+    if (modal) {
+        modal.style.display = "flex";
+    }
+}
+
+function configurarFiltros() {
+    document.querySelectorAll('input[data-tipo="categoria"]').forEach(input => {
+        input.addEventListener("change", aplicarFiltros);
+    });
+
+    selectOrdenCatalogo?.addEventListener("change", () => {
+        ordenCatalogo = selectOrdenCatalogo.value || "recientes";
+        aplicarFiltros();
+    });
 }
 
 function aplicarFiltros() {
     cerrarTodosLosMenusTalla();
-    const filtrados = obtenerProductosFiltrados();
-    renderizarProductos(filtrados, true);
+    cargarProductosCatalogo(true);
+}
+
+function configurarScrollInfinito() {
+    window.addEventListener("scroll", async () => {
+        const cercaFinal =
+            window.innerHeight + window.scrollY >= document.body.offsetHeight - 250;
+
+        if (cercaFinal && !ultimaPagina && !cargandoProductos) {
+            paginaActual++;
+            await cargarProductosCatalogo(false);
+        }
+    });
+}
+
+function esUrlImagenValida(url) {
+    if (!url) {
+        return false;
+    }
+
+    return !url.includes(".m3u8") && !url.includes("master.m3u8");
+}
+
+function formatearPrecioProducto(valor) {
+    if (valor === null || valor === undefined || valor === "") {
+        return formateadorEuro.format(0);
+    }
+
+    return formateadorEuro.format(Number(valor));
 }
 
 async function iniciarHombre() {
     try {
-        const [zaraRes, pullRes, bershkaRes] = await Promise.all([
-            fetch(`${BASE_URL}/productos/tienda/Zara`),
-            fetch(`${BASE_URL}/productos/tienda/PullAndBear`),
-            fetch(`${BASE_URL}/productos/tienda/Bershka`),
-            cargarFavoritosUsuario()
-        ]);
-
-        if (!zaraRes.ok || !pullRes.ok || !bershkaRes.ok) {
-            throw new Error("No se pudieron cargar los productos");
-        }
-
-        const productosZara = await zaraRes.json();
-        const productosPull = await pullRes.json();
-        const productosBershka = await bershkaRes.json();
-
-        productosHombre = mezclarArray([
-            ...productosZara,
-            ...productosPull,
-            ...productosBershka
-        ]).filter(p => p.seccion && p.seccion.toLowerCase().includes("hombre"));
-
-        renderizarProductos(productosHombre, true);
-
-        document.querySelectorAll('input[data-tipo="categoria"]').forEach(c =>
-            c.addEventListener("change", aplicarFiltros)
-        );
-
-        window.addEventListener("scroll", () => {
-            const filtrados = obtenerProductosFiltrados();
-
-            const cercaFinal =
-                window.innerHeight + window.scrollY >= document.body.offsetHeight - 200;
-
-            if (cercaFinal && indiceActual < filtrados.length) {
-                renderizarProductos(filtrados, false);
-            }
-        });
-
+        await cargarFavoritosUsuario();
+        configurarFiltros();
+        configurarScrollInfinito();
+        await cargarProductosCatalogo(true);
     } catch (error) {
         console.error("Error:", error);
+        mostrarErrorProductos();
     }
 }
 

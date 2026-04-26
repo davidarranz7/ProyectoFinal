@@ -10,83 +10,94 @@
 </head>
 <body>
 
-    <div id="menu-container"></div>
+<div id="menu-container"></div>
 
-    <main class="hombre-container">
-        <aside class="sidebar-filtros">
+<main class="hombre-container">
+    <aside class="sidebar-filtros">
 
-            <div class="filtro-seccion">
-                <h3>Categoría</h3>
-                <ul>
-                    <li>
-                        <label class="filtro-item">
-                            <input type="checkbox" class="filtro-check" data-tipo="categoria" value="camiseta">
-                            <span class="filtro-label-texto">Camisetas</span>
-                            <span class="filtro-linea"></span>
-                        </label>
-                    </li>
-                    <li>
-                        <label class="filtro-item">
-                            <input type="checkbox" class="filtro-check" data-tipo="categoria" value="pantalon">
-                            <span class="filtro-label-texto">Pantalones</span>
-                            <span class="filtro-linea"></span>
-                        </label>
-                    </li>
-                    <li>
-                        <label class="filtro-item">
-                            <input type="checkbox" class="filtro-check" data-tipo="categoria" value="sudadera">
-                            <span class="filtro-label-texto">Sudaderas</span>
-                            <span class="filtro-linea"></span>
-                        </label>
-                    </li>
-                    <li>
-                        <label class="filtro-item">
-                            <input type="checkbox" class="filtro-check" data-tipo="categoria" value="abrigo">
-                            <span class="filtro-label-texto">Abrigos</span>
-                            <span class="filtro-linea"></span>
-                        </label>
-                    </li>
-                </ul>
+        <div class="filtro-seccion">
+            <h3>Categoría</h3>
+            <ul>
+                <li>
+                    <label class="filtro-item">
+                        <input type="checkbox" class="filtro-check" data-tipo="categoria" value="camiseta">
+                        <span class="filtro-label-texto">Camisetas</span>
+                        <span class="filtro-linea"></span>
+                    </label>
+                </li>
+                <li>
+                    <label class="filtro-item">
+                        <input type="checkbox" class="filtro-check" data-tipo="categoria" value="pantalon">
+                        <span class="filtro-label-texto">Pantalones</span>
+                        <span class="filtro-linea"></span>
+                    </label>
+                </li>
+                <li>
+                    <label class="filtro-item">
+                        <input type="checkbox" class="filtro-check" data-tipo="categoria" value="sudadera">
+                        <span class="filtro-label-texto">Sudaderas</span>
+                        <span class="filtro-linea"></span>
+                    </label>
+                </li>
+                <li>
+                    <label class="filtro-item">
+                        <input type="checkbox" class="filtro-check" data-tipo="categoria" value="abrigo">
+                        <span class="filtro-label-texto">Abrigos</span>
+                        <span class="filtro-linea"></span>
+                    </label>
+                </li>
+            </ul>
+        </div>
+
+        <div class="filtro-seccion">
+            <h3>Ordenar</h3>
+            <select id="orden-catalogo">
+                <option value="recientes">Más recientes</option>
+                <option value="precioAsc">Precio: menor a mayor</option>
+                <option value="precioDesc">Precio: mayor a menor</option>
+                <option value="nombreAsc">Nombre: A-Z</option>
+                <option value="nombreDesc">Nombre: Z-A</option>
+            </select>
+        </div>
+
+    </aside>
+
+    <section class="contenido-productos">
+        <header class="hombre-header">
+            <div class="hombre-header-content">
+                <h1>HOMBRE</h1>
+                <p id="contador-productos">MAN COLLECTION / 0 PRODUCTOS</p>
             </div>
+        </header>
 
-        </aside>
+        <div class="grid-hombre" id="grid-productos"></div>
+    </section>
+</main>
 
-        <section class="contenido-productos">
-            <header class="hombre-header">
-                <div class="hombre-header-content">
-                    <h1>HOMBRE</h1>
-                    <p id="contador-productos">MAN COLLECTION / 0 PRODUCTOS</p>
-                </div>
-            </header>
+<div id="modal-login" class="modal">
+    <div class="modal-overlay"></div>
 
-            <div class="grid-hombre" id="grid-productos"></div>
-        </section>
-    </main>
+    <div class="modal-panel">
+        <button id="cerrar-modal" class="modal-close" type="button">×</button>
 
-    <div id="modal-login" class="modal">
-        <div class="modal-overlay"></div>
+        <span class="modal-tag">ACCESO REQUERIDO</span>
+        <h2>Inicia sesión para continuar</h2>
+        <p id="modal-mensaje">
+            Debes iniciar sesión para continuar.
+        </p>
 
-        <div class="modal-panel">
-            <button id="cerrar-modal" class="modal-close" type="button">×</button>
-
-            <span class="modal-tag">ACCESO REQUERIDO</span>
-            <h2>Inicia sesión para continuar</h2>
-            <p id="modal-mensaje">
-                Debes iniciar sesión para continuar.
-            </p>
-
-            <div class="modal-actions">
-                <button id="abrir-login-modal" class="modal-btn modal-btn-dark" type="button">Iniciar sesión</button>
-                <button id="cerrar-modal-secundario" class="modal-btn modal-btn-light" type="button">
-                    Seguir explorando
-                </button>
-            </div>
+        <div class="modal-actions">
+            <button id="abrir-login-modal" class="modal-btn modal-btn-dark" type="button">Iniciar sesión</button>
+            <button id="cerrar-modal-secundario" class="modal-btn modal-btn-light" type="button">
+                Seguir explorando
+            </button>
         </div>
     </div>
+</div>
 
-    <script src="js/config.js"></script>
-    <script src="js/menu.js"></script>
-    <script src="js/hombre.js"></script>
-    <div id="toast-carrito" class="toast-carrito">Añadido al carrito</div>
+<script src="js/config.js"></script>
+<script src="js/menu.js"></script>
+<script src="js/hombre.js"></script>
+<div id="toast-carrito" class="toast-carrito">Añadido al carrito</div>
 </body>
 </html>
