@@ -2,6 +2,7 @@ package com.david.ProyectoFinal.service;
 
 import com.david.ProyectoFinal.dto.CrearIncidenciaRequestDTO;
 import com.david.ProyectoFinal.dto.IncidenciaResponseDTO;
+import com.david.ProyectoFinal.dto.MensajeIncidenciaResponseDTO;
 import com.david.ProyectoFinal.model.EstadoIncidencia;
 import com.david.ProyectoFinal.model.Incidencia;
 import com.david.ProyectoFinal.model.MensajeIncidencia;
@@ -17,6 +18,8 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -64,6 +67,67 @@ public class IncidenciaServiceImpl implements IncidenciaService {
         enviarCorreoConfirmacionIncidencia(incidenciaGuardada);
 
         return convertirAResponseDTO(incidenciaGuardada);
+    }
+
+    @Override
+    public List<IncidenciaResponseDTO> obtenerTodasLasIncidencias() {
+        return incidenciaRepository.findAllByOrderByFechaUltimaActualizacionDesc()
+                .stream()
+                .map(this::convertirAResponseDTO)
+                .toList();
+    }
+
+    @Override
+    public List<IncidenciaResponseDTO> obtenerIncidenciasPorEstado(EstadoIncidencia estadoIncidencia) {
+        if (estadoIncidencia == null) {
+            throw new RuntimeException("El estado de incidencia es obligatorio");
+        }
+
+        return incidenciaRepository.findByEstadoIncidenciaOrderByFechaUltimaActualizacionDesc(estadoIncidencia)
+                .stream()
+                .map(this::convertirAResponseDTO)
+                .toList();
+    }
+
+    @Override
+    public IncidenciaResponseDTO obtenerIncidenciaPorId(Long incidenciaId) {
+        Incidencia incidencia = incidenciaRepository.findById(incidenciaId)
+                .orElseThrow(() -> new RuntimeException("Incidencia no encontrada"));
+
+        return convertirAResponseDTO(incidencia);
+    }
+
+    @Override
+    public List<MensajeIncidenciaResponseDTO> obtenerMensajesDeIncidencia(Long incidenciaId) {
+        if (!incidenciaRepository.existsById(incidenciaId)) {
+            throw new RuntimeException("Incidencia no encontrada");
+        }
+
+        return mensajeIncidenciaRepository.findByIncidenciaIdOrderByFechaMensajeAsc(incidenciaId)
+                .stream()
+                .map(this::convertirMensajeAResponseDTO)
+                .toList();
+    }
+
+    @Override
+    @Transactional
+    public IncidenciaResponseDTO cambiarEstadoIncidencia(Long incidenciaId, EstadoIncidencia nuevoEstado) {
+        if (nuevoEstado == null) {
+            throw new RuntimeException("El nuevo estado es obligatorio");
+        }
+
+        Incidencia incidencia = incidenciaRepository.findById(incidenciaId)
+                .orElseThrow(() -> new RuntimeException("Incidencia no encontrada"));
+
+        incidencia.setEstadoIncidencia(nuevoEstado);
+
+        if (nuevoEstado == EstadoIncidencia.CERRADA) {
+            incidencia.setFechaCierre(LocalDateTime.now());
+        }
+
+        Incidencia incidenciaActualizada = incidenciaRepository.save(incidencia);
+
+        return convertirAResponseDTO(incidenciaActualizada);
     }
 
     private void validarCrearIncidencia(CrearIncidenciaRequestDTO request) {
@@ -153,6 +217,18 @@ public class IncidenciaServiceImpl implements IncidenciaService {
         );
     }
 
+    private MensajeIncidenciaResponseDTO convertirMensajeAResponseDTO(MensajeIncidencia mensaje) {
+        return new MensajeIncidenciaResponseDTO(
+                mensaje.getId(),
+                mensaje.getIncidencia().getId(),
+                mensaje.getRemitente(),
+                mensaje.getOrigen(),
+                mensaje.getEmailRemitente(),
+                mensaje.getContenido(),
+                mensaje.getFechaMensaje()
+        );
+    }
+
     private String leerPlantillaHtml(String ruta) {
         try (InputStream inputStream = new ClassPathResource(ruta).getInputStream()) {
             return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
@@ -168,7 +244,7 @@ public class IncidenciaServiceImpl implements IncidenciaService {
             case SIN_ACCESO_EMAIL -> "Sin acceso al email";
             case PROBLEMA_PEDIDO -> "Problema con un pedido";
             case PROBLEMA_PAGO -> "Problema con el pago";
-            case PRODUCTO_DEFECTUOSO -> "Producto defectuoso";
+            case PRODUCTO_DEFECTUOSO -> "Producto dañado o incorrecto";
             case ERROR_WEB -> "Error en la web";
             case OTRO -> "Otro";
         };
