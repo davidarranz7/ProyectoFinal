@@ -166,6 +166,49 @@ public class IncidenciaServiceImpl implements IncidenciaService {
         return convertirMensajeAResponseDTO(mensajeGuardado);
     }
 
+    @Override
+    @Transactional
+    public MensajeIncidenciaResponseDTO registrarRespuestaUsuarioDesdeEmail(String codigoSeguimiento,
+                                                                            String emailRemitente,
+                                                                            String contenido) {
+        if (codigoSeguimiento == null || codigoSeguimiento.trim().isBlank()) {
+            throw new RuntimeException("El código de seguimiento es obligatorio");
+        }
+
+        if (emailRemitente == null || emailRemitente.trim().isBlank()) {
+            throw new RuntimeException("El email del remitente es obligatorio");
+        }
+
+        if (contenido == null || contenido.trim().isBlank()) {
+            throw new RuntimeException("El contenido del mensaje es obligatorio");
+        }
+
+        Incidencia incidencia = incidenciaRepository.findByCodigoSeguimiento(codigoSeguimiento.trim().toUpperCase())
+                .orElseThrow(() -> new RuntimeException("No existe una incidencia con ese código de seguimiento"));
+
+        if (incidencia.getEstadoIncidencia() == EstadoIncidencia.CERRADA) {
+            throw new RuntimeException("No se puede responder una incidencia cerrada");
+        }
+
+        if (!incidencia.getEmailContacto().equalsIgnoreCase(emailRemitente.trim())) {
+            throw new RuntimeException("El email del remitente no coincide con el email de la incidencia");
+        }
+
+        MensajeIncidencia mensajeUsuario = new MensajeIncidencia();
+        mensajeUsuario.setIncidencia(incidencia);
+        mensajeUsuario.setRemitente(RemitenteMensajeIncidencia.USUARIO);
+        mensajeUsuario.setOrigen(OrigenMensajeIncidencia.EMAIL);
+        mensajeUsuario.setEmailRemitente(emailRemitente.trim());
+        mensajeUsuario.setContenido(contenido.trim());
+
+        MensajeIncidencia mensajeGuardado = mensajeIncidenciaRepository.save(mensajeUsuario);
+
+        incidencia.setEstadoIncidencia(EstadoIncidencia.RESPONDIDA_POR_USUARIO);
+        incidenciaRepository.save(incidencia);
+
+        return convertirMensajeAResponseDTO(mensajeGuardado);
+    }
+
     private String construirRespuestaAdminHtml(Incidencia incidencia, String mensajeAdmin) {
         String plantilla = leerPlantillaHtml("templates/incidenciaRespuestaAdmin.html");
 

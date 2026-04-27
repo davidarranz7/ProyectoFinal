@@ -2,6 +2,7 @@ package com.david.ProyectoFinal.controller;
 
 import com.david.ProyectoFinal.dto.ResponderIncidenciaRequestDTO;
 import com.david.ProyectoFinal.model.EstadoIncidencia;
+import com.david.ProyectoFinal.service.EmailEntranteIncidenciaService;
 import com.david.ProyectoFinal.service.IncidenciaService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -13,9 +14,11 @@ import org.springframework.web.bind.annotation.*;
 public class AdminIncidenciaController {
 
     private final IncidenciaService incidenciaService;
+    private final EmailEntranteIncidenciaService emailEntranteIncidenciaService;
 
-    public AdminIncidenciaController(IncidenciaService incidenciaService) {
+    public AdminIncidenciaController(IncidenciaService incidenciaService, EmailEntranteIncidenciaService emailEntranteIncidenciaService) {
         this.incidenciaService = incidenciaService;
+        this.emailEntranteIncidenciaService = emailEntranteIncidenciaService;
     }
 
     @GetMapping
@@ -83,4 +86,16 @@ public class AdminIncidenciaController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    @PostMapping("/leer-correos")
+    public ResponseEntity<?> leerCorreosEntrantes() {
+        try {
+            int correosProcesados = emailEntranteIncidenciaService.leerCorreosEntrantesDeIncidencias();
+
+            return ResponseEntity.ok("Correos procesados: " + correosProcesados);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
 }

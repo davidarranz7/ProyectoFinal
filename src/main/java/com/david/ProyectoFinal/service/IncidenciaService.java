@@ -30,6 +30,13 @@ public interface IncidenciaService {
     /// Permite al admin responder una incidencia, guarda el mensaje y envía correo al usuario.
     MensajeIncidenciaResponseDTO responderIncidencia(Long incidenciaId, String mensaje);
 
+    /// Guarda una respuesta enviada por el usuario desde Gmail/correo.
+    MensajeIncidenciaResponseDTO registrarRespuestaUsuarioDesdeEmail(
+            String codigoSeguimiento,
+            String emailRemitente,
+            String contenido
+    );
+
     /// Devuelve todos los estados posibles de una incidencia.
     List<EstadoIncidencia> obtenerEstadosIncidencia();
 }

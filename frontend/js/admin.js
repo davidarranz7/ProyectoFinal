@@ -959,7 +959,10 @@ async function cargarIncidencias(refs, state) {
         }
 
         if (filtro === "ABIERTAS") {
-            incidencias = incidencias.filter((incidencia) => incidencia.estadoIncidencia !== "CERRADA");
+            incidencias = incidencias.filter((incidencia) =>
+                incidencia.estadoIncidencia !== "CERRADA" &&
+                incidencia.estadoIncidencia !== "RESUELTA"
+            );
         }
 
         state.incidencias = ordenarIncidenciasParaAdmin(incidencias);
