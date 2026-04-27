@@ -26,4 +26,10 @@ public interface IncidenciaService {
 
     /// Permite al admin cambiar el estado de una incidencia.
     IncidenciaResponseDTO cambiarEstadoIncidencia(Long incidenciaId, EstadoIncidencia nuevoEstado);
+
+    /// Permite al admin responder una incidencia, guarda el mensaje y envía correo al usuario.
+    MensajeIncidenciaResponseDTO responderIncidencia(Long incidenciaId, String mensaje);
+
+    /// Devuelve todos los estados posibles de una incidencia.
+    List<EstadoIncidencia> obtenerEstadosIncidencia();
 }

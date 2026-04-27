@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Respuesta a tu incidencia</title>
+</head>
+<body style="margin:0; padding:0; background:#f6f3ff; font-family:Arial, sans-serif; color:#17141f;">
+
+<table width="100%" cellpadding="0" cellspacing="0" style="padding:32px 0;">
+    <tr>
+        <td align="center">
+
+            <table width="600" cellpadding="0" cellspacing="0"
+                   style="background:#ffffff; border-radius:22px; padding:32px; box-shadow:0 16px 40px rgba(59,24,95,0.10);">
+
+                <tr>
+                    <td>
+
+                        <h1 style="margin:0 0 12px; font-size:26px; color:#17141f;">
+                            Respuesta a tu incidencia
+                        </h1>
+
+                        <p style="margin:0 0 22px; color:#6d677b; line-height:1.6;">
+                            Hola {{NOMBRE_CONTACTO}}, hemos respondido a tu incidencia.
+                        </p>
+
+                        <div style="background:#f3ecff; border-radius:16px; padding:18px; margin-bottom:22px;">
+                            <p style="margin:0 0 8px;">
+                                <strong>Código:</strong> {{CODIGO_SEGUIMIENTO}}
+                            </p>
+
+                            <p style="margin:0 0 8px;">
+                                <strong>Asunto:</strong> {{ASUNTO_INCIDENCIA}}
+                            </p>
+
+                            <p style="margin:0;">
+                                <strong>Estado:</strong> {{ESTADO_INCIDENCIA}}
+                            </p>
+                        </div>
+
+                        <div style="border:1px solid #ece6fb; border-radius:16px; padding:18px; margin-bottom:22px;">
+                            <h2 style="font-size:18px; margin:0 0 12px; color:#17141f;">
+                                Mensaje del equipo de soporte
+                            </h2>
+
+                            <p style="margin:0; color:#17141f; line-height:1.7; white-space:pre-line;">
+                                {{MENSAJE_ADMIN}}
+                            </p>
+                        </div>
+
+                        <p style="margin:0 0 12px; color:#6d677b; line-height:1.6;">
+                            Puedes responder directamente a este correo para continuar la conversación.
+                        </p>
+
+                        <p style="margin:0; color:#6d677b; line-height:1.6;">
+                            Mantén el código de incidencia en el asunto para que podamos identificar tu caso correctamente.
+                        </p>
+
+                    </td>
+                </tr>
+
+            </table>
+
+        </td>
+    </tr>
+</table>
+
+</body>
+</html>

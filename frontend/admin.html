@@ -59,6 +59,11 @@
                 <span>Pedidos</span>
             </button>
 
+            <button class="admin-nav-btn" type="button" data-seccion="incidencias">
+                <span class="admin-nav-icon">🎫</span>
+                <span>Incidencias</span>
+            </button>
+
             <button class="admin-nav-btn" type="button" data-seccion="confirmacion-entrega">
                 <span class="admin-nav-icon">✅</span>
                 <span>Confirmar entrega</span>
@@ -438,6 +443,43 @@
             </div>
         </section>
 
+        <!-- INCIDENCIAS -->
+        <section class="admin-section" id="incidencias">
+            <div class="admin-block">
+                <div class="admin-block-header">
+                    <div>
+                        <p class="admin-section-eyebrow">Soporte</p>
+                        <h2>Incidencias</h2>
+                        <p class="admin-section-subtitle">
+                            Revisa las incidencias enviadas por los usuarios, abre la conversación completa y responde al cliente por correo.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="toolbar-admin">
+                    <div class="toolbar-left">
+                        <div class="toolbar-filter">
+                            <select id="filtro-estado-incidencias">
+                                <option value="ABIERTAS">Abiertas / en curso</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="incidencias-admin-estado" class="estado-panel-admin" style="display:none;"></div>
+
+                <div class="admin-list-wrap">
+                    <div id="contenedor-incidencias-admin" class="admin-list-grid">
+                        <div class="empty-admin-state">
+                            <h3>Cargando incidencias</h3>
+                            <p>Las incidencias aparecerán aquí automáticamente.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CONFIRMACIÓN ENTREGA -->
         <section class="admin-section" id="confirmacion-entrega">
             <div class="admin-block">
                 <div class="admin-block-header">
@@ -690,6 +732,38 @@
         </div>
 
         <div id="contenido-detalle-pedido" class="detalle-admin-layout"></div>
+    </div>
+</div>
+
+<!-- MODAL DETALLE INCIDENCIA -->
+<div id="modal-detalle-incidencia" class="modal-admin-overlay" style="display:none;">
+    <div class="modal-admin modal-admin-xl">
+        <div class="modal-admin-header">
+            <h3>Detalle de incidencia</h3>
+            <button type="button" class="modal-admin-close" id="cerrar-modal-detalle-incidencia">×</button>
+        </div>
+
+        <div id="contenido-detalle-incidencia" class="detalle-admin-layout"></div>
+
+        <form id="form-responder-incidencia" class="form-admin-grid incidencia-respuesta-form">
+            <input type="hidden" id="responder-incidencia-id" />
+
+            <div class="form-group form-group-full">
+                <label for="texto-respuesta-incidencia">Responder al usuario</label>
+                <textarea
+                        id="texto-respuesta-incidencia"
+                        rows="6"
+                        placeholder="Escribe aquí la respuesta que se enviará por correo al usuario..."
+                        required
+                ></textarea>
+            </div>
+
+            <div class="modal-admin-actions form-group-full">
+                <button type="submit" class="btn btn-primary" id="btn-enviar-respuesta-incidencia">
+                    Enviar respuesta
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 

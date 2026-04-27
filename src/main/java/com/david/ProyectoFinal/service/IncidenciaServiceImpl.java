@@ -130,6 +130,83 @@ public class IncidenciaServiceImpl implements IncidenciaService {
         return convertirAResponseDTO(incidenciaActualizada);
     }
 
+    @Override
+    public List<EstadoIncidencia> obtenerEstadosIncidencia() {
+        return List.of(EstadoIncidencia.values());
+    }
+
+    @Override
+    @Transactional
+    public MensajeIncidenciaResponseDTO responderIncidencia(Long incidenciaId, String mensaje) {
+        if (mensaje == null || mensaje.trim().isBlank()) {
+            throw new RuntimeException("El mensaje de respuesta es obligatorio");
+        }
+
+        Incidencia incidencia = incidenciaRepository.findById(incidenciaId)
+                .orElseThrow(() -> new RuntimeException("Incidencia no encontrada"));
+
+        if (incidencia.getEstadoIncidencia() == EstadoIncidencia.CERRADA) {
+            throw new RuntimeException("No se puede responder una incidencia cerrada");
+        }
+
+        MensajeIncidencia mensajeAdmin = new MensajeIncidencia();
+        mensajeAdmin.setIncidencia(incidencia);
+        mensajeAdmin.setRemitente(RemitenteMensajeIncidencia.ADMIN);
+        mensajeAdmin.setOrigen(OrigenMensajeIncidencia.WEB);
+        mensajeAdmin.setEmailRemitente("admin@moda.com");
+        mensajeAdmin.setContenido(mensaje.trim());
+
+        MensajeIncidencia mensajeGuardado = mensajeIncidenciaRepository.save(mensajeAdmin);
+
+        incidencia.setEstadoIncidencia(EstadoIncidencia.ESPERANDO_RESPUESTA_USUARIO);
+        incidenciaRepository.save(incidencia);
+
+        enviarCorreoRespuestaAdmin(incidencia, mensajeGuardado.getContenido());
+
+        return convertirMensajeAResponseDTO(mensajeGuardado);
+    }
+
+    private String construirRespuestaAdminHtml(Incidencia incidencia, String mensajeAdmin) {
+        String plantilla = leerPlantillaHtml("templates/incidenciaRespuestaAdmin.html");
+
+        return plantilla
+                .replace("{{NOMBRE_CONTACTO}}", escaparHtml(incidencia.getNombreContacto()))
+                .replace("{{CODIGO_SEGUIMIENTO}}", escaparHtml(incidencia.getCodigoSeguimiento()))
+                .replace("{{ASUNTO_INCIDENCIA}}", escaparHtml(incidencia.getAsunto()))
+                .replace("{{ESTADO_INCIDENCIA}}", escaparHtml(formatearEstadoIncidencia(incidencia.getEstadoIncidencia())))
+                .replace("{{MENSAJE_ADMIN}}", escaparHtml(mensajeAdmin));
+    }
+
+    private void enviarCorreoRespuestaAdmin(Incidencia incidencia, String mensajeAdmin) {
+        try {
+            String asunto = "[" + incidencia.getCodigoSeguimiento() + "] Respuesta a tu incidencia";
+            String contenidoHtml = construirRespuestaAdminHtml(incidencia, mensajeAdmin);
+
+            emailService.enviarCorreoHtml(
+                    incidencia.getEmailContacto(),
+                    asunto,
+                    contenidoHtml
+            );
+        } catch (Exception e) {
+            System.out.println("ERROR AL ENVIAR CORREO DE RESPUESTA DE INCIDENCIA: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private String escaparHtml(String texto) {
+        if (texto == null) {
+            return "";
+        }
+
+        return texto
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&#39;");
+    }
+
+
     private void validarCrearIncidencia(CrearIncidenciaRequestDTO request) {
         if (request.getNombreContacto() == null || request.getNombreContacto().trim().isBlank()) {
             throw new RuntimeException("El nombre de contacto es obligatorio");

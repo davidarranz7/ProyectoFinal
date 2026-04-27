@@ -42,6 +42,7 @@ function iniciarAdmin() {
     configurarPuntosRecogida(refs, state);
     configurarUsuarios(refs, state);
     configurarPedidos(refs, state);
+    configurarIncidencias(refs, state);
     configurarConfirmacionEntrega(refs, state);
     configurarModales(refs, state);
 
@@ -150,6 +151,18 @@ function obtenerReferencias() {
         contenedorPedidos: document.getElementById("contenedor-pedidos-admin"),
         estadoPedidos: document.getElementById("pedidos-admin-estado"),
 
+        filtroEstadoIncidencias: document.getElementById("filtro-estado-incidencias"),
+        contenedorIncidencias: document.getElementById("contenedor-incidencias-admin"),
+        estadoIncidencias: document.getElementById("incidencias-admin-estado"),
+
+        modalDetalleIncidencia: document.getElementById("modal-detalle-incidencia"),
+        cerrarModalDetalleIncidencia: document.getElementById("cerrar-modal-detalle-incidencia"),
+        contenidoDetalleIncidencia: document.getElementById("contenido-detalle-incidencia"),
+        formResponderIncidencia: document.getElementById("form-responder-incidencia"),
+        responderIncidenciaId: document.getElementById("responder-incidencia-id"),
+        textoRespuestaIncidencia: document.getElementById("texto-respuesta-incidencia"),
+        btnEnviarRespuestaIncidencia: document.getElementById("btn-enviar-respuesta-incidencia"),
+
         qrReaderEntrega: document.getElementById("qr-reader-entrega"),
         btnIniciarEscanerEntrega: document.getElementById("btn-iniciar-escaner-entrega"),
         btnDetenerEscanerEntrega: document.getElementById("btn-detener-escaner-entrega"),
@@ -227,7 +240,9 @@ function crearEstadoInicial() {
         puntosRecogidaFiltrados: [],
         usuarios: [],
         pedidos: [],
+        incidencias: [],
         estadosPedidoDisponibles: [],
+        estadosIncidenciaDisponibles: [],
 
         modoSeleccionProductos: false,
         productosSeleccionados: new Set(),
@@ -464,6 +479,17 @@ function configurarPedidos(refs, state) {
     });
 }
 
+function configurarIncidencias(refs, state) {
+    refs.filtroEstadoIncidencias?.addEventListener("change", async () => {
+        await cargarIncidencias(refs, state);
+    });
+
+    refs.formResponderIncidencia?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        await enviarRespuestaIncidencia(refs, state);
+    });
+}
+
 function configurarConfirmacionEntrega(refs, state) {
     refs.btnIniciarEscanerEntrega?.addEventListener("click", async () => {
         await iniciarEscanerEntrega(refs, state);
@@ -556,6 +582,24 @@ function configurarModales(refs, state) {
         limpiarContenedor(refs.contenidoDetallePedido);
     });
 
+    configurarCerrarModal(refs.modalDetalleIncidencia, refs.cerrarModalDetalleIncidencia, null, () => {
+        limpiarContenedor(refs.contenidoDetalleIncidencia);
+        refs.formResponderIncidencia?.reset();
+
+        if (refs.responderIncidenciaId) {
+            refs.responderIncidenciaId.value = "";
+        }
+
+        if (refs.textoRespuestaIncidencia) {
+            refs.textoRespuestaIncidencia.disabled = false;
+            refs.textoRespuestaIncidencia.placeholder = "Escribe aquí la respuesta que se enviará por correo al usuario...";
+        }
+
+        if (refs.btnEnviarRespuestaIncidencia) {
+            refs.btnEnviarRespuestaIncidencia.disabled = false;
+        }
+    });
+
     configurarCerrarModal(refs.modalCambiarEstadoPedido, refs.cerrarModalCambiarEstadoPedido, refs.cancelarModalCambiarEstadoPedido, () => {
         refs.formCambiarEstadoPedido?.reset();
         state.pedidoCambioEstado = null;
@@ -588,11 +632,16 @@ async function cargarTodo(refs, state) {
     await Promise.all([
         cargarMetricas(refs),
         cargarEstadosPedidoDisponibles(refs, state),
+        cargarEstadosIncidenciaDisponibles(refs, state)
+    ]);
+
+    await Promise.all([
         cargarProductos(refs, state, true),
         cargarEstablecimientos(refs, state),
         cargarPuntosRecogida(refs, state),
         cargarUsuarios(refs, state),
-        cargarPedidos(refs, state)
+        cargarPedidos(refs, state),
+        cargarIncidencias(refs, state)
     ]);
 }
 
@@ -649,6 +698,58 @@ async function cargarEstadosPedidoDisponibles(refs, state) {
         console.error("Error cargando estados disponibles del pedido:", error);
         renderizarFiltroEstadosPedidoFallback(refs);
     }
+}
+
+async function cargarEstadosIncidenciaDisponibles(refs, state) {
+    try {
+        const response = await fetch(`${BASE_URL}/admin/incidencias/estados`, {
+            method: "GET",
+            credentials: "include"
+        });
+
+        if (!response.ok) {
+            throw new Error("No se pudieron cargar los estados de incidencia");
+        }
+
+        state.estadosIncidenciaDisponibles = await response.json();
+        renderizarFiltroEstadosIncidencia(refs, state);
+    } catch (error) {
+        console.error("Error cargando estados de incidencia:", error);
+        state.estadosIncidenciaDisponibles = [];
+        renderizarFiltroEstadosIncidencia(refs, state);
+    }
+}
+
+function renderizarFiltroEstadosIncidencia(refs, state) {
+    if (!refs.filtroEstadoIncidencias) return;
+
+    const valorActual = refs.filtroEstadoIncidencias.value || "ABIERTAS";
+
+    refs.filtroEstadoIncidencias.innerHTML = "";
+
+    const optionAbiertas = document.createElement("option");
+    optionAbiertas.value = "ABIERTAS";
+    optionAbiertas.textContent = "Abiertas / en curso";
+    refs.filtroEstadoIncidencias.appendChild(optionAbiertas);
+
+    const optionTodas = document.createElement("option");
+    optionTodas.value = "TODOS";
+    optionTodas.textContent = "Todas las incidencias";
+    refs.filtroEstadoIncidencias.appendChild(optionTodas);
+
+    if (Array.isArray(state.estadosIncidenciaDisponibles)) {
+        state.estadosIncidenciaDisponibles.forEach((estado) => {
+            const option = document.createElement("option");
+            option.value = estado;
+            option.textContent = formatearEstadoIncidenciaTexto(estado);
+            refs.filtroEstadoIncidencias.appendChild(option);
+        });
+    }
+
+    const existeValor = Array.from(refs.filtroEstadoIncidencias.options)
+        .some((option) => option.value === valorActual);
+
+    refs.filtroEstadoIncidencias.value = existeValor ? valorActual : "ABIERTAS";
 }
 
 async function cargarProductos(refs, state, reiniciar = true) {
@@ -825,6 +926,82 @@ async function cargarPedidos(refs, state) {
         mostrarEstado(refs.estadoPedidos, "No se pudieron cargar los pedidos.", "error");
         renderizarEstadoVacio(refs.contenedorPedidos, "Error al cargar", "No se pudo obtener la lista de pedidos.");
     }
+}
+
+async function cargarIncidencias(refs, state) {
+    try {
+        mostrarEstado(refs.estadoIncidencias, "Cargando incidencias...", "info");
+
+        const filtro = refs.filtroEstadoIncidencias?.value || "ABIERTAS";
+
+        const url = filtro === "ABIERTAS" || filtro === "TODOS"
+            ? `${BASE_URL}/admin/incidencias`
+            : `${BASE_URL}/admin/incidencias?estado=${encodeURIComponent(filtro)}`;
+
+        const response = await fetch(url, {
+            method: "GET",
+            credentials: "include"
+        });
+
+        if (!response.ok) {
+            let mensaje = "No se pudieron cargar las incidencias.";
+            try {
+                const texto = await response.text();
+                if (texto) mensaje = texto;
+            } catch (_) {}
+            throw new Error(mensaje);
+        }
+
+        let incidencias = await response.json();
+
+        if (!Array.isArray(incidencias)) {
+            incidencias = [];
+        }
+
+        if (filtro === "ABIERTAS") {
+            incidencias = incidencias.filter((incidencia) => incidencia.estadoIncidencia !== "CERRADA");
+        }
+
+        state.incidencias = ordenarIncidenciasParaAdmin(incidencias);
+
+        ocultarEstado(refs.estadoIncidencias);
+        renderizarIncidencias(refs, state);
+    } catch (error) {
+        console.error("Error cargando incidencias:", error);
+        mostrarEstado(refs.estadoIncidencias, error.message || "No se pudieron cargar las incidencias.", "error");
+        renderizarEstadoVacio(
+            refs.contenedorIncidencias,
+            "Error al cargar",
+            "No se pudo obtener la lista de incidencias."
+        );
+    }
+}
+
+function ordenarIncidenciasParaAdmin(incidencias) {
+    return [...incidencias].sort((a, b) => {
+        const prioridadA = obtenerPrioridadIncidencia(a.estadoIncidencia);
+        const prioridadB = obtenerPrioridadIncidencia(b.estadoIncidencia);
+
+        if (prioridadA !== prioridadB) {
+            return prioridadA - prioridadB;
+        }
+
+        const fechaA = new Date(a.fechaUltimaActualizacion || a.fechaCreacion || 0).getTime();
+        const fechaB = new Date(b.fechaUltimaActualizacion || b.fechaCreacion || 0).getTime();
+
+        return fechaB - fechaA;
+    });
+}
+
+function obtenerPrioridadIncidencia(estado) {
+    if (estado === "PENDIENTE") return 1;
+    if (estado === "RESPONDIDA_POR_USUARIO") return 2;
+    if (estado === "EN_REVISION") return 3;
+    if (estado === "ESPERANDO_RESPUESTA_USUARIO") return 4;
+    if (estado === "RESUELTA") return 5;
+    if (estado === "CERRADA") return 99;
+
+    return 50;
 }
 
 /* =========================
@@ -2361,6 +2538,359 @@ async function guardarCambioEstadoPedido(refs, state) {
         restaurarBoton(refs.guardarCambioEstadoPedido, "Guardar cambio");
     }
 }
+
+/* =========================
+   INCIDENCIAS
+========================= */
+
+function renderizarIncidencias(refs, state) {
+    limpiarContenedor(refs.contenedorIncidencias);
+
+    if (!Array.isArray(state.incidencias) || state.incidencias.length === 0) {
+        renderizarEstadoVacio(
+            refs.contenedorIncidencias,
+            "Sin incidencias",
+            "No se encontraron incidencias con el filtro actual."
+        );
+        return;
+    }
+
+    state.incidencias.forEach((incidencia) => {
+        refs.contenedorIncidencias.appendChild(crearCardIncidencia(incidencia, refs, state));
+    });
+}
+
+function crearCardIncidencia(incidencia, refs, state) {
+    const article = el("article", { className: "item-admin-card" });
+
+    const avatar = el("div", {
+        className: "item-admin-avatar",
+        text: "🎫"
+    });
+
+    const body = el("div", { className: "item-admin-body" });
+
+    body.appendChild(el("h3", {
+        text: `${incidencia.codigoSeguimiento || "INC"} · ${incidencia.asunto || "Sin asunto"}`
+    }));
+
+    const meta = el("div", { className: "item-admin-meta" });
+    meta.appendChild(crearBadgeEstadoIncidencia(incidencia.estadoIncidencia));
+    meta.appendChild(crearBadge(formatearTipoIncidenciaTexto(incidencia.tipoIncidencia)));
+    body.appendChild(meta);
+
+    body.appendChild(el("p", {
+        className: "item-admin-texto",
+        text: `Contacto: ${incidencia.nombreContacto || "Sin nombre"} · ${incidencia.emailContacto || "Sin email"}`
+    }));
+
+    body.appendChild(el("p", {
+        className: "item-admin-texto",
+        text: `Fecha: ${formatearFecha(incidencia.fechaCreacion)}`
+    }));
+
+    const acciones = el("div", { className: "item-admin-acciones" });
+
+    acciones.append(
+        crearBoton("Ver / responder", "btn btn-primary", async () => {
+            await abrirDetalleIncidencia(refs, state, incidencia.id);
+        }),
+        crearBoton("En revisión", "btn btn-secondary", async () => {
+            await cambiarEstadoIncidencia(refs, state, incidencia.id, "EN_REVISION");
+        }),
+        crearBoton("Cerrar", "btn btn-danger", async () => {
+            await cambiarEstadoIncidencia(refs, state, incidencia.id, "CERRADA");
+        })
+    );
+
+    article.append(avatar, body, acciones);
+    return article;
+}
+
+async function cambiarEstadoIncidencia(refs, state, incidenciaId, nuevoEstado) {
+    if (!incidenciaId || !nuevoEstado) {
+        mostrarMensaje(refs, "No se pudo identificar la incidencia o el estado.", "error");
+        return;
+    }
+
+    try {
+        const response = await fetch(`${BASE_URL}/admin/incidencias/${incidenciaId}/estado/${encodeURIComponent(nuevoEstado)}`, {
+            method: "PUT",
+            credentials: "include"
+        });
+
+        if (!response.ok) {
+            let mensaje = "No se pudo cambiar el estado de la incidencia.";
+            try {
+                const texto = await response.text();
+                if (texto) mensaje = texto;
+            } catch (_) {}
+            throw new Error(mensaje);
+        }
+
+        mostrarMensaje(refs, "Estado de incidencia actualizado correctamente.", "ok");
+        await cargarIncidencias(refs, state);
+    } catch (error) {
+        console.error("Error cambiando estado de incidencia:", error);
+        mostrarMensaje(refs, error.message || "No se pudo cambiar el estado de la incidencia.", "error");
+    }
+}
+
+async function abrirDetalleIncidencia(refs, state, incidenciaId) {
+    try {
+        mostrarMensaje(refs, "Cargando detalle de incidencia...", "info");
+
+        const [resIncidencia, resMensajes] = await Promise.all([
+            fetch(`${BASE_URL}/admin/incidencias/${incidenciaId}`, {
+                method: "GET",
+                credentials: "include"
+            }),
+            fetch(`${BASE_URL}/admin/incidencias/${incidenciaId}/mensajes`, {
+                method: "GET",
+                credentials: "include"
+            })
+        ]);
+
+        if (!resIncidencia.ok) {
+            let mensaje = "No se pudo cargar el detalle de la incidencia.";
+            try {
+                const texto = await resIncidencia.text();
+                if (texto) mensaje = texto;
+            } catch (_) {}
+            throw new Error(mensaje);
+        }
+
+        if (!resMensajes.ok) {
+            let mensaje = "No se pudo cargar la conversación de la incidencia.";
+            try {
+                const texto = await resMensajes.text();
+                if (texto) mensaje = texto;
+            } catch (_) {}
+            throw new Error(mensaje);
+        }
+
+        const incidencia = await resIncidencia.json();
+        const mensajes = await resMensajes.json();
+
+        incidencia.mensajes = Array.isArray(mensajes) ? mensajes : [];
+
+        renderizarDetalleIncidencia(refs, incidencia);
+
+        if (refs.responderIncidenciaId) {
+            refs.responderIncidenciaId.value = incidencia.id;
+        }
+
+        if (refs.textoRespuestaIncidencia) {
+            refs.textoRespuestaIncidencia.value = "";
+        }
+
+        const estaCerrada = incidencia.estadoIncidencia === "CERRADA";
+
+        if (refs.textoRespuestaIncidencia) {
+            refs.textoRespuestaIncidencia.disabled = estaCerrada;
+            refs.textoRespuestaIncidencia.placeholder = estaCerrada
+                ? "Esta incidencia está cerrada y no admite nuevas respuestas."
+                : "Escribe aquí la respuesta que se enviará por correo al usuario...";
+        }
+
+        if (refs.btnEnviarRespuestaIncidencia) {
+            refs.btnEnviarRespuestaIncidencia.disabled = estaCerrada;
+        }
+
+        abrirModal(refs.modalDetalleIncidencia);
+    } catch (error) {
+        console.error("Error cargando detalle de incidencia:", error);
+        mostrarMensaje(refs, error.message || "No se pudo cargar el detalle de la incidencia.", "error");
+    }
+}
+
+function renderizarDetalleIncidencia(refs, incidencia) {
+    limpiarContenedor(refs.contenidoDetalleIncidencia);
+
+    const mensajes = obtenerMensajesIncidencia(incidencia);
+    const primerMensajeUsuario = mensajes.find((mensaje) => mensaje.remitente === "USUARIO");
+
+    const top = el("div", { className: "detalle-grid-top" });
+
+    top.append(
+        crearDetalleCard("Datos de la incidencia", [
+            ["Código", incidencia.codigoSeguimiento || "-"],
+            ["Asunto", incidencia.asunto || "-"],
+            ["Tipo", formatearTipoIncidenciaTexto(incidencia.tipoIncidencia)],
+            ["Estado", formatearEstadoIncidenciaTexto(incidencia.estadoIncidencia)],
+            ["Fecha", formatearFecha(incidencia.fechaCreacion)]
+        ]),
+        crearDetalleCard("Contacto", [
+            ["Nombre", incidencia.nombreContacto || "-"],
+            ["Email", incidencia.emailContacto || "-"],
+            ["Usuario", incidencia.usuarioRelacionado || incidencia.usuario?.nombre || "No vinculado"],
+            ["ID usuario", incidencia.usuario?.id ?? "-"]
+        ])
+    );
+
+    refs.contenidoDetalleIncidencia.appendChild(top);
+
+    const descripcionCard = el("div", { className: "detalle-card" });
+    descripcionCard.appendChild(el("h4", { text: "Mensaje inicial del usuario" }));
+    descripcionCard.appendChild(el("p", {
+        text: primerMensajeUsuario?.contenido || "Sin descripción."
+    }));
+
+    refs.contenidoDetalleIncidencia.appendChild(descripcionCard);
+
+    const conversacionCard = el("div", { className: "detalle-card incidencia-conversacion-card" });
+    conversacionCard.appendChild(el("h4", { text: "Conversación" }));
+
+    const conversacionLista = el("div", { className: "incidencia-conversacion-lista" });
+
+    if (mensajes.length === 0) {
+        conversacionLista.appendChild(el("div", {
+            className: "detalle-vacio",
+            text: "Todavía no hay mensajes en esta incidencia."
+        }));
+    } else {
+        mensajes.forEach((mensaje) => {
+            conversacionLista.appendChild(crearMensajeConversacionIncidencia(mensaje));
+        });
+    }
+
+    conversacionCard.appendChild(conversacionLista);
+    refs.contenidoDetalleIncidencia.appendChild(conversacionCard);
+}
+
+function obtenerMensajesIncidencia(incidencia) {
+    if (Array.isArray(incidencia.mensajes)) return incidencia.mensajes;
+    if (Array.isArray(incidencia.respuestas)) return incidencia.respuestas;
+    if (Array.isArray(incidencia.conversacion)) return incidencia.conversacion;
+    return [];
+}
+
+function crearMensajeConversacionIncidencia(mensaje) {
+    const remitente = mensaje.remitente || mensaje.tipoRemitente || "USUARIO";
+    const esAdmin = remitente === "ADMIN";
+
+    const item = el("div", {
+        className: `incidencia-mensaje ${esAdmin ? "incidencia-mensaje-admin" : "incidencia-mensaje-usuario"}`
+    });
+
+    const cabecera = el("div", { className: "incidencia-mensaje-header" });
+
+    cabecera.appendChild(el("strong", {
+        text: esAdmin ? "Administrador" : "Usuario"
+    }));
+
+    cabecera.appendChild(el("span", {
+        text: formatearFecha(
+            mensaje.fechaMensaje ||
+            mensaje.fechaCreacion ||
+            mensaje.fechaEnvio ||
+            mensaje.fechaRespuesta
+        )
+    }));
+
+    item.appendChild(cabecera);
+
+    item.appendChild(el("p", {
+        text: mensaje.contenido || mensaje.mensaje || mensaje.texto || ""
+    }));
+
+    return item;
+}
+
+async function enviarRespuestaIncidencia(refs, state) {
+    const incidenciaId = refs.responderIncidenciaId?.value;
+    const mensaje = refs.textoRespuestaIncidencia?.value.trim();
+
+    if (!incidenciaId) {
+        mostrarMensaje(refs, "No se pudo identificar la incidencia.", "error");
+        return;
+    }
+
+    if (!mensaje) {
+        mostrarMensaje(refs, "Escribe una respuesta antes de enviarla.", "error");
+        return;
+    }
+
+    try {
+        bloquearBoton(refs.btnEnviarRespuestaIncidencia, "Enviando...");
+
+        const response = await fetch(`${BASE_URL}/admin/incidencias/${incidenciaId}/responder`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({
+                mensaje: mensaje
+            })
+        });
+
+        if (!response.ok) {
+            let textoError = "No se pudo enviar la respuesta.";
+            try {
+                const texto = await response.text();
+                if (texto) textoError = texto;
+            } catch (_) {}
+            throw new Error(textoError);
+        }
+
+        mostrarMensaje(refs, "Respuesta enviada correctamente al usuario.", "ok");
+
+        refs.textoRespuestaIncidencia.value = "";
+
+        await abrirDetalleIncidencia(refs, state, incidenciaId);
+        await cargarIncidencias(refs, state);
+    } catch (error) {
+        console.error("Error enviando respuesta de incidencia:", error);
+        mostrarMensaje(refs, error.message || "No se pudo enviar la respuesta.", "error");
+    } finally {
+        restaurarBoton(refs.btnEnviarRespuestaIncidencia, "Enviar respuesta");
+    }
+}
+
+function crearBadgeEstadoIncidencia(estado) {
+    return el("span", {
+        className: `item-admin-badge item-admin-badge-estado ${obtenerClaseEstadoIncidencia(estado)}`,
+        text: formatearEstadoIncidenciaTexto(estado)
+    });
+}
+
+function obtenerClaseEstadoIncidencia(estado) {
+    switch (estado) {
+        case "PENDIENTE": return "estado-pendiente";
+        case "EN_REVISION": return "estado-preparando";
+        case "ESPERANDO_RESPUESTA_USUARIO": return "estado-enviado";
+        case "RESPONDIDA_POR_USUARIO": return "estado-confirmado";
+        case "RESUELTA": return "estado-entregado";
+        case "CERRADA": return "estado-cancelado";
+        default: return "estado-confirmado";
+    }
+}
+
+function formatearEstadoIncidenciaTexto(estado) {
+    switch (estado) {
+        case "PENDIENTE": return "Pendiente";
+        case "EN_REVISION": return "En revisión";
+        case "ESPERANDO_RESPUESTA_USUARIO": return "Esperando respuesta";
+        case "RESPONDIDA_POR_USUARIO": return "Respondida por usuario";
+        case "RESUELTA": return "Resuelta";
+        case "CERRADA": return "Cerrada";
+        default: return estado || "Sin estado";
+    }
+}
+
+function formatearTipoIncidenciaTexto(tipo) {
+    switch (tipo) {
+        case "PROBLEMA_ACCESO": return "Problema de acceso";
+        case "NO_RECUERDO_DATOS": return "No recuerda datos";
+        case "SIN_ACCESO_EMAIL": return "Sin acceso al email";
+        case "PROBLEMA_PEDIDO": return "Problema con pedido";
+        case "PROBLEMA_PAGO": return "Problema con pago";
+        case "PRODUCTO_DEFECTUOSO": return "Producto dañado o incorrecto";
+        case "ERROR_WEB": return "Error web";
+        case "OTRO": return "Otro";
+        default: return tipo || "Sin tipo";
+    }
+}
+
 
 /* =========================
    CONFIRMACIÓN ENTREGA QR

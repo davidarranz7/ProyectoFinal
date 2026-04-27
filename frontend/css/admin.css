@@ -734,6 +734,67 @@ body {
   gap: 8px;
 }
 
+/* INCIDENCIAS */
+#incidencias .admin-block {
+  position: relative;
+  overflow: hidden;
+}
+
+#incidencias .admin-block::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 28px;
+  right: 28px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(109, 40, 217, 0.28), transparent);
+}
+
+#contenedor-incidencias-admin .item-admin-card {
+  border-left: 4px solid rgba(109, 40, 217, 0.35);
+}
+
+#contenedor-incidencias-admin .item-admin-card:hover {
+  border-left-color: var(--purple);
+}
+
+#contenedor-incidencias-admin .item-admin-avatar {
+  background: linear-gradient(135deg, #efe7ff, #fbf8ff);
+  color: var(--purple-dark);
+  font-size: 28px;
+}
+
+#contenedor-incidencias-admin .item-admin-body h3 {
+  font-size: 17px;
+  line-height: 1.4;
+}
+
+#contenedor-incidencias-admin .item-admin-texto {
+  max-width: 720px;
+}
+
+#contenedor-incidencias-admin .item-admin-acciones {
+  min-width: 165px;
+}
+
+#contenedor-incidencias-admin .btn-secondary {
+  background: #f7f3ff;
+  color: var(--purple-dark);
+  border: 1px solid #e3d7fb;
+}
+
+#contenedor-incidencias-admin .btn-secondary:hover:not(:disabled) {
+  background: #efe7ff;
+}
+
+#contenedor-incidencias-admin .btn-primary {
+  background: linear-gradient(135deg, #17141f, #34294a);
+}
+
+#contenedor-incidencias-admin .btn-danger {
+  background: linear-gradient(135deg, #991b1b, #7f1d1d);
+}
+
 /* BOTONES */
 .btn {
   border: none;
@@ -1194,6 +1255,17 @@ body {
   .confirmacion-entrega-grid {
     grid-template-columns: 1fr;
   }
+
+  #contenedor-incidencias-admin .item-admin-card {
+    grid-template-columns: 86px 1fr;
+  }
+
+  #contenedor-incidencias-admin .item-admin-acciones {
+    grid-column: 1 / -1;
+    min-width: 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 @media (max-width: 1024px) {
@@ -1209,6 +1281,75 @@ body {
   .detalle-grid-top {
     grid-template-columns: 1fr;
   }
+}
+
+/* MODAL CONVERSACIÓN INCIDENCIAS */
+.incidencia-respuesta-form {
+  margin-top: 22px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.incidencia-conversacion-card {
+  overflow: hidden;
+}
+
+.incidencia-conversacion-lista {
+  display: grid;
+  gap: 14px;
+  max-height: 360px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.incidencia-conversacion-lista::-webkit-scrollbar {
+  width: 8px;
+}
+
+.incidencia-conversacion-lista::-webkit-scrollbar-thumb {
+  background: #d7c7f8;
+  border-radius: 999px;
+}
+
+.incidencia-mensaje {
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 14px 16px;
+  display: grid;
+  gap: 8px;
+}
+
+.incidencia-mensaje-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.incidencia-mensaje-header strong {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.incidencia-mensaje-header span {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.incidencia-mensaje p {
+  color: var(--text-soft);
+  font-size: 14px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.incidencia-mensaje-admin {
+  background: linear-gradient(180deg, #f3ecff 0%, #faf7ff 100%);
+  border-color: #ddd2fb;
+}
+
+.incidencia-mensaje-usuario {
+  background: linear-gradient(180deg, #ffffff 0%, #fcfbff 100%);
 }
 
 @media (max-width: 720px) {
@@ -1260,6 +1401,16 @@ body {
   }
 
   .item-admin-acciones {
+    min-width: 0;
+  }
+
+  #contenedor-incidencias-admin .item-admin-card {
+    grid-template-columns: 1fr;
+  }
+
+  #contenedor-incidencias-admin .item-admin-acciones {
+    grid-column: auto;
+    grid-template-columns: 1fr;
     min-width: 0;
   }
 

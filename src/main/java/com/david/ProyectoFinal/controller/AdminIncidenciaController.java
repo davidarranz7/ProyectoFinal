@@ -1,5 +1,6 @@
 package com.david.ProyectoFinal.controller;
 
+import com.david.ProyectoFinal.dto.ResponderIncidenciaRequestDTO;
 import com.david.ProyectoFinal.model.EstadoIncidencia;
 import com.david.ProyectoFinal.service.IncidenciaService;
 import org.springframework.http.ResponseEntity;
@@ -33,7 +34,14 @@ public class AdminIncidenciaController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
-
+    @GetMapping("/estados")
+    public ResponseEntity<?> obtenerEstadosIncidencia() {
+        return ResponseEntity.ok(
+                java.util.Arrays.stream(EstadoIncidencia.values())
+                        .map(Enum::name)
+                        .toList()
+        );
+    }
     @GetMapping("/{id}")
     public ResponseEntity<?> obtenerIncidenciaPorId(@PathVariable Long id) {
         try {
@@ -61,6 +69,16 @@ public class AdminIncidenciaController {
 
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body("El nuevo estado de incidencia no es válido");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/{id}/responder")
+    public ResponseEntity<?> responderIncidencia(@PathVariable Long id,
+                                                 @RequestBody ResponderIncidenciaRequestDTO request) {
+        try {
+            return ResponseEntity.ok(incidenciaService.responderIncidencia(id, request.getMensaje()));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
