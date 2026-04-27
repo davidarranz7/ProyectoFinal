@@ -51,6 +51,7 @@ function iniciarAdmin() {
     actualizarCampoMotivoPuntoRecogida(refs);
 
     cargarTodo(refs, state);
+    iniciarRefrescoAutomaticoIncidencias(refs, state);
 }
 
 function obtenerReferencias() {
@@ -244,6 +245,15 @@ function crearEstadoInicial() {
         estadosPedidoDisponibles: [],
         estadosIncidenciaDisponibles: [],
 
+        incidenciaDetalleAbiertaId: null,
+        intervaloDetalleIncidencia: null,
+        cargandoDetalleIncidencia: false,
+        snapshotDetalleIncidencia: "",
+
+        intervaloIncidenciasAdmin: null,
+        cargandoIncidencias: false,
+        snapshotIncidencias: "",
+
         modoSeleccionProductos: false,
         productosSeleccionados: new Set(),
         productoIdPendienteEliminar: null,
@@ -265,6 +275,21 @@ function crearEstadoInicial() {
         timeoutBusquedaProductos: null,
         observadorProductos: null
     };
+}
+
+function crearSnapshotMensajesIncidencia(incidencia) {
+    const mensajes = obtenerMensajesIncidencia(incidencia);
+
+    return JSON.stringify({
+        id: incidencia.id,
+        estado: incidencia.estadoIncidencia,
+        mensajes: mensajes.map((mensaje) => ({
+            id: mensaje.id,
+            remitente: mensaje.remitente,
+            contenido: mensaje.contenido,
+            fecha: mensaje.fechaMensaje
+        }))
+    });
 }
 
 /* =========================
@@ -490,6 +515,16 @@ function configurarIncidencias(refs, state) {
     });
 }
 
+function crearSnapshotIncidencias(incidencias) {
+    return JSON.stringify(
+        incidencias.map((incidencia) => ({
+            id: incidencia.id,
+            estado: incidencia.estadoIncidencia,
+            fecha: incidencia.fechaUltimaActualizacion || incidencia.fechaCreacion
+        }))
+    );
+}
+
 function configurarConfirmacionEntrega(refs, state) {
     refs.btnIniciarEscanerEntrega?.addEventListener("click", async () => {
         await iniciarEscanerEntrega(refs, state);
@@ -583,12 +618,14 @@ function configurarModales(refs, state) {
     });
 
     configurarCerrarModal(refs.modalDetalleIncidencia, refs.cerrarModalDetalleIncidencia, null, () => {
+        detenerRefrescoDetalleIncidencia(state);
+
+        state.incidenciaDetalleAbiertaId = null;
+
         limpiarContenedor(refs.contenidoDetalleIncidencia);
         refs.formResponderIncidencia?.reset();
 
-        if (refs.responderIncidenciaId) {
-            refs.responderIncidenciaId.value = "";
-        }
+        if (refs.responderIncidenciaId) refs.responderIncidenciaId.value = "";
 
         if (refs.textoRespuestaIncidencia) {
             refs.textoRespuestaIncidencia.disabled = false;
@@ -643,6 +680,16 @@ async function cargarTodo(refs, state) {
         cargarPedidos(refs, state),
         cargarIncidencias(refs, state)
     ]);
+}
+
+function iniciarRefrescoAutomaticoIncidencias(refs, state) {
+    if (state.intervaloIncidenciasAdmin) {
+        clearInterval(state.intervaloIncidenciasAdmin);
+    }
+
+    state.intervaloIncidenciasAdmin = setInterval(async () => {
+        await cargarIncidencias(refs, state, true);
+    }, 10000);
 }
 
 async function cargarMetricas(refs) {
@@ -928,9 +975,17 @@ async function cargarPedidos(refs, state) {
     }
 }
 
-async function cargarIncidencias(refs, state) {
+async function cargarIncidencias(refs, state, silencioso = false) {
+    if (state.cargandoIncidencias) {
+        return;
+    }
+
     try {
-        mostrarEstado(refs.estadoIncidencias, "Cargando incidencias...", "info");
+        state.cargandoIncidencias = true;
+
+        if (!silencioso) {
+            mostrarEstado(refs.estadoIncidencias, "Cargando incidencias...", "info");
+        }
 
         const filtro = refs.filtroEstadoIncidencias?.value || "ABIERTAS";
 
@@ -959,26 +1014,41 @@ async function cargarIncidencias(refs, state) {
         }
 
         if (filtro === "ABIERTAS") {
-            incidencias = incidencias.filter((incidencia) =>
-                incidencia.estadoIncidencia !== "CERRADA" &&
-                incidencia.estadoIncidencia !== "RESUELTA"
-            );
+            incidencias = incidencias.filter((incidencia) => incidencia.estadoIncidencia !== "CERRADA");
         }
 
-        state.incidencias = ordenarIncidenciasParaAdmin(incidencias);
+        const incidenciasOrdenadas = ordenarIncidenciasParaAdmin(incidencias);
+        const nuevoSnapshot = crearSnapshotIncidencias(incidenciasOrdenadas);
 
-        ocultarEstado(refs.estadoIncidencias);
+        if (silencioso && nuevoSnapshot === state.snapshotIncidencias) {
+            return;
+        }
+
+        state.snapshotIncidencias = nuevoSnapshot;
+        state.incidencias = incidenciasOrdenadas;
+
+        if (!silencioso) {
+            ocultarEstado(refs.estadoIncidencias);
+        }
+
         renderizarIncidencias(refs, state);
     } catch (error) {
         console.error("Error cargando incidencias:", error);
-        mostrarEstado(refs.estadoIncidencias, error.message || "No se pudieron cargar las incidencias.", "error");
-        renderizarEstadoVacio(
-            refs.contenedorIncidencias,
-            "Error al cargar",
-            "No se pudo obtener la lista de incidencias."
-        );
+
+        if (!silencioso) {
+            mostrarEstado(refs.estadoIncidencias, error.message || "No se pudieron cargar las incidencias.", "error");
+            renderizarEstadoVacio(
+                refs.contenedorIncidencias,
+                "Error al cargar",
+                "No se pudo obtener la lista de incidencias."
+            );
+        }
+    } finally {
+        state.cargandoIncidencias = false;
     }
 }
+
+
 
 function ordenarIncidenciasParaAdmin(incidencias) {
     return [...incidencias].sort((a, b) => {
@@ -2640,8 +2710,28 @@ async function cambiarEstadoIncidencia(refs, state, incidenciaId, nuevoEstado) {
 }
 
 async function abrirDetalleIncidencia(refs, state, incidenciaId) {
+    detenerRefrescoDetalleIncidencia(state);
+
+    state.incidenciaDetalleAbiertaId = incidenciaId;
+
+    await cargarDetalleIncidencia(refs, state, incidenciaId, true);
+
+    abrirModal(refs.modalDetalleIncidencia);
+
+    iniciarRefrescoDetalleIncidencia(refs, state, incidenciaId);
+}
+
+async function cargarDetalleIncidencia(refs, state, incidenciaId, esPrimeraCarga = false) {
+    if (state.cargandoDetalleIncidencia) {
+        return;
+    }
+
     try {
-        mostrarMensaje(refs, "Cargando detalle de incidencia...", "info");
+        state.cargandoDetalleIncidencia = true;
+
+        if (esPrimeraCarga) {
+            mostrarMensaje(refs, "Cargando detalle de incidencia...", "info");
+        }
 
         const [resIncidencia, resMensajes] = await Promise.all([
             fetch(`${BASE_URL}/admin/incidencias/${incidenciaId}`, {
@@ -2677,13 +2767,28 @@ async function abrirDetalleIncidencia(refs, state, incidenciaId) {
 
         incidencia.mensajes = Array.isArray(mensajes) ? mensajes : [];
 
+        const nuevoSnapshot = crearSnapshotMensajesIncidencia(incidencia);
+
+        if (!esPrimeraCarga && nuevoSnapshot === state.snapshotDetalleIncidencia) {
+            return;
+        }
+
+        state.snapshotDetalleIncidencia = nuevoSnapshot;
+
+        const modalContenido = refs.modalDetalleIncidencia?.querySelector(".modal-admin");
+        const scrollAnterior = modalContenido ? modalContenido.scrollTop : 0;
+
         renderizarDetalleIncidencia(refs, incidencia);
+
+        if (modalContenido && !esPrimeraCarga) {
+            modalContenido.scrollTop = scrollAnterior;
+        }
 
         if (refs.responderIncidenciaId) {
             refs.responderIncidenciaId.value = incidencia.id;
         }
 
-        if (refs.textoRespuestaIncidencia) {
+        if (esPrimeraCarga && refs.textoRespuestaIncidencia) {
             refs.textoRespuestaIncidencia.value = "";
         }
 
@@ -2700,10 +2805,36 @@ async function abrirDetalleIncidencia(refs, state, incidenciaId) {
             refs.btnEnviarRespuestaIncidencia.disabled = estaCerrada;
         }
 
-        abrirModal(refs.modalDetalleIncidencia);
     } catch (error) {
         console.error("Error cargando detalle de incidencia:", error);
-        mostrarMensaje(refs, error.message || "No se pudo cargar el detalle de la incidencia.", "error");
+
+        if (esPrimeraCarga) {
+            mostrarMensaje(refs, error.message || "No se pudo cargar el detalle de la incidencia.", "error");
+        }
+    } finally {
+        state.cargandoDetalleIncidencia = false;
+    }
+}
+
+function iniciarRefrescoDetalleIncidencia(refs, state, incidenciaId) {
+    detenerRefrescoDetalleIncidencia(state);
+
+    state.intervaloDetalleIncidencia = setInterval(async () => {
+        const modalAbierto = refs.modalDetalleIncidencia?.style.display === "flex";
+
+        if (!modalAbierto || state.incidenciaDetalleAbiertaId !== incidenciaId) {
+            detenerRefrescoDetalleIncidencia(state);
+            return;
+        }
+
+        await cargarDetalleIncidencia(refs, state, incidenciaId, false);
+    }, 10000);
+}
+
+function detenerRefrescoDetalleIncidencia(state) {
+    if (state.intervaloDetalleIncidencia) {
+        clearInterval(state.intervaloDetalleIncidencia);
+        state.intervaloDetalleIncidencia = null;
     }
 }
 
