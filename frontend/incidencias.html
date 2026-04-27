@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centro de incidencias</title>
+    <link rel="stylesheet" href="css/menu.css">
+    <link rel="stylesheet" href="css/incidencias.css">
+</head>
+<body>
+
+<div id="menu-container"></div>
+
+<main class="incidencias-page">
+
+    <section class="incidencias-hero">
+        <span class="hero-tag">Soporte</span>
+        <h1>Centro de incidencias</h1>
+        <p>
+            Cuéntanos qué ocurre y nuestro equipo revisará tu caso. Te responderemos por correo
+            y podrás continuar la conversación hasta que la incidencia quede resuelta.
+        </p>
+    </section>
+
+    <section class="incidencias-layout">
+
+        <aside class="incidencias-info">
+            <h2>¿Cuándo usar este formulario?</h2>
+
+            <div class="info-item">
+                <span>01</span>
+                <p>Si no puedes acceder a tu cuenta o no recuerdas tus datos.</p>
+            </div>
+
+            <div class="info-item">
+                <span>02</span>
+                <p>Si tienes problemas con un pedido, pago, entrega o producto.</p>
+            </div>
+
+            <div class="info-item">
+                <span>03</span>
+                <p>Si has detectado un error en la web o necesitas ayuda del equipo.</p>
+            </div>
+
+            <div class="info-box">
+                <strong>Importante</strong>
+                <p>
+                    Usa un email al que tengas acceso. Ahí recibirás la confirmación y las respuestas del equipo.
+                </p>
+            </div>
+        </aside>
+
+        <section class="incidencia-card">
+            <form id="form-incidencia" class="incidencia-form">
+
+                <div class="form-header">
+                    <h2>Nueva incidencia</h2>
+                    <p>Completa los datos necesarios para que podamos ayudarte mejor.</p>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="nombreContacto">Nombre de contacto</label>
+                        <input type="text" id="nombreContacto" name="nombreContacto" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="emailContacto">Email de contacto</label>
+                        <input type="email" id="emailContacto" name="emailContacto" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="tipoIncidencia">Tipo de incidencia</label>
+                    <select id="tipoIncidencia" name="tipoIncidencia" required>
+                        <option value="">Selecciona una opción</option>
+                        <option value="PROBLEMA_ACCESO">Problema de acceso</option>
+                        <option value="NO_RECUERDO_DATOS">No recuerdo mis datos</option>
+                        <option value="SIN_ACCESO_EMAIL">No tengo acceso al email</option>
+                        <option value="PROBLEMA_PEDIDO">Problema con un pedido</option>
+                        <option value="PROBLEMA_PAGO">Problema con el pago</option>
+                        <option value="PRODUCTO_DEFECTUOSO">Producto defectuoso</option>
+                        <option value="ERROR_WEB">Error en la web</option>
+                        <option value="OTRO">Otro</option>
+                    </select>
+                </div>
+
+                <div id="bloque-cuenta" class="conditional-block hidden">
+                    <div class="conditional-title">
+                        <h3>Datos de cuenta</h3>
+                        <p>Rellena lo que recuerdes. Si no sabes tu usuario, puedes dejarlo vacío.</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="usuarioRelacionado">Usuario relacionado</label>
+                        <input type="text" id="usuarioRelacionado" name="usuarioRelacionado">
+                    </div>
+                </div>
+
+                <div id="bloque-pedido" class="conditional-block hidden">
+                    <div class="conditional-title">
+                        <h3>Datos del pedido</h3>
+                        <p>Indica el número de pedido si lo tienes disponible.</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="numeroPedido">Número de pedido</label>
+                        <input type="number" id="numeroPedido" name="numeroPedido" min="1">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="asunto">Asunto</label>
+                    <input type="text" id="asunto" name="asunto" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="mensaje">Mensaje</label>
+                    <textarea id="mensaje" name="mensaje" rows="6" required></textarea>
+                </div>
+
+                <button type="submit" id="btn-enviar-incidencia">
+                    Enviar incidencia
+                </button>
+
+                <p id="mensaje-incidencia" class="mensaje-incidencia"></p>
+
+                <a href="index.html" class="volver-inicio">
+                    Volver al inicio
+                </a>
+
+            </form>
+        </section>
+
+    </section>
+
+</main>
+
+<script src="js/config.js"></script>
+<script src="js/menu.js"></script>
+<script src="js/incidencias.js"></script>
+</body>
+</html>

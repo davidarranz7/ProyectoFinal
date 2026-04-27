@@ -148,6 +148,20 @@ button:disabled {
     text-decoration: underline;
 }
 
+.soporte-link {
+    display: block;
+    margin-top: 10px;
+    text-align: center;
+    color: #6e4b3a;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.soporte-link:hover {
+    text-decoration: underline;
+}
+
 @media (max-width: 560px) {
     .recovery-page {
         padding: 14px;

@@ -233,14 +233,13 @@ body {
     accent-color: var(--accent);
 }
 
-.login-recovery-links {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 14px;
-    flex-wrap: wrap;
-    margin-top: -4px;
-}
+..login-recovery-links {
+     display: flex;
+     flex-direction: column;
+     align-items: flex-start;
+     gap: 7px;
+     margin-top: -4px;
+ }
 
 .login-recovery-links a {
     text-decoration: none;
