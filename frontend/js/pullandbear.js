@@ -17,6 +17,7 @@ const cerrarModalSecundario = document.getElementById("cerrar-modal-secundario")
 const modalMensaje = document.getElementById("modal-mensaje");
 const abrirLoginModal = document.getElementById("abrir-login-modal");
 const selectOrdenCatalogo = document.getElementById("orden-catalogo");
+const listaCategoriasFiltro = document.getElementById("lista-categorias-filtro");
 
 const formateadorEuro = new Intl.NumberFormat("es-ES", {
     style: "currency",
@@ -33,7 +34,10 @@ function mostrarToastFavorito(mensaje = "Favorito actualizado") {
 
 function mostrarToast(mensaje) {
     const toast = document.getElementById("toast-carrito");
-    if (!toast) return;
+
+    if (!toast) {
+        return;
+    }
 
     toast.textContent = mensaje;
     toast.classList.add("activo");
@@ -98,10 +102,12 @@ async function obtenerSesionActual() {
 
         const data = await response.json();
         sesionActual = data;
+
         return data;
     } catch (error) {
         console.error("Error al comprobar sesión:", error);
         sesionActual = null;
+
         return null;
     }
 }
@@ -142,11 +148,85 @@ async function cargarFavoritosUsuario() {
 function actualizarEstadoVisualFavorito(btnFav, productoId) {
     if (favoritosIds.has(Number(productoId))) {
         btnFav.classList.add("activo");
-        btnFav.style.color = "#ff5c7a";
+        btnFav.style.color = "#ff3b5f";
     } else {
         btnFav.classList.remove("activo");
         btnFav.style.color = "";
     }
+}
+
+async function cargarCategoriasCatalogo() {
+    if (!listaCategoriasFiltro) {
+        return;
+    }
+
+    try {
+        listaCategoriasFiltro.innerHTML = `
+            <li>
+                <span class="filtro-label-texto">Cargando categorías...</span>
+            </li>
+        `;
+
+        const response = await fetch(`${BASE_URL}/productos/catalogo/categorias?tienda=${TIENDA_ACTUAL}`, {
+            method: "GET",
+            credentials: "include"
+        });
+
+        if (!response.ok) {
+            throw new Error("No se pudieron cargar las categorías");
+        }
+
+        const categorias = await response.json();
+
+        if (!Array.isArray(categorias) || categorias.length === 0) {
+            listaCategoriasFiltro.innerHTML = `
+                <li>
+                    <span class="filtro-label-texto">Sin categorías</span>
+                </li>
+            `;
+            return;
+        }
+
+        renderizarCategoriasFiltro(categorias);
+
+    } catch (error) {
+        console.error("Error al cargar categorías:", error);
+
+        listaCategoriasFiltro.innerHTML = `
+            <li>
+                <span class="filtro-label-texto">Error al cargar categorías</span>
+            </li>
+        `;
+    }
+}
+
+function renderizarCategoriasFiltro(categorias) {
+    listaCategoriasFiltro.innerHTML = "";
+
+    categorias.forEach(categoria => {
+        const li = document.createElement("li");
+
+        const label = document.createElement("label");
+        label.className = "filtro-item";
+
+        const input = document.createElement("input");
+        input.type = "checkbox";
+        input.className = "filtro-check";
+        input.dataset.tipo = "categoria";
+        input.value = categoria;
+
+        const spanTexto = document.createElement("span");
+        spanTexto.className = "filtro-label-texto";
+        spanTexto.textContent = categoria;
+
+        const spanLinea = document.createElement("span");
+        spanLinea.className = "filtro-linea";
+
+        label.append(input, spanTexto, spanLinea);
+        li.appendChild(label);
+
+        listaCategoriasFiltro.appendChild(li);
+    });
 }
 
 function obtenerFiltrosCatalogo() {
@@ -155,6 +235,7 @@ function obtenerFiltrosCatalogo() {
     ).map(input => {
         if (input.value === "hombre") return "HOMBRE";
         if (input.value === "mujer") return "MUJER";
+
         return input.value.toUpperCase();
     });
 
@@ -298,38 +379,14 @@ function crearCardProducto(producto) {
     const card = document.createElement("article");
     card.className = "tarjeta-pull";
 
-    const imgWrapper = document.createElement("div");
-    imgWrapper.className = "img-wrapper";
+    const imgWrapper = crearCarruselImagenesProducto(producto);
 
     const btnFav = document.createElement("button");
     btnFav.className = "btn-fav";
     btnFav.type = "button";
     btnFav.textContent = "❤";
 
-    const linkImagen = document.createElement("a");
-    linkImagen.href = `fichaProducto.html?id=${producto.id}`;
-
-    if (esUrlImagenValida(producto.urlImagen)) {
-        const img = document.createElement("img");
-        img.src = producto.urlImagen;
-        img.alt = producto.nombre || "Producto";
-        img.loading = "lazy";
-
-        img.onerror = () => {
-            img.style.display = "none";
-            const sinImagen = document.createElement("span");
-            sinImagen.textContent = "Sin imagen";
-            linkImagen.appendChild(sinImagen);
-        };
-
-        linkImagen.appendChild(img);
-    } else {
-        const sinImagen = document.createElement("span");
-        sinImagen.textContent = "Sin imagen";
-        linkImagen.appendChild(sinImagen);
-    }
-
-    imgWrapper.append(btnFav, linkImagen);
+    imgWrapper.prepend(btnFav);
 
     const infoProducto = document.createElement("div");
     infoProducto.className = "info-producto";
@@ -380,6 +437,7 @@ function crearCardProducto(producto) {
     let tallaSeleccionada = null;
 
     actualizarEstadoVisualFavorito(btnFav, producto.id);
+
     configurarTallasProducto(producto, listaTallas, mensajeStock, (talla) => {
         tallaSeleccionada = talla;
     });
@@ -391,6 +449,7 @@ function crearCardProducto(producto) {
     btnFav.addEventListener("click", async (event) => {
         event.preventDefault();
         event.stopPropagation();
+
         await alternarFavorito(producto, btnFav);
     });
 
@@ -430,12 +489,228 @@ function crearCardProducto(producto) {
             return;
         }
 
-        await agregarProductoAlCarrito(producto, tallaSeleccionada, miniMenuTalla, listaTallas, mensajeStock, () => {
-            tallaSeleccionada = null;
-        });
+        await agregarProductoAlCarrito(
+            producto,
+            tallaSeleccionada,
+            miniMenuTalla,
+            listaTallas,
+            mensajeStock,
+            () => {
+                tallaSeleccionada = null;
+            }
+        );
     });
 
     return card;
+}
+
+function crearCarruselImagenesProducto(producto) {
+    const imgWrapper = document.createElement("div");
+    imgWrapper.className = "img-wrapper";
+
+    let imagenes = obtenerImagenesProducto(producto).filter(esUrlImagenValida);
+    let indiceImagenActual = 0;
+    let intervaloCarrusel = null;
+    let usuarioHaPulsadoFlecha = false;
+
+    const linkImagen = document.createElement("a");
+    linkImagen.href = `fichaProducto.html?id=${producto.id}`;
+    linkImagen.className = "link-imagen-producto";
+
+    const img = document.createElement("img");
+    img.alt = producto.nombre || "Producto";
+    img.loading = "lazy";
+
+    const sinImagen = document.createElement("span");
+    sinImagen.textContent = "Sin imagen";
+    sinImagen.className = "sin-imagen-card";
+    sinImagen.style.display = "none";
+
+    linkImagen.append(img, sinImagen);
+    imgWrapper.appendChild(linkImagen);
+
+    const btnAnterior = document.createElement("button");
+    btnAnterior.className = "btn-imagen-card btn-imagen-anterior";
+    btnAnterior.type = "button";
+    btnAnterior.textContent = "‹";
+    btnAnterior.setAttribute("aria-label", "Imagen anterior");
+
+    const btnSiguiente = document.createElement("button");
+    btnSiguiente.className = "btn-imagen-card btn-imagen-siguiente";
+    btnSiguiente.type = "button";
+    btnSiguiente.textContent = "›";
+    btnSiguiente.setAttribute("aria-label", "Imagen siguiente");
+
+    const indicadorImagen = document.createElement("div");
+    indicadorImagen.className = "indicador-imagen-card";
+
+    function actualizarVisibilidadControles() {
+        const hayVariasImagenes = imagenes.length > 1;
+
+        btnAnterior.style.display = hayVariasImagenes ? "" : "none";
+        btnSiguiente.style.display = hayVariasImagenes ? "" : "none";
+        indicadorImagen.style.display = hayVariasImagenes ? "" : "none";
+    }
+
+    function actualizarImagen() {
+        if (imagenes.length === 0) {
+            img.removeAttribute("src");
+            img.style.display = "none";
+            sinImagen.style.display = "";
+            indicadorImagen.textContent = "";
+            actualizarVisibilidadControles();
+            return;
+        }
+
+        if (indiceImagenActual >= imagenes.length) {
+            indiceImagenActual = 0;
+        }
+
+        if (indiceImagenActual < 0) {
+            indiceImagenActual = imagenes.length - 1;
+        }
+
+        const urlActual = imagenes[indiceImagenActual];
+
+        img.style.display = "";
+        sinImagen.style.display = "none";
+        img.src = urlActual;
+
+        indicadorImagen.textContent = imagenes.length > 1
+            ? `${indiceImagenActual + 1}/${imagenes.length}`
+            : "";
+
+        actualizarVisibilidadControles();
+    }
+
+    function pasarImagenSiguiente() {
+        if (imagenes.length <= 1) {
+            return;
+        }
+
+        indiceImagenActual++;
+
+        if (indiceImagenActual >= imagenes.length) {
+            indiceImagenActual = 0;
+        }
+
+        actualizarImagen();
+    }
+
+    function pasarImagenAnterior() {
+        if (imagenes.length <= 1) {
+            return;
+        }
+
+        indiceImagenActual--;
+
+        if (indiceImagenActual < 0) {
+            indiceImagenActual = imagenes.length - 1;
+        }
+
+        actualizarImagen();
+    }
+
+    function iniciarCarruselAutomatico() {
+        if (imagenes.length <= 1 || usuarioHaPulsadoFlecha) {
+            return;
+        }
+
+        clearInterval(intervaloCarrusel);
+
+        intervaloCarrusel = setInterval(() => {
+            pasarImagenSiguiente();
+        }, 1800);
+    }
+
+    function detenerCarruselAutomatico() {
+        clearInterval(intervaloCarrusel);
+        intervaloCarrusel = null;
+    }
+
+    img.onerror = () => {
+        const urlFallida = imagenes[indiceImagenActual];
+
+        console.warn("Imagen fallida eliminada del carrusel:", {
+            producto: producto.nombre,
+            url: urlFallida
+        });
+
+        imagenes = imagenes.filter(url => url !== urlFallida);
+
+        if (indiceImagenActual >= imagenes.length) {
+            indiceImagenActual = 0;
+        }
+
+        actualizarImagen();
+    };
+
+    btnAnterior.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+
+        usuarioHaPulsadoFlecha = true;
+        detenerCarruselAutomatico();
+        pasarImagenAnterior();
+    });
+
+    btnSiguiente.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+
+        usuarioHaPulsadoFlecha = true;
+        detenerCarruselAutomatico();
+        pasarImagenSiguiente();
+    });
+
+    imgWrapper.addEventListener("mouseenter", () => {
+        iniciarCarruselAutomatico();
+    });
+
+    imgWrapper.addEventListener("mouseleave", () => {
+        detenerCarruselAutomatico();
+    });
+
+    imgWrapper.append(btnAnterior, btnSiguiente, indicadorImagen);
+
+    actualizarImagen();
+
+    return imgWrapper;
+}
+
+function obtenerImagenesProducto(producto) {
+    const urls = [];
+
+    if (producto && esUrlImagenValida(producto.urlImagen)) {
+        urls.push(producto.urlImagen);
+    }
+
+    if (producto && Array.isArray(producto.imagenes)) {
+        const imagenesOrdenadas = [...producto.imagenes].sort((a, b) => {
+            const ordenA = Number(a.orden ?? 999);
+            const ordenB = Number(b.orden ?? 999);
+
+            return ordenA - ordenB;
+        });
+
+        imagenesOrdenadas.forEach(imagen => {
+            const url = obtenerUrlDesdeImagenProducto(imagen);
+
+            if (esUrlImagenValida(url)) {
+                urls.push(url);
+            }
+        });
+    }
+
+    return [...new Set(urls)];
+}
+
+function obtenerUrlDesdeImagenProducto(imagen) {
+    if (!imagen) {
+        return "";
+    }
+
+    return imagen.urlImagen || imagen.url_imagen || imagen.url || "";
 }
 
 function configurarTallasProducto(producto, listaTallas, mensajeStock, onSeleccionarTalla) {
@@ -656,8 +931,12 @@ function formatearPrecioProducto(valor) {
 async function iniciarPullAndBear() {
     try {
         await cargarFavoritosUsuario();
+
+        await cargarCategoriasCatalogo();
+
         configurarFiltros();
         configurarScrollInfinito();
+
         await cargarProductosCatalogo(true);
     } catch (error) {
         console.error("Error:", error);
