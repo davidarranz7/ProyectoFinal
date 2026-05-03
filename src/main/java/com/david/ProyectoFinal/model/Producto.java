@@ -15,11 +15,15 @@ public class Producto {
     private Long id;
 
     private String nombre;
+
     @Lob
     @Column(columnDefinition = "TEXT")
     private String descripcion;
+
     private BigDecimal precio;///PAra poder evvitar probelmas de redondeo
+
     private String urlImagen;
+
     private String urlProducto;
 
     @Enumerated(EnumType.STRING)
@@ -32,7 +36,11 @@ public class Producto {
     private Tienda tienda;
 
     @OneToMany(mappedBy = "producto", cascade = CascadeType.ALL, orphanRemoval = true)/// Un producto puede tener muchas tallas y stock
-    private List<ProductoTallaStock> tallaStocks;
+    private List<ProductoTallaStock> tallaStocks = new ArrayList<>();
+
+    @OneToMany(mappedBy = "producto", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("orden ASC")
+    private List<ProductoImagen> imagenes = new ArrayList<>();
 
     /// Constructores
     /// Constructor vacío-> necesario para JPA para que pueda crear el objeto la base de datos
@@ -50,7 +58,8 @@ public class Producto {
         this.seccion = seccion;
         this.categoria = categoria;
         this.tienda = tienda;
-        this.tallaStocks = new ArrayList<>();
+        this.tallaStocks = tallaStocks != null ? tallaStocks : new ArrayList<>();
+        this.imagenes = new ArrayList<>();
     }
 
     /// Getters y Setters
@@ -132,6 +141,25 @@ public class Producto {
     }
 
     public void setTallaStocks(List<ProductoTallaStock> tallaStocks) {
-        this.tallaStocks = tallaStocks;
+        this.tallaStocks = tallaStocks != null ? tallaStocks : new ArrayList<>();
+    }
+
+    public List<ProductoImagen> getImagenes() {
+        return imagenes;
+    }
+
+    public void setImagenes(List<ProductoImagen> imagenes) {
+        this.imagenes.clear();
+
+        if (imagenes != null) {
+            for (ProductoImagen imagen : imagenes) {
+                addImagen(imagen);
+            }
+        }
+    }
+
+    public void addImagen(ProductoImagen imagen) {
+        this.imagenes.add(imagen);
+        imagen.setProducto(this);
     }
 }

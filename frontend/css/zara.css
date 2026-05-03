@@ -53,6 +53,10 @@ body::before {
     align-items: start;
 }
 
+/* ============================= */
+/* FILTROS */
+/* ============================= */
+
 .sidebar-filtros {
     position: sticky;
     top: 96px;
@@ -155,7 +159,10 @@ body::before {
     transform: scaleX(1);
 }
 
+/* ============================= */
 /* ORDENAR */
+/* ============================= */
+
 .filtro-orden {
     padding-top: 6px;
 }
@@ -186,6 +193,10 @@ body::before {
     border-color: #111;
     box-shadow: 0 0 0 4px rgba(17, 17, 17, 0.08);
 }
+
+/* ============================= */
+/* HEADER */
+/* ============================= */
 
 .contenido-productos {
     display: flex;
@@ -246,6 +257,10 @@ body::before {
     letter-spacing: 0.08em;
 }
 
+/* ============================= */
+/* GRID PRODUCTOS */
+/* ============================= */
+
 .grid-zara {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -280,6 +295,10 @@ body::before {
     display: block;
 }
 
+/* ============================= */
+/* IMAGEN / CARRUSEL */
+/* ============================= */
+
 .img-wrapper {
     position: relative;
     overflow: hidden;
@@ -296,26 +315,35 @@ body::before {
     opacity: 0;
     transition: opacity 0.35s ease;
     pointer-events: none;
+    z-index: 10;
 }
 
 .tarjeta-zara:hover .img-wrapper::after {
     opacity: 1;
 }
 
-.img-wrapper img {
+.link-imagen-producto {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.link-imagen-producto img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     display: block;
-    transition: transform 0.7s ease, filter 0.5s ease;
+    transition: transform 0.7s ease, filter 0.5s ease, opacity 0.25s ease;
 }
 
-.tarjeta-zara:hover .img-wrapper img {
+.tarjeta-zara:hover .link-imagen-producto img {
     transform: scale(1.06);
     filter: brightness(0.96);
 }
 
-.img-wrapper span {
+.sin-imagen-card {
     width: 100%;
     height: 100%;
     display: grid;
@@ -326,6 +354,56 @@ body::before {
     text-transform: uppercase;
     background: rgba(255,255,255,0.7);
 }
+
+.btn-imagen-card {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 34px;
+    height: 48px;
+    border: none;
+    background: rgba(255, 255, 255, 0.85);
+    color: #111;
+    font-size: 34px;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0;
+    z-index: 50;
+    transition: opacity 0.25s ease, background 0.25s ease, transform 0.25s ease;
+}
+
+.img-wrapper:hover .btn-imagen-card {
+    opacity: 1;
+}
+
+.btn-imagen-card:hover {
+    background: rgba(255, 255, 255, 1);
+    transform: translateY(-50%) scale(1.05);
+}
+
+.btn-imagen-anterior {
+    left: 8px;
+}
+
+.btn-imagen-siguiente {
+    right: 8px;
+}
+
+.indicador-imagen-card {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    padding: 4px 8px;
+    background: rgba(255, 255, 255, 0.88);
+    color: #111;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    z-index: 50;
+}
+
+/* ============================= */
+/* FAVORITO */
+/* ============================= */
 
 .btn-fav {
     position: absolute;
@@ -340,7 +418,7 @@ body::before {
     color: #111;
     font-size: 15px;
     cursor: pointer;
-    z-index: 2;
+    z-index: 70;
     transition: all 0.25s ease;
     box-shadow: 0 6px 18px rgba(0,0,0,0.10);
 }
@@ -354,6 +432,10 @@ body::before {
 .btn-fav.activo {
     color: red;
 }
+
+/* ============================= */
+/* INFO PRODUCTO */
+/* ============================= */
 
 .info-producto {
     position: relative;
@@ -423,7 +505,113 @@ body::before {
     box-shadow: 0 10px 30px rgba(0,0,0,0.08);
 }
 
+/* ============================= */
+/* MINI MENÚ TALLAS */
+/* ============================= */
+
+.mini-menu-talla {
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    bottom: 70px;
+    background: white;
+    border: 1px solid rgba(17,17,17,0.12);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+    pointer-events: none;
+    transition: all 0.2s ease;
+    z-index: 80;
+}
+
+.mini-menu-talla.activo {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+}
+
+.lista-tallas {
+    display: flex;
+    flex-direction: column;
+    border-top: 1px solid rgba(17, 17, 17, 0.08);
+    border-bottom: 1px solid rgba(17, 17, 17, 0.08);
+}
+
+.btn-talla {
+    width: 100%;
+    border: none;
+    border-bottom: 1px solid rgba(17, 17, 17, 0.08);
+    background: transparent;
+    color: #111;
+    padding: 11px 4px;
+    text-align: left;
+    font-size: 0.74rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-talla:last-child {
+    border-bottom: none;
+}
+
+.btn-talla:hover {
+    background: rgba(17, 17, 17, 0.04);
+    padding-left: 8px;
+}
+
+.btn-talla.seleccionada {
+    background: rgba(17, 17, 17, 0.08);
+    font-weight: 700;
+    padding-left: 8px;
+}
+
+.btn-talla.agotada {
+    color: rgba(17, 17, 17, 0.3);
+    cursor: not-allowed;
+}
+
+.btn-talla.agotada:hover {
+    background: transparent;
+    padding-left: 4px;
+}
+
+.mensaje-stock {
+    min-height: 18px;
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(17, 17, 17, 0.58);
+    margin: 2px 0 0;
+}
+
+.btn-confirmar-carrito {
+    width: 100%;
+    border: 1px solid #111;
+    background: #111;
+    color: white;
+    padding: 11px 14px;
+    font-size: 0.68rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-confirmar-carrito:hover {
+    background: #333;
+    border-color: #333;
+}
+
+/* ============================= */
 /* MODAL LOGIN */
+/* ============================= */
+
 .modal {
     position: fixed;
     inset: 0;
@@ -526,107 +714,10 @@ body::before {
     background: #f5f5f5;
 }
 
-/* MINI MENÚ TALLAS */
-.mini-menu-talla {
-    position: absolute;
-    left: 10px;
-    right: 10px;
-    bottom: 70px;
-    background: white;
-    border: 1px solid rgba(17,17,17,0.12);
-    box-shadow: 0 12px 30px rgba(0,0,0,0.12);
-    padding: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    opacity: 0;
-    transform: translateY(10px) scale(0.98);
-    pointer-events: none;
-    transition: all 0.2s ease;
-    z-index: 20;
-}
-
-.mini-menu-talla.activo {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-    pointer-events: auto;
-}
-
-.lista-tallas {
-    display: flex;
-    flex-direction: column;
-    border-top: 1px solid rgba(17, 17, 17, 0.08);
-    border-bottom: 1px solid rgba(17, 17, 17, 0.08);
-}
-
-.btn-talla {
-    width: 100%;
-    border: none;
-    border-bottom: 1px solid rgba(17, 17, 17, 0.08);
-    background: transparent;
-    color: #111;
-    padding: 11px 4px;
-    text-align: left;
-    font-size: 0.74rem;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.btn-talla:last-child {
-    border-bottom: none;
-}
-
-.btn-talla:hover {
-    background: rgba(17, 17, 17, 0.04);
-    padding-left: 8px;
-}
-
-.btn-talla.seleccionada {
-    background: rgba(17, 17, 17, 0.08);
-    font-weight: 700;
-    padding-left: 8px;
-}
-
-.btn-talla.agotada {
-    color: rgba(17, 17, 17, 0.3);
-    cursor: not-allowed;
-}
-
-.btn-talla.agotada:hover {
-    background: transparent;
-    padding-left: 4px;
-}
-
-.mensaje-stock {
-    min-height: 18px;
-    font-size: 0.68rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: rgba(17, 17, 17, 0.58);
-    margin: 2px 0 0;
-}
-
-.btn-confirmar-carrito {
-    width: 100%;
-    border: 1px solid #111;
-    background: #111;
-    color: white;
-    padding: 11px 14px;
-    font-size: 0.68rem;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.btn-confirmar-carrito:hover {
-    background: #333;
-    border-color: #333;
-}
-
+/* ============================= */
 /* TOAST */
+/* ============================= */
+
 .toast-carrito {
     position: fixed;
     top: 95px;
@@ -650,7 +741,10 @@ body::before {
     transform: translateY(0);
 }
 
+/* ============================= */
 /* ANIMACIONES */
+/* ============================= */
+
 @keyframes modalEntrada {
     from {
         opacity: 0;
@@ -669,7 +763,10 @@ body::before {
     }
 }
 
+/* ============================= */
 /* RESPONSIVE */
+/* ============================= */
+
 @media (max-width: 1100px) {
     .zara-container {
         grid-template-columns: 1fr;

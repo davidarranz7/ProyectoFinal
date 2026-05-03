@@ -2,6 +2,7 @@ package com.david.ProyectoFinal.scraper.tienda;
 
 import com.david.ProyectoFinal.model.Categoria;
 import com.david.ProyectoFinal.model.Producto;
+import com.david.ProyectoFinal.model.ProductoImagen;
 import com.david.ProyectoFinal.model.Seccion;
 import com.david.ProyectoFinal.model.Tienda;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -253,21 +254,38 @@ public class ZaraScraper implements ScraperTienda {
         categoria.setNombre(nombreCategoria);
 
         String urlProducto = crearUrlProducto(keyword, nombre, seoProductId, productId);
-        String imagen = extraerImagenPrincipal(productoJson);
 
         if (estaVacio(urlProducto)) {
             return null;
         }
 
+        List<String> imagenesExtraidas = extraerImagenesProducto(productoJson);
+
+        String imagenPrincipal = imagenesExtraidas.isEmpty()
+                ? ""
+                : imagenesExtraidas.get(0);
+
         Producto producto = new Producto();
         producto.setNombre(nombre);
         producto.setDescripcion(descripcion);
         producto.setPrecio(precio);
-        producto.setUrlImagen(imagen);
+        producto.setUrlImagen(imagenPrincipal);
         producto.setUrlProducto(urlProducto);
         producto.setSeccion(seccion);
         producto.setCategoria(categoria);
         producto.setTienda(tienda);
+
+        int orden = 1;
+
+        for (String urlImagen : imagenesExtraidas) {
+            ProductoImagen productoImagen = new ProductoImagen();
+            productoImagen.setUrlImagen(urlImagen);
+            productoImagen.setOrden(orden);
+
+            producto.addImagen(productoImagen);
+
+            orden++;
+        }
 
         return producto;
     }
@@ -296,6 +314,7 @@ public class ZaraScraper implements ScraperTienda {
         return switch (seccionNormalizada) {
             case "MAN" -> Seccion.HOMBRE;
             case "WOMAN" -> Seccion.MUJER;
+            case "KID" -> Seccion.UNISEX;
             default -> Seccion.UNISEX;
         };
     }
@@ -659,28 +678,45 @@ public class ZaraScraper implements ScraperTienda {
                 .replaceAll("-+$", "");
     }
 
-    private String extraerImagenPrincipal(JsonNode productoJson) {
-        JsonNode colorDetalle = productoJson.path("detail").path("colors").isArray()
-                && productoJson.path("detail").path("colors").size() > 0
-                ? productoJson.path("detail").path("colors").get(0)
-                : objectMapper.createObjectNode();
+    private List<String> extraerImagenesProducto(JsonNode productoJson) {
+        List<String> imagenes = new ArrayList<>();
+        Set<String> imagenesVistas = new HashSet<>();
 
-        JsonNode xmedia = colorDetalle.path("xmedia");
+        JsonNode colors = productoJson.path("detail").path("colors");
 
-        if (!xmedia.isArray()) {
-            return "";
+        if (!colors.isArray()) {
+            return imagenes;
         }
 
-        for (JsonNode media : xmedia) {
-            String type = texto(media, "type");
-            String deliveryUrl = texto(media.path("extraInfo"), "deliveryUrl");
+        for (JsonNode color : colors) {
+            JsonNode xmedia = color.path("xmedia");
 
-            if ("image".equals(type) && !estaVacio(deliveryUrl)) {
-                return deliveryUrl;
+            if (!xmedia.isArray()) {
+                continue;
+            }
+
+            for (JsonNode media : xmedia) {
+                String type = texto(media, "type");
+                String deliveryUrl = texto(media.path("extraInfo"), "deliveryUrl");
+
+                if (!"image".equals(type)) {
+                    continue;
+                }
+
+                if (estaVacio(deliveryUrl)) {
+                    continue;
+                }
+
+                if (imagenesVistas.contains(deliveryUrl)) {
+                    continue;
+                }
+
+                imagenesVistas.add(deliveryUrl);
+                imagenes.add(deliveryUrl);
             }
         }
 
-        return "";
+        return imagenes;
     }
 
     private BigDecimal convertirPrecio(String precioTexto) {
@@ -753,6 +789,11 @@ public class ZaraScraper implements ScraperTienda {
                 .filter(producto -> estaVacio(producto.getUrlProducto()))
                 .count();
 
+        long totalImagenesExtraidas = productos.stream()
+                .filter(producto -> producto.getImagenes() != null)
+                .mapToLong(producto -> producto.getImagenes().size())
+                .sum();
+
         Map<String, Long> conteoPorCategoria = new LinkedHashMap<>();
         Map<Seccion, Long> conteoPorSeccion = new LinkedHashMap<>();
 
@@ -775,9 +816,10 @@ public class ZaraScraper implements ScraperTienda {
         System.out.println("RESUMEN FINAL ZARA");
         System.out.println("====================================");
         System.out.println("Productos únicos finales: " + productos.size());
-        System.out.println("Productos sin imagen: " + productosSinImagen);
+        System.out.println("Productos sin imagen principal: " + productosSinImagen);
         System.out.println("Productos sin precio: " + productosSinPrecio);
         System.out.println("Productos sin URL: " + productosSinUrl);
+        System.out.println("Total imágenes extraídas: " + totalImagenesExtraidas);
 
         System.out.println();
         System.out.println("====================================");
@@ -805,13 +847,18 @@ public class ZaraScraper implements ScraperTienda {
         productos.stream()
                 .limit(30)
                 .forEach(producto -> {
+                    int totalImagenesProducto = producto.getImagenes() != null
+                            ? producto.getImagenes().size()
+                            : 0;
+
                     System.out.println("------------------------------------");
                     System.out.println("Nombre: " + producto.getNombre());
                     System.out.println("Precio: " + producto.getPrecio());
                     System.out.println("Sección: " + producto.getSeccion());
                     System.out.println("Categoría: " + (producto.getCategoria() != null ? producto.getCategoria().getNombre() : ""));
                     System.out.println("URL: " + producto.getUrlProducto());
-                    System.out.println("Imagen: " + producto.getUrlImagen());
+                    System.out.println("Imagen principal: " + producto.getUrlImagen());
+                    System.out.println("Total imágenes: " + totalImagenesProducto);
                 });
 
         System.out.println();

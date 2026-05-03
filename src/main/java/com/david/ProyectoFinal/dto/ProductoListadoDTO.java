@@ -17,6 +17,7 @@ public class ProductoListadoDTO {
     private CategoriaSimpleDTO categoria;
     private TiendaSimpleDTO tienda;
     private List<ProductoTallaStockResponseDTO> tallaStocks;
+    private List<ProductoImagenResponseDTO> imagenes;
 
     public ProductoListadoDTO() {
     }
@@ -41,6 +42,30 @@ public class ProductoListadoDTO {
         this.categoria = categoria;
         this.tienda = tienda;
         this.tallaStocks = tallaStocks;
+    }
+
+    public ProductoListadoDTO(Long id,
+                              String nombre,
+                              String descripcion,
+                              BigDecimal precio,
+                              String urlImagen,
+                              String urlProducto,
+                              Seccion seccion,
+                              CategoriaSimpleDTO categoria,
+                              TiendaSimpleDTO tienda,
+                              List<ProductoTallaStockResponseDTO> tallaStocks,
+                              List<ProductoImagenResponseDTO> imagenes) {
+        this.id = id;
+        this.nombre = nombre;
+        this.descripcion = descripcion;
+        this.precio = precio;
+        this.urlImagen = urlImagen;
+        this.urlProducto = urlProducto;
+        this.seccion = seccion;
+        this.categoria = categoria;
+        this.tienda = tienda;
+        this.tallaStocks = tallaStocks;
+        this.imagenes = imagenes;
     }
 
     public Long getId() {
@@ -83,6 +108,10 @@ public class ProductoListadoDTO {
         return tallaStocks;
     }
 
+    public List<ProductoImagenResponseDTO> getImagenes() {
+        return imagenes;
+    }
+
     public void setId(Long id) {
         this.id = id;
     }
@@ -121,5 +150,9 @@ public class ProductoListadoDTO {
 
     public void setTallaStocks(List<ProductoTallaStockResponseDTO> tallaStocks) {
         this.tallaStocks = tallaStocks;
+    }
+
+    public void setImagenes(List<ProductoImagenResponseDTO> imagenes) {
+        this.imagenes = imagenes;
     }
 }

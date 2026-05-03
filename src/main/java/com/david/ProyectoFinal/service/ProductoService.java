@@ -25,19 +25,16 @@ public class ProductoService {
     private final CategoriaRepository categoriaRepository;
     private final ProductoTallaStockRepository productoTallaStockRepository;
     private final FavoritoRepository favoritoRepository;
+    private final ProductoImagenRepository productoImagenRepository;
 
-    public ProductoService(ProductoRepository productoRepository,
-                           GestorScraping gestorScraping,
-                           TiendaRepository tiendaRepository,
-                           CategoriaRepository categoriaRepository,
-                           ProductoTallaStockRepository productoTallaStockRepository,
-                           FavoritoRepository favoritoRepository) {
+    public ProductoService(ProductoRepository productoRepository, GestorScraping gestorScraping, TiendaRepository tiendaRepository, CategoriaRepository categoriaRepository, ProductoTallaStockRepository productoTallaStockRepository, FavoritoRepository favoritoRepository, ProductoImagenRepository productoImagenRepository) {
         this.productoRepository = productoRepository;
         this.gestorScraping = gestorScraping;
         this.tiendaRepository = tiendaRepository;
         this.categoriaRepository = categoriaRepository;
         this.productoTallaStockRepository = productoTallaStockRepository;
         this.favoritoRepository = favoritoRepository;
+        this.productoImagenRepository = productoImagenRepository;
     }
 
     public List<Producto> obtenerProductosMasFavoritos(int limite) {
@@ -291,9 +288,19 @@ public class ProductoService {
                 .stream()
                 .collect(Collectors.groupingBy(item -> item.getProducto().getId()));
 
+        Map<Long, List<ProductoImagen>> imagenesPorProducto = productoIds.isEmpty()
+                ? Map.of()
+                : productoImagenRepository.findByProductoIdInOrderByProductoIdAscOrdenAsc(productoIds)
+                .stream()
+                .collect(Collectors.groupingBy(imagen -> imagen.getProducto().getId()));
+
         List<ProductoListadoDTO> productosDTO = productosPage.getContent()
                 .stream()
-                .map(producto -> convertirAProductoListadoDTO(producto, tallasPorProducto.get(producto.getId())))
+                .map(producto -> convertirAProductoListadoDTO(
+                        producto,
+                        tallasPorProducto.get(producto.getId()),
+                        imagenesPorProducto.get(producto.getId())
+                ))
                 .toList();
 
         return new ProductoPageResponseDTO(
@@ -328,7 +335,9 @@ public class ProductoService {
         };
     }
 
-    private ProductoListadoDTO convertirAProductoListadoDTO(Producto producto, List<ProductoTallaStock> tallaStocks) {
+    private ProductoListadoDTO convertirAProductoListadoDTO(Producto producto,
+                                                            List<ProductoTallaStock> tallaStocks,
+                                                            List<ProductoImagen> imagenes) {
         CategoriaSimpleDTO categoriaDTO = null;
 
         if (producto.getCategoria() != null) {
@@ -358,8 +367,25 @@ public class ProductoService {
                 producto.getSeccion(),
                 categoriaDTO,
                 tiendaDTO,
-                construirTallasCompletas(tallaStocks)
+                construirTallasCompletas(tallaStocks),
+                construirImagenesProducto(imagenes)
         );
+    }
+
+    private List<ProductoImagenResponseDTO> construirImagenesProducto(List<ProductoImagen> imagenes) {
+        if (imagenes == null || imagenes.isEmpty()) {
+            return List.of();
+        }
+
+        return imagenes.stream()
+                .filter(imagen -> imagen.getUrlImagen() != null && !imagen.getUrlImagen().isBlank())
+                .sorted(Comparator.comparingInt(ProductoImagen::getOrden))
+                .map(imagen -> new ProductoImagenResponseDTO(
+                        imagen.getId(),
+                        imagen.getUrlImagen(),
+                        imagen.getOrden()
+                ))
+                .toList();
     }
 
     private List<ProductoTallaStockResponseDTO> construirTallasCompletas(List<ProductoTallaStock> tallaStocks) {
