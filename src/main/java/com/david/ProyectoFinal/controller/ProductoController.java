@@ -62,6 +62,14 @@ public class ProductoController {
         return productoService.buscarProductos(tienda, secciones, categorias, busqueda, orden, page, size);
     }
 
+    @GetMapping("/catalogo/categorias")
+    public List<String> obtenerCategoriasCatalogo(
+            @RequestParam String tienda
+    ) {
+        return productoService.obtenerCategoriasPorTienda(tienda);
+    }
+
+
     @GetMapping("/{id}")
     public Producto obtenerPorId(@PathVariable Long id) {
         return productoService.obtenerPorId(id);

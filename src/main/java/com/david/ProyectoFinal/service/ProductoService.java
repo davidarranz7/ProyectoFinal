@@ -305,6 +305,14 @@ public class ProductoService {
         );
     }
 
+    public List<String> obtenerCategoriasPorTienda(String tienda) {
+        if (tienda == null || tienda.isBlank()) {
+            return List.of();
+        }
+
+        return productoRepository.findCategoriasDistintasPorTienda(tienda.trim());
+    }
+
     private Sort obtenerOrdenProductos(String orden) {
         if (orden == null || orden.isBlank()) {
             return Sort.by(Sort.Direction.DESC, "id");

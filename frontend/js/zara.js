@@ -17,6 +17,7 @@ const cerrarModalSecundario = document.getElementById("cerrar-modal-secundario")
 const modalMensaje = document.getElementById("modal-mensaje");
 const abrirLoginModal = document.getElementById("abrir-login-modal");
 const selectOrdenCatalogo = document.getElementById("orden-catalogo");
+const listaCategoriasFiltro = document.getElementById("lista-categorias-filtro");
 
 const formateadorEuro = new Intl.NumberFormat("es-ES", {
     style: "currency",
@@ -147,6 +148,80 @@ function actualizarEstadoVisualFavorito(btnFav, productoId) {
         btnFav.classList.remove("activo");
         btnFav.style.color = "";
     }
+}
+
+async function cargarCategoriasCatalogo() {
+    if (!listaCategoriasFiltro) {
+        return;
+    }
+
+    try {
+        listaCategoriasFiltro.innerHTML = `
+            <li>
+                <span class="filtro-label-texto">Cargando categorías...</span>
+            </li>
+        `;
+
+        const response = await fetch(`${BASE_URL}/productos/catalogo/categorias?tienda=${TIENDA_ACTUAL}`, {
+            method: "GET",
+            credentials: "include"
+        });
+
+        if (!response.ok) {
+            throw new Error("No se pudieron cargar las categorías");
+        }
+
+        const categorias = await response.json();
+
+        if (!Array.isArray(categorias) || categorias.length === 0) {
+            listaCategoriasFiltro.innerHTML = `
+                <li>
+                    <span class="filtro-label-texto">Sin categorías</span>
+                </li>
+            `;
+            return;
+        }
+
+        renderizarCategoriasFiltro(categorias);
+
+    } catch (error) {
+        console.error("Error al cargar categorías:", error);
+
+        listaCategoriasFiltro.innerHTML = `
+            <li>
+                <span class="filtro-label-texto">Error al cargar categorías</span>
+            </li>
+        `;
+    }
+}
+
+function renderizarCategoriasFiltro(categorias) {
+    listaCategoriasFiltro.innerHTML = "";
+
+    categorias.forEach(categoria => {
+        const li = document.createElement("li");
+
+        const label = document.createElement("label");
+        label.className = "filtro-item";
+
+        const input = document.createElement("input");
+        input.type = "checkbox";
+        input.className = "filtro-check";
+        input.dataset.tipo = "categoria";
+        input.value = categoria;
+
+        const spanTexto = document.createElement("span");
+        spanTexto.className = "filtro-label-texto";
+        spanTexto.textContent = categoria;
+
+        const spanLinea = document.createElement("span");
+        spanLinea.className = "filtro-linea";
+
+        label.append(input, spanTexto, spanLinea);
+        li.appendChild(label);
+
+        listaCategoriasFiltro.appendChild(li);
+    });
 }
 
 function obtenerFiltrosCatalogo() {
@@ -656,8 +731,12 @@ function formatearPrecioProducto(valor) {
 async function iniciarZara() {
     try {
         await cargarFavoritosUsuario();
+
+        await cargarCategoriasCatalogo();
+
         configurarFiltros();
         configurarScrollInfinito();
+
         await cargarProductosCatalogo(true);
     } catch (error) {
         console.error("Error:", error);
