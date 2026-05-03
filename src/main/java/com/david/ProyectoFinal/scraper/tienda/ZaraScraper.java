@@ -82,12 +82,16 @@ public class ZaraScraper implements ScraperTienda {
 
                 new CategoriaZara("Hombre lino", "2431961"),
                 new CategoriaZara("Hombre camisas", "2431994"),
+                new CategoriaZara("Hombre camisetas", "2432041"),
+                new CategoriaZara("Hombre pantalones", "2432096"),
                 new CategoriaZara("Hombre jeans", "2432131"),
                 new CategoriaZara("Hombre trajes", "2432192"),
                 new CategoriaZara("Hombre sudaderas", "2432232"),
                 new CategoriaZara("Hombre punto", "2432265"),
                 new CategoriaZara("Hombre abrigos", "2606109"),
-                new CategoriaZara("Hombre zapatos", "2436382")
+                new CategoriaZara("Hombre zapatos", "2436382"),
+                new CategoriaZara("Hombre bolsos", "2436405"),
+                new CategoriaZara("Hombre accesorios", "2436431")
         );
     }
 
