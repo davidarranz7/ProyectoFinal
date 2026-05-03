@@ -241,7 +241,8 @@ public class ZaraScraper implements ScraperTienda {
                 nombre,
                 familyName,
                 subfamilyName,
-                categoriaZara.nombre()
+                categoriaZara.nombre(),
+                keyword
         );
 
         Categoria categoria = new Categoria();
@@ -299,68 +300,321 @@ public class ZaraScraper implements ScraperTienda {
             String nombreProducto,
             String familyName,
             String subfamilyName,
-            String categoriaOrigen
+            String categoriaOrigen,
+            String keyword
     ) {
-        String texto = unirTextos(nombreProducto, familyName, subfamilyName, categoriaOrigen)
-                .toUpperCase();
+        String nombre = normalizarTexto(nombreProducto);
+        String familia = normalizarTexto(familyName);
+        String subfamilia = normalizarTexto(subfamilyName);
+        String origen = normalizarTexto(categoriaOrigen);
+        String keywordNormalizado = normalizarTexto(keyword);
 
-        if (contieneAlguno(texto, "VESTIDO", "MONO")) {
+        String textoDenim = unirTextos(nombre, familia, subfamilia, origen, keywordNormalizado);
+
+        if (empiezaPorAlgunaPalabra(nombre, "VESTIDO")) {
             return "Vestidos";
         }
 
-        if (contieneAlguno(texto, "CAMISA", "BLUSA")) {
-            return "Camisas";
+        if (empiezaPorAlgunaPalabra(nombre, "MONO")) {
+            return "Vestidos";
         }
 
-        if (contieneAlguno(texto, "CAMISETA", "TOP", "POLO")) {
-            return "Camisetas";
-        }
-
-        if (contieneAlguno(texto, "JEANS", "DENIM")) {
-            return "Jeans";
-        }
-
-        if (contieneAlguno(texto, "PANTALON", "PANTALÓN")) {
-            return "Pantalones";
-        }
-
-        if (contieneAlguno(texto, "FALDA")) {
+        if (empiezaPorAlgunaPalabra(nombre, "FALDA")) {
             return "Faldas";
         }
 
-        if (contieneAlguno(texto, "JERSEY", "JERSÉI", "JERSEIS", "JERSÉIS", "PUNTO", "CARDIGAN", "CÁRDIGAN")) {
-            return "Jerséis";
-        }
-
-        if (contieneAlguno(texto, "SUDADERA")) {
-            return "Sudaderas";
-        }
-
-        if (contieneAlguno(texto, "TRAJE")) {
-            return "Trajes";
-        }
-
-        if (contieneAlguno(texto, "ABRIGO", "GABARDINA", "ANORAK", "PARKA", "TRENCH")) {
-            return "Abrigos";
-        }
-
-        if (contieneAlguno(texto, "CHAQUETA", "CAZADORA", "BLAZER", "BOMBER")) {
-            return "Chaquetas";
-        }
-
-        if (contieneAlguno(texto, "ZAPATO", "ZAPATILLA", "SANDALIA", "MOCASIN", "MOCASÍN", "RUNNING", "DEPORTIVO", "BOTA", "MULE")) {
+        if (esZapatoPorTexto(nombre) || esZapatoPorJson(familia, subfamilia)) {
             return "Zapatos";
         }
 
-        if (contieneAlguno(texto, "BOLSO", "BOLSOS", "SHOPPER", "CLUTCH", "MONEDERO", "CARTERA", "MOCHILA")) {
+        if (empiezaPorAlgunaPalabra(nombre, "BOLSO", "MOCHILA", "CARTERA", "MONEDERO", "MALETA", "MALETIN", "SHOPPER", "CLUTCH")) {
             return "Bolsos";
         }
 
-        if (contieneAlguno(texto, "ACCESORIO", "ACCESORIOS", "LLAVERO", "CINTURON", "CINTURÓN", "GORRA", "SOMBRERO", "PAÑUELO", "BUFANDA")) {
+        if (empiezaPorAlgunaPalabra(nombre, "CINTURON", "GORRA", "SOMBRERO", "PANUELO", "BUFANDA", "CORBATA", "GAFAS", "LLAVERO", "COLLAR", "PENDIENTE")) {
+            return "Accesorios";
+        }
+
+        if (empiezaPorAlgunaPalabra(nombre, "CAMISA", "SOBRECAMISA", "BLUSA")) {
+            return "Camisas";
+        }
+
+        if (empiezaPorAlgunaPalabra(nombre, "CAMISETA", "CAMISET", "TOP", "POLO")) {
+            return "Camisetas";
+        }
+
+        if (empiezaPorAlgunaPalabra(nombre, "CHAQUETA", "CAZADORA", "BOMBER")) {
+            return "Chaquetas";
+        }
+
+        if (empiezaPorAlgunaPalabra(nombre, "BLAZER")) {
+            if (contieneAlgunaPalabra(nombre, "TRAJE")) {
+                return "Trajes";
+            }
+
+            return "Chaquetas";
+        }
+
+        if (empiezaPorAlgunaPalabra(nombre, "ABRIGO", "GABARDINA", "TRENCH", "PARKA", "ANORAK")) {
+            return "Abrigos";
+        }
+
+        if (empiezaPorAlgunaPalabra(nombre, "SUDADERA")) {
+            return "Sudaderas";
+        }
+
+        if (empiezaPorAlgunaPalabra(nombre, "JERSEY", "CARDIGAN")) {
+            return "Jerséis";
+        }
+
+        if (empiezaPorAlgunaPalabra(nombre, "PANTALON", "BERMUDA", "SHORT", "SHORTS", "LEGGING", "LEGGINGS", "JOGGER")) {
+            if (esDenim(textoDenim)) {
+                return "Jeans";
+            }
+
+            return "Pantalones";
+        }
+
+        if (esBolsoPorJson(familia)) {
+            return "Bolsos";
+        }
+
+        if (esAccesorioPorJson(familia)) {
+            return "Accesorios";
+        }
+
+        if (esVestidoPorJson(familia)) {
+            return "Vestidos";
+        }
+
+        if (esFaldaPorJson(familia)) {
+            return "Faldas";
+        }
+
+        if (esCamisaPorJson(familia)) {
+            return "Camisas";
+        }
+
+        if (esCamisetaPorJson(familia)) {
+            return "Camisetas";
+        }
+
+        if (esChaquetaPorJson(familia)) {
+            return "Chaquetas";
+        }
+
+        if (esAbrigoPorJson(familia)) {
+            return "Abrigos";
+        }
+
+        if (esSudaderaPorJson(familia)) {
+            return "Sudaderas";
+        }
+
+        if (esPantalonPorJson(familia)) {
+            if (esDenim(textoDenim)) {
+                return "Jeans";
+            }
+
+            return "Pantalones";
+        }
+
+        if (esJerseyPorJson(familia, subfamilia)) {
+            return "Jerséis";
+        }
+
+        if (origen.contains("JEANS")) {
+            return "Jeans";
+        }
+
+        if (origen.contains("VESTIDOS")) {
+            return "Vestidos";
+        }
+
+        if (origen.contains("FALDAS")) {
+            return "Faldas";
+        }
+
+        if (origen.contains("PANTALONES")) {
+            return "Pantalones";
+        }
+
+        if (origen.contains("CAMISAS")) {
+            return "Camisas";
+        }
+
+        if (origen.contains("CAMISETAS")) {
+            return "Camisetas";
+        }
+
+        if (origen.contains("CHAQUETAS")) {
+            return "Chaquetas";
+        }
+
+        if (origen.contains("ABRIGOS")) {
+            return "Abrigos";
+        }
+
+        if (origen.contains("SUDADERAS")) {
+            return "Sudaderas";
+        }
+
+        if (origen.contains("ZAPATOS")) {
+            return "Zapatos";
+        }
+
+        if (origen.contains("BOLSOS")) {
+            return "Bolsos";
+        }
+
+        if (origen.contains("ACCESORIOS")) {
             return "Accesorios";
         }
 
         return "Otros";
+    }
+
+    private boolean esZapatoPorJson(String familia, String subfamilia) {
+        return contieneAlgunaPalabra(familia,
+                "ZAPATO", "ZAPATO PLANO", "ZAPATO TACON",
+                "SANDALIA", "SANDALIA DEPORTIVA", "SANDALIA E",
+                "BOTA", "BOTA PLANA", "BOTA TACON",
+                "BOTIN", "BOTIN PLANO", "BOTIN TACON",
+                "MOCASIN", "RUNNING", "BAMBAS", "DEPORTIVO",
+                "CALZADO DEPORTIVO", "DEPORTIVO BOTIN",
+                "CUÑA", "PALA", "PINKY", "ABIERTO"
+        ) || contieneAlgunaPalabra(subfamilia,
+                "ZAPATO", "BOTA", "BOTIN", "DEPORTIVO",
+                "MOCASIN", "RUNNING", "ABIERTO", "YUTE"
+        );
+    }
+
+    private boolean esZapatoPorTexto(String nombre) {
+        return empiezaPorAlgunaPalabra(nombre,
+                "ZAPATO", "ZAPATILLA", "BOTA", "BOTIN",
+                "SANDALIA", "MOCASIN", "ALPARGATA",
+                "BAILARINA", "MULE", "TACON", "RUNNING"
+        );
+    }
+
+    private boolean esBolsoPorJson(String familia) {
+        return contieneAlgunaPalabra(familia,
+                "BOLSOS", "MONEDERO BILLETERA"
+        );
+    }
+
+    private boolean esAccesorioPorJson(String familia) {
+        return contieneAlgunaPalabra(familia,
+                "ACCESORIOS", "COMPLEMENTOS"
+        );
+    }
+
+    private boolean esVestidoPorJson(String familia) {
+        return contieneAlgunaPalabra(familia,
+                "VESTIDO", "MONO"
+        );
+    }
+
+    private boolean esFaldaPorJson(String familia) {
+        return contieneAlgunaPalabra(familia,
+                "FALDA"
+        );
+    }
+
+    private boolean esCamisaPorJson(String familia) {
+        return contieneAlgunaPalabra(familia,
+                "CAMISA", "SOBRECAMISA", "BLUSA"
+        );
+    }
+
+    private boolean esCamisetaPorJson(String familia) {
+        return contieneAlgunaPalabra(familia,
+                "CAMISETA", "POLO"
+        );
+    }
+
+    private boolean esChaquetaPorJson(String familia) {
+        return contieneAlgunaPalabra(familia,
+                "CHAQUETA", "CAZADORA", "BLAZER", "BOMBER", "CHALECO"
+        );
+    }
+
+    private boolean esAbrigoPorJson(String familia) {
+        return contieneAlgunaPalabra(familia,
+                "ABRIGO", "GABARDINA", "ANORAK", "PARKA", "TRENCH"
+        );
+    }
+
+    private boolean esSudaderaPorJson(String familia) {
+        return contieneAlgunaPalabra(familia,
+                "SUDADERA"
+        );
+    }
+
+    private boolean esPantalonPorJson(String familia) {
+        return contieneAlgunaPalabra(familia,
+                "PANTALON", "BERMUDA", "SHORT", "LEGGINGS", "LEGGING"
+        );
+    }
+
+    private boolean esJerseyPorJson(String familia, String subfamilia) {
+        return contieneAlgunaPalabra(familia,
+                "JERSEY", "CHALECO PUNTO"
+        ) || contieneAlgunaPalabra(subfamilia,
+                "JERSEY", "CHALECO PUNTO"
+        );
+    }
+
+    private boolean esDenim(String texto) {
+        return contieneAlgunaPalabra(texto, "DENIM", "JEANS");
+    }
+
+    private String normalizarTexto(String texto) {
+        if (texto == null || texto.isBlank()) {
+            return "";
+        }
+
+        return Normalizer.normalize(texto, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .toUpperCase()
+                .replace("Ñ", "N")
+                .replaceAll("[^A-Z0-9]+", " ")
+                .replaceAll("\\s+", " ")
+                .trim();
+    }
+
+    private boolean empiezaPorAlgunaPalabra(String texto, String... palabras) {
+        if (texto == null || texto.isBlank()) {
+            return false;
+        }
+
+        for (String palabra : palabras) {
+            String palabraNormalizada = normalizarTexto(palabra);
+
+            if (texto.equals(palabraNormalizada) || texto.startsWith(palabraNormalizada + " ")) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private boolean contieneAlgunaPalabra(String texto, String... palabras) {
+        if (texto == null || texto.isBlank()) {
+            return false;
+        }
+
+        String textoConEspacios = " " + texto + " ";
+
+        for (String palabra : palabras) {
+            String palabraNormalizada = normalizarTexto(palabra);
+
+            if (textoConEspacios.contains(" " + palabraNormalizada + " ")) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private String crearUrlProducto(

@@ -1,7 +1,10 @@
 package com.david.ProyectoFinal.model;
 
 public enum Seccion {
-    HOMBRE,
     MUJER,
+    HOMBRE,
+    NINA,
+    NINO,
+    BEBE,
     UNISEX
 }
