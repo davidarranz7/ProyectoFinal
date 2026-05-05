@@ -799,17 +799,39 @@ public class PullAndBearScraper implements ScraperTienda {
     }
 
     private String obtenerClaveProducto(JsonNode productoJson, Producto producto) {
+        if (producto != null && !estaVacio(producto.getUrlProducto())) {
+            return limpiarUrlProductoPullBear(producto.getUrlProducto());
+        }
+
+        String productUrl = texto(productoJson, "productUrl");
+
+        if (!estaVacio(productUrl)) {
+            return limpiarUrlProductoPullBear(productUrl);
+        }
+
         String id = texto(productoJson, "id");
 
         if (!estaVacio(id)) {
             return id;
         }
 
-        if (producto != null && !estaVacio(producto.getUrlProducto())) {
-            return producto.getUrlProducto();
+        return "";
+    }
+
+    private String limpiarUrlProductoPullBear(String urlProducto) {
+        if (estaVacio(urlProducto)) {
+            return "";
         }
 
-        return "";
+        String urlLimpia = urlProducto.trim();
+
+        int indiceParametros = urlLimpia.indexOf("?");
+
+        if (indiceParametros != -1) {
+            urlLimpia = urlLimpia.substring(0, indiceParametros);
+        }
+
+        return urlLimpia;
     }
 
     private BigDecimal obtenerPrecio(JsonNode detail) {
