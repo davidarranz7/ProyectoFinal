@@ -939,7 +939,9 @@ public class BershkaScraper implements ScraperTienda {
             return null;
         }
 
-        List<String> imagenesExtraidas = extraerImagenesProducto(detail);
+        List<String> imagenesExtraidas = ordenarImagenesBershka(
+                extraerImagenesProducto(detail)
+        );
 
         String imagenPrincipal = imagenesExtraidas.isEmpty()
                 ? ""
@@ -1268,6 +1270,100 @@ public class BershkaScraper implements ScraperTienda {
         }
 
         return imagenes;
+    }
+
+    private List<String> ordenarImagenesBershka(List<String> imagenes) {
+        if (imagenes == null || imagenes.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        List<String> imagenesOrdenadas = new ArrayList<>(imagenes);
+
+        imagenesOrdenadas.sort((url1, url2) ->
+                Integer.compare(
+                        obtenerPrioridadImagenBershka(url1),
+                        obtenerPrioridadImagenBershka(url2)
+                )
+        );
+
+        return imagenesOrdenadas;
+    }
+
+    private int obtenerPrioridadImagenBershka(String urlImagen) {
+        String sufijo = obtenerSufijoImagenBershka(urlImagen);
+
+        if (estaVacio(sufijo)) {
+            return 60;
+        }
+
+        if ("p".equals(sufijo)) {
+            return 0;
+        }
+
+        if (sufijo.matches("p\\d+")) {
+            return 5 + extraerNumeroSufijoBershka(sufijo);
+        }
+
+        if (sufijo.startsWith("a")) {
+            return 30 + extraerNumeroSufijoBershka(sufijo);
+        }
+
+        if ("b".equals(sufijo)) {
+            return 70;
+        }
+
+        if ("s".equals(sufijo)) {
+            return 80;
+        }
+
+        if ("r".equals(sufijo)) {
+            return 90;
+        }
+
+        return 60;
+    }
+
+    private String obtenerSufijoImagenBershka(String urlImagen) {
+        if (estaVacio(urlImagen)) {
+            return "";
+        }
+
+        String urlNormalizada = urlImagen.toLowerCase();
+
+        int indiceParametros = urlNormalizada.indexOf("?");
+
+        if (indiceParametros != -1) {
+            urlNormalizada = urlNormalizada.substring(0, indiceParametros);
+        }
+
+        Pattern pattern = Pattern.compile("-(p\\d*|a\\d+[a-z]?|b|s|r)(?:\\.|/)");
+        Matcher matcher = pattern.matcher(urlNormalizada);
+
+        String ultimoSufijoEncontrado = "";
+
+        while (matcher.find()) {
+            ultimoSufijoEncontrado = matcher.group(1);
+        }
+
+        return ultimoSufijoEncontrado;
+    }
+
+    private int extraerNumeroSufijoBershka(String sufijo) {
+        if (estaVacio(sufijo)) {
+            return 99;
+        }
+
+        Matcher matcher = Pattern.compile("\\d+").matcher(sufijo);
+
+        if (!matcher.find()) {
+            return 99;
+        }
+
+        try {
+            return Integer.parseInt(matcher.group());
+        } catch (Exception e) {
+            return 99;
+        }
     }
 
     private String obtenerUrlImagen(JsonNode media) {

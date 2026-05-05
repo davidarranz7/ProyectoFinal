@@ -44,18 +44,26 @@ body::before {
     overflow: visible;
 }
 
+/* ============================= */
+/* LAYOUT */
+/* ============================= */
+
 .bershka-container {
     width: min(1400px, 92%);
-    margin: 30px auto 56px;
+    margin: 110px auto 56px;
     display: grid;
     grid-template-columns: 270px 1fr;
     gap: 36px;
     align-items: start;
 }
 
+/* ============================= */
+/* FILTROS */
+/* ============================= */
+
 .sidebar-filtros {
     position: sticky;
-    top: 24px;
+    top: 96px;
     padding: 10px 0;
     background: transparent;
     border: none;
@@ -80,6 +88,12 @@ body::before {
     display: flex;
     flex-direction: column;
     gap: 4px;
+}
+
+#lista-categorias-filtro {
+    list-style: none;
+    padding: 0;
+    margin: 0;
 }
 
 .filtro-item {
@@ -155,6 +169,53 @@ body::before {
     transform: scaleX(1);
 }
 
+.filtro-cargando {
+    font-size: 0.78rem;
+    color: #777;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 0.4rem 0;
+}
+
+/* ============================= */
+/* ORDENAR */
+/* ============================= */
+
+.filtro-orden {
+    padding-top: 6px;
+}
+
+#orden-catalogo {
+    width: 100%;
+    min-height: 46px;
+    padding: 0 14px;
+    border: 1px solid rgba(17, 17, 17, 0.22);
+    background: rgba(255, 255, 255, 0.88);
+    color: #111;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    outline: none;
+    cursor: pointer;
+    backdrop-filter: blur(8px);
+    transition: border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+}
+
+#orden-catalogo:hover {
+    border-color: rgba(255, 47, 109, 0.6);
+    background: rgba(255, 255, 255, 0.96);
+}
+
+#orden-catalogo:focus {
+    border-color: #ff2f6d;
+    box-shadow: 0 0 0 4px rgba(255, 47, 109, 0.12);
+}
+
+/* ============================= */
+/* HEADER */
+/* ============================= */
+
 .contenido-productos {
     display: flex;
     flex-direction: column;
@@ -186,9 +247,7 @@ body::before {
     transform: scale(1.05);
 }
 
-.bershka-header h1,
-.bershka-header p,
-.bershka-subtext {
+.bershka-header-content {
     position: relative;
     z-index: 1;
 }
@@ -199,16 +258,13 @@ body::before {
     letter-spacing: 0.28em;
     margin-bottom: 12px;
     color: white;
-    align-self: flex-start;
 }
 
 .bershka-header p {
-    position: absolute;
-    left: 44px;
-    bottom: 52px;
     font-size: 13px;
     letter-spacing: 0.3em;
     color: rgba(255,255,255,0.92);
+    margin-bottom: 16px;
 }
 
 .bershka-subtext {
@@ -216,8 +272,12 @@ body::before {
     font-size: 0.95rem;
     line-height: 1.7;
     color: rgba(255,255,255,0.84);
-    margin-top: 8px;
+    letter-spacing: 0.08em;
 }
+
+/* ============================= */
+/* GRID PRODUCTOS */
+/* ============================= */
 
 .grid-bershka {
     display: grid;
@@ -237,6 +297,9 @@ body::before {
     display: flex;
     flex-direction: column;
     height: 100%;
+    opacity: 0;
+    transform: translateY(18px);
+    animation: aparecerProducto 0.45s ease forwards;
 }
 
 .tarjeta-bershka:hover {
@@ -249,6 +312,10 @@ body::before {
     color: inherit;
     display: block;
 }
+
+/* ============================= */
+/* IMAGEN / CARRUSEL */
+/* ============================= */
 
 .img-wrapper {
     position: relative;
@@ -266,24 +333,96 @@ body::before {
     opacity: 0;
     transition: opacity 0.35s ease;
     pointer-events: none;
+    z-index: 10;
 }
 
 .tarjeta-bershka:hover .img-wrapper::after {
     opacity: 1;
 }
 
-.img-wrapper img {
+.link-imagen-producto {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.link-imagen-producto img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     display: block;
-    transition: transform 0.7s ease, filter 0.5s ease;
+    transition: transform 0.7s ease, filter 0.5s ease, opacity 0.25s ease;
 }
 
-.tarjeta-bershka:hover .img-wrapper img {
+.tarjeta-bershka:hover .link-imagen-producto img {
     transform: scale(1.06);
     filter: brightness(0.95) contrast(1.02);
 }
+
+.sin-imagen-card {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    place-items: center;
+    background: rgba(255,255,255,0.76);
+    color: rgba(17,17,17,0.48);
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+}
+
+.btn-imagen-card {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 34px;
+    height: 48px;
+    border: none;
+    background: rgba(255, 255, 255, 0.88);
+    color: #111;
+    font-size: 34px;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0;
+    z-index: 50;
+    transition: opacity 0.25s ease, background 0.25s ease, transform 0.25s ease;
+}
+
+.img-wrapper:hover .btn-imagen-card {
+    opacity: 1;
+}
+
+.btn-imagen-card:hover {
+    background: #ff2f6d;
+    color: white;
+    transform: translateY(-50%) scale(1.05);
+}
+
+.btn-imagen-anterior {
+    left: 8px;
+}
+
+.btn-imagen-siguiente {
+    right: 8px;
+}
+
+.indicador-imagen-card {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    padding: 4px 8px;
+    background: rgba(255, 255, 255, 0.9);
+    color: #111;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    z-index: 50;
+}
+
+/* ============================= */
+/* FAVORITO */
+/* ============================= */
 
 .btn-fav {
     position: absolute;
@@ -298,7 +437,7 @@ body::before {
     color: #111;
     font-size: 15px;
     cursor: pointer;
-    z-index: 2;
+    z-index: 70;
     transition: all 0.25s ease;
     box-shadow: 0 6px 18px rgba(0,0,0,0.12);
 }
@@ -308,6 +447,14 @@ body::before {
     color: white;
     transform: scale(1.06);
 }
+
+.btn-fav.activo {
+    color: #ff2f6d;
+}
+
+/* ============================= */
+/* INFO PRODUCTO */
+/* ============================= */
 
 .info-producto {
     position: relative;
@@ -377,6 +524,113 @@ body::before {
     text-transform: uppercase;
     box-shadow: 0 10px 30px rgba(0,0,0,0.08);
 }
+
+/* ============================= */
+/* MINI MENÚ TALLAS */
+/* ============================= */
+
+.mini-menu-talla {
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    bottom: 70px;
+    background: white;
+    border: 1px solid rgba(17,17,17,0.12);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+    pointer-events: none;
+    transition: all 0.2s ease;
+    z-index: 80;
+}
+
+.mini-menu-talla.activo {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+}
+
+.lista-tallas {
+    display: flex;
+    flex-direction: column;
+    border-top: 1px solid rgba(17, 17, 17, 0.08);
+    border-bottom: 1px solid rgba(17, 17, 17, 0.08);
+}
+
+.btn-talla {
+    width: 100%;
+    border: none;
+    border-bottom: 1px solid rgba(17, 17, 17, 0.08);
+    background: transparent;
+    color: #111;
+    padding: 11px 4px;
+    text-align: left;
+    font-size: 0.74rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-talla:last-child {
+    border-bottom: none;
+}
+
+.btn-talla:hover {
+    background: rgba(255, 47, 109, 0.06);
+    padding-left: 8px;
+}
+
+.btn-talla.seleccionada {
+    background: rgba(255, 47, 109, 0.10);
+    font-weight: 700;
+    padding-left: 8px;
+}
+
+.btn-talla.agotada {
+    color: rgba(17, 17, 17, 0.3);
+    cursor: not-allowed;
+}
+
+.btn-talla.agotada:hover {
+    background: transparent;
+    padding-left: 4px;
+}
+
+.mensaje-stock {
+    min-height: 18px;
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(17, 17, 17, 0.58);
+    margin: 2px 0 0;
+}
+
+.btn-confirmar-carrito {
+    width: 100%;
+    border: 1px solid #111;
+    background: #111;
+    color: white;
+    padding: 11px 14px;
+    font-size: 0.68rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-confirmar-carrito:hover {
+    background: #ff2f6d;
+    border-color: #ff2f6d;
+}
+
+/* ============================= */
+/* MODAL LOGIN */
+/* ============================= */
 
 .modal {
     position: fixed;
@@ -467,8 +721,8 @@ body::before {
 }
 
 .modal-btn-dark:hover {
-    background: #333;
-    border-color: #333;
+    background: #ff2f6d;
+    border-color: #ff2f6d;
 }
 
 .modal-btn-light {
@@ -480,25 +734,76 @@ body::before {
     background: #f5f5f5;
 }
 
+/* ============================= */
+/* TOAST */
+/* ============================= */
+
+.toast-carrito {
+    position: fixed;
+    top: 95px;
+    right: 24px;
+    background: #111;
+    color: white;
+    padding: 14px 18px;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.18);
+    z-index: 6000;
+    opacity: 0;
+    transform: translateY(-10px);
+    pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.toast-carrito.activo {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* ============================= */
+/* ANIMACIONES */
+/* ============================= */
+
 @keyframes modalEntrada {
     from {
         opacity: 0;
         transform: translateY(12px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
     }
 }
 
+@keyframes aparecerProducto {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ============================= */
+/* RESPONSIVE */
+/* ============================= */
+
 @media (max-width: 1100px) {
     .bershka-container {
         grid-template-columns: 1fr;
+        margin-top: 96px;
     }
 
     .sidebar-filtros {
         position: static;
         padding: 18px 0 8px;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 24px;
+    }
+
+    .filtro-seccion + .filtro-seccion {
+        margin-top: 0;
     }
 
     .filtro-seccion ul {
@@ -509,15 +814,6 @@ body::before {
         min-height: 360px;
         padding: 28px;
     }
-
-    .bershka-header p {
-        left: 28px;
-        bottom: 22px;
-    }
-
-    .bershka-subtext {
-        margin-top: 28px;
-    }
 }
 
 @media (max-width: 768px) {
@@ -527,8 +823,13 @@ body::before {
 
     .bershka-container {
         width: min(94%, 94%);
-        margin: 18px auto 40px;
+        margin: 90px auto 40px;
         gap: 24px;
+    }
+
+    .sidebar-filtros {
+        grid-template-columns: 1fr;
+        gap: 22px;
     }
 
     .grid-bershka {
@@ -567,335 +868,7 @@ body::before {
     .modal-btn {
         width: 100%;
     }
-}
 
-.producto-card {
-    opacity: 0;
-    transform: translateY(18px);
-    animation: aparecerProducto 0.45s ease forwards;
-}
-
-@keyframes aparecerProducto {
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.mini-menu-talla {
-    position: absolute;
-    left: 10px;
-    right: 10px;
-    bottom: 70px;
-    background: white;
-    border: 1px solid rgba(17,17,17,0.12);
-    box-shadow: 0 12px 30px rgba(0,0,0,0.12);
-    padding: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    opacity: 0;
-    transform: translateY(10px) scale(0.98);
-    pointer-events: none;
-    transition: all 0.2s ease;
-    z-index: 20;
-}
-
-.mini-menu-talla.activo {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-    pointer-events: auto;
-}
-
-.btn-confirmar-carrito {
-    width: 100%;
-    border: 1px solid #111;
-    background: #111;
-    color: white;
-    padding: 11px 14px;
-    font-size: 0.68rem;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.btn-confirmar-carrito:hover {
-    background: #ff2f6d;
-    border-color: #ff2f6d;
-}
-
-.lista-tallas {
-    display: flex;
-    flex-direction: column;
-    border-top: 1px solid rgba(17, 17, 17, 0.08);
-    border-bottom: 1px solid rgba(17, 17, 17, 0.08);
-}
-
-.btn-talla {
-    width: 100%;
-    border: none;
-    border-bottom: 1px solid rgba(17, 17, 17, 0.08);
-    background: transparent;
-    color: #111;
-    padding: 11px 4px;
-    text-align: left;
-    font-size: 0.74rem;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.btn-talla:last-child {
-    border-bottom: none;
-}
-
-.btn-talla:hover {
-    background: rgba(255, 47, 109, 0.06);
-    padding-left: 8px;
-}
-
-.btn-talla.seleccionada {
-    background: rgba(255, 47, 109, 0.10);
-    font-weight: 700;
-    padding-left: 8px;
-}
-
-.btn-talla.agotada {
-    color: rgba(17, 17, 17, 0.3);
-    cursor: not-allowed;
-}
-
-.btn-talla.agotada:hover {
-    background: transparent;
-    padding-left: 4px;
-}
-
-.mensaje-stock {
-    min-height: 18px;
-    font-size: 0.68rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: rgba(17, 17, 17, 0.58);
-    margin: 2px 0 0;
-}
-
-.toast-carrito {
-    position: fixed;
-    top: 95px;
-    right: 24px;
-    background: #111;
-    color: white;
-    padding: 14px 18px;
-    font-size: 0.72rem;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    box-shadow: 0 12px 30px rgba(0,0,0,0.18);
-    z-index: 6000;
-    opacity: 0;
-    transform: translateY(-10px);
-    pointer-events: none;
-    transition: opacity 0.25s ease, transform 0.25s ease;
-}
-
-.toast-carrito.activo {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-/* =========================================================
-   CATEGORÍAS DINÁMICAS
-========================================================= */
-
-#lista-categorias-filtro {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-.filtro-cargando {
-    font-size: 0.78rem;
-    color: #777;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    padding: 0.4rem 0;
-}
-
-
-/* =========================================================
-   CARRUSEL BERSHKA
-========================================================= */
-
-.bershka-carrusel-section {
-    width: 100%;
-    margin-bottom: 3rem;
-    padding: 0 0 1rem;
-}
-
-.bershka-carrusel-header {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 1rem;
-    margin-bottom: 1.4rem;
-}
-
-.bershka-carrusel-header h2 {
-    margin: 0;
-    font-size: clamp(1.6rem, 3vw, 3rem);
-    font-weight: 900;
-    letter-spacing: -0.08em;
-    text-transform: uppercase;
-    line-height: 0.9;
-}
-
-.bershka-carrusel-header p {
-    margin: 0.35rem 0 0;
-    color: #777;
-    font-size: 0.8rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-}
-
-.bershka-carrusel-controls {
-    display: flex;
-    gap: 0.6rem;
-}
-
-.bershka-carrusel-btn {
-    width: 42px;
-    height: 42px;
-    border: 1px solid #111;
-    background: #fff;
-    color: #111;
-    font-size: 1.4rem;
-    cursor: pointer;
-    transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
-}
-
-.bershka-carrusel-btn:hover {
-    background: #111;
-    color: #fff;
-    transform: translateY(-2px);
-}
-
-.bershka-carrusel-wrapper {
-    width: 100%;
-    overflow: hidden;
-}
-
-.bershka-carrusel-track {
-    display: flex;
-    gap: 1rem;
-    overflow-x: auto;
-    scroll-behavior: smooth;
-    padding-bottom: 0.9rem;
-    scrollbar-width: thin;
-}
-
-.bershka-carrusel-track::-webkit-scrollbar {
-    height: 7px;
-}
-
-.bershka-carrusel-track::-webkit-scrollbar-track {
-    background: #eee;
-}
-
-.bershka-carrusel-track::-webkit-scrollbar-thumb {
-    background: #111;
-}
-
-.carrusel-card {
-    flex: 0 0 230px;
-    background: #fff;
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    overflow: hidden;
-    transition: transform 0.25s ease, box-shadow 0.25s ease;
-}
-
-.carrusel-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.12);
-}
-
-.carrusel-card a {
-    display: block;
-    text-decoration: none;
-    color: inherit;
-}
-
-.carrusel-card img,
-.carrusel-sin-imagen {
-    width: 100%;
-    aspect-ratio: 3 / 4;
-    object-fit: cover;
-    display: block;
-    background: #f3f3f3;
-}
-
-.carrusel-sin-imagen {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #777;
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-}
-
-.carrusel-info {
-    padding: 0.85rem;
-}
-
-.carrusel-info h3 {
-    margin: 0 0 0.35rem;
-    font-size: 0.78rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.02em;
-    line-height: 1.25;
-}
-
-.carrusel-info p {
-    margin: 0;
-    font-size: 0.82rem;
-    font-weight: 700;
-}
-
-
-/* =========================================================
-   RESPONSIVE CARRUSEL
-========================================================= */
-
-@media (max-width: 768px) {
-    .bershka-carrusel-header {
-        align-items: flex-start;
-        flex-direction: column;
-    }
-
-    .bershka-carrusel-controls {
-        align-self: flex-end;
-    }
-
-    .carrusel-card {
-        flex-basis: 180px;
-    }
-}
-
-@media (max-width: 480px) {
-    .carrusel-card {
-        flex-basis: 155px;
-    }
-
-    .bershka-carrusel-btn {
-        width: 36px;
-        height: 36px;
-        font-size: 1.1rem;
-    }
-}
-
-@media (max-width: 768px) {
     .toast-carrito {
         top: 82px;
         right: 12px;
