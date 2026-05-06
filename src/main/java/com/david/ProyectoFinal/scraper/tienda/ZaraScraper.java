@@ -109,6 +109,7 @@ public class ZaraScraper implements ScraperTienda {
         int productosRepetidos = 0;
         int productosDescartados = 0;
         int urlsFallback = 0;
+        int productosEnOfertaCategoria = 0;
 
         System.out.println("====================================");
         System.out.println("PROCESANDO CATEGORÍA ZARA");
@@ -157,6 +158,10 @@ public class ZaraScraper implements ScraperTienda {
                             continue;
                         }
 
+                        if (Boolean.TRUE.equals(producto.getEnOferta())) {
+                            productosEnOfertaCategoria++;
+                        }
+
                         if (producto.getUrlProducto() != null && producto.getUrlProducto().contains("slug-fallback-debug")) {
                             urlsFallback++;
                         }
@@ -185,6 +190,7 @@ public class ZaraScraper implements ScraperTienda {
             System.out.println("Productos nuevos añadidos: " + productosNuevos);
             System.out.println("Productos repetidos ignorados: " + productosRepetidos);
             System.out.println("Productos descartados: " + productosDescartados);
+            System.out.println("Productos en oferta detectados en categoría: " + productosEnOfertaCategoria);
             System.out.println("URLs fallback generadas: " + urlsFallback);
             System.out.println();
 
@@ -259,6 +265,19 @@ public class ZaraScraper implements ScraperTienda {
         }
 
         BigDecimal precio = convertirPrecio(productoJson.path("price").asText("0"));
+        BigDecimal precioOriginal = convertirPrecio(productoJson.path("oldPrice").asText(""));
+
+        Integer porcentajeDescuento = productoJson.hasNonNull("displayDiscountPercentage")
+                ? productoJson.path("displayDiscountPercentage").asInt()
+                : null;
+
+        boolean enOferta = precioOriginal != null
+                && precio != null
+                && precioOriginal.compareTo(precio) > 0;
+
+        if (porcentajeDescuento != null && porcentajeDescuento > 0) {
+            enOferta = true;
+        }
 
         if (precio == null || precio.compareTo(BigDecimal.ZERO) <= 0) {
             return null;
@@ -297,6 +316,9 @@ public class ZaraScraper implements ScraperTienda {
         producto.setNombre(nombre);
         producto.setDescripcion(descripcion);
         producto.setPrecio(precio);
+        producto.setPrecioOriginal(precioOriginal);
+        producto.setPorcentajeDescuento(porcentajeDescuento);
+        producto.setEnOferta(enOferta);
         producto.setUrlImagen(imagenPrincipal);
         producto.setUrlProducto(urlProducto);
         producto.setSeccion(seccion);
@@ -817,6 +839,10 @@ public class ZaraScraper implements ScraperTienda {
                 .filter(producto -> estaVacio(producto.getUrlProducto()))
                 .count();
 
+        long productosEnOferta = productos.stream()
+                .filter(producto -> Boolean.TRUE.equals(producto.getEnOferta()))
+                .count();
+
         long totalImagenesExtraidas = productos.stream()
                 .filter(producto -> producto.getImagenes() != null)
                 .mapToLong(producto -> producto.getImagenes().size())
@@ -847,6 +873,7 @@ public class ZaraScraper implements ScraperTienda {
         System.out.println("Productos sin imagen principal: " + productosSinImagen);
         System.out.println("Productos sin precio: " + productosSinPrecio);
         System.out.println("Productos sin URL: " + productosSinUrl);
+        System.out.println("Productos en oferta: " + productosEnOferta);
         System.out.println("Total imágenes extraídas: " + totalImagenesExtraidas);
 
         System.out.println();
@@ -882,6 +909,9 @@ public class ZaraScraper implements ScraperTienda {
                     System.out.println("------------------------------------");
                     System.out.println("Nombre: " + producto.getNombre());
                     System.out.println("Precio: " + producto.getPrecio());
+                    System.out.println("Precio original: " + producto.getPrecioOriginal());
+                    System.out.println("Porcentaje descuento: " + producto.getPorcentajeDescuento());
+                    System.out.println("En oferta: " + producto.getEnOferta());
                     System.out.println("Sección: " + producto.getSeccion());
                     System.out.println("Categoría: " + (producto.getCategoria() != null ? producto.getCategoria().getNombre() : ""));
                     System.out.println("URL: " + producto.getUrlProducto());
@@ -899,5 +929,4 @@ public class ZaraScraper implements ScraperTienda {
     ) {
 
     }
-
 }

@@ -46,6 +46,7 @@ public class ProductoController {
             @RequestParam(name = "categoria", required = false) List<String> categorias,
             @RequestParam(required = false) String busqueda,
             @RequestParam(required = false) String orden,
+            @RequestParam(required = false) Boolean enOferta,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "24") int size
     ) {
@@ -55,11 +56,12 @@ public class ProductoController {
                         + ", categorias=" + categorias
                         + ", busqueda=" + busqueda
                         + ", orden=" + orden
+                        + ", enOferta=" + enOferta
                         + ", page=" + page
                         + ", size=" + size
         );
 
-        return productoService.buscarProductos(tienda, secciones, categorias, busqueda, orden, page, size);
+        return productoService.buscarProductos(tienda, secciones, categorias, busqueda, orden, enOferta, page, size);
     }
 
     @GetMapping("/catalogo/categorias")

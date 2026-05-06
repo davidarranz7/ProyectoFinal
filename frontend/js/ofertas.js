@@ -1,4 +1,4 @@
-let productosZara = [];
+let productosOfertas = [];
 let favoritosIds = new Set();
 let sesionActual = null;
 
@@ -9,7 +9,7 @@ let totalProductosCatalogo = 0;
 let ordenCatalogo = "recientes";
 
 const PRODUCTOS_POR_CARGA = 8;
-const TIENDA_ACTUAL = "Zara";
+const TIENDAS_DISPONIBLES = ["Zara", "PullAndBear", "Bershka"];
 
 const modal = document.getElementById("modal-login");
 const cerrarModal = document.getElementById("cerrar-modal");
@@ -24,6 +24,10 @@ const formateadorEuro = new Intl.NumberFormat("es-ES", {
     currency: "EUR"
 });
 
+if (modal) {
+    modal.style.display = "none";
+}
+
 function mostrarToastCarrito(mensaje = "Añadido al carrito") {
     mostrarToast(mensaje);
 }
@@ -34,7 +38,10 @@ function mostrarToastFavorito(mensaje = "Favorito actualizado") {
 
 function mostrarToast(mensaje) {
     const toast = document.getElementById("toast-carrito");
-    if (!toast) return;
+
+    if (!toast) {
+        return;
+    }
 
     toast.textContent = mensaje;
     toast.classList.add("activo");
@@ -99,10 +106,12 @@ async function obtenerSesionActual() {
 
         const data = await response.json();
         sesionActual = data;
+
         return data;
     } catch (error) {
         console.error("Error al comprobar sesión:", error);
         sesionActual = null;
+
         return null;
     }
 }
@@ -162,18 +171,32 @@ async function cargarCategoriasCatalogo() {
             </li>
         `;
 
-        const response = await fetch(`${BASE_URL}/productos/catalogo/categorias?tienda=${TIENDA_ACTUAL}`, {
-            method: "GET",
-            credentials: "include"
-        });
+        const categoriasUnicas = new Set();
 
-        if (!response.ok) {
-            throw new Error("No se pudieron cargar las categorías");
+        for (const tienda of TIENDAS_DISPONIBLES) {
+            const response = await fetch(`${BASE_URL}/productos/catalogo/categorias?tienda=${tienda}`, {
+                method: "GET",
+                credentials: "include"
+            });
+
+            if (!response.ok) {
+                continue;
+            }
+
+            const categorias = await response.json();
+
+            if (Array.isArray(categorias)) {
+                categorias.forEach(categoria => {
+                    if (categoria) {
+                        categoriasUnicas.add(categoria);
+                    }
+                });
+            }
         }
 
-        const categorias = await response.json();
+        const categoriasOrdenadas = [...categoriasUnicas].sort((a, b) => a.localeCompare(b));
 
-        if (!Array.isArray(categorias) || categorias.length === 0) {
+        if (categoriasOrdenadas.length === 0) {
             listaCategoriasFiltro.innerHTML = `
                 <li>
                     <span class="filtro-label-texto">Sin categorías</span>
@@ -182,7 +205,7 @@ async function cargarCategoriasCatalogo() {
             return;
         }
 
-        renderizarCategoriasFiltro(categorias);
+        renderizarCategoriasFiltro(categoriasOrdenadas);
 
     } catch (error) {
         console.error("Error al cargar categorías:", error);
@@ -225,6 +248,10 @@ function renderizarCategoriasFiltro(categorias) {
 }
 
 function obtenerFiltrosCatalogo() {
+    const tiendas = Array.from(
+        document.querySelectorAll('input[data-tipo="tienda"]:checked')
+    ).map(input => input.value);
+
     const secciones = Array.from(
         document.querySelectorAll('input[data-tipo="genero"]:checked')
     ).map(input => {
@@ -238,20 +265,24 @@ function obtenerFiltrosCatalogo() {
     ).map(input => input.value);
 
     return {
+        tiendas,
         secciones,
         categorias
     };
 }
 
-function construirUrlCatalogo() {
+function construirUrlCatalogo(tienda = null) {
     const filtros = obtenerFiltrosCatalogo();
 
     const params = new URLSearchParams();
-    params.append("tienda", TIENDA_ACTUAL);
-    params.append("enOferta", "false");
+    params.append("enOferta", "true");
     params.append("page", paginaActual);
     params.append("size", PRODUCTOS_POR_CARGA);
     params.append("orden", ordenCatalogo);
+
+    if (tienda) {
+        params.append("tienda", tienda);
+    }
 
     filtros.secciones.forEach(seccion => {
         params.append("seccion", seccion);
@@ -276,39 +307,67 @@ async function cargarProductosCatalogo(reiniciar = false) {
     if (reiniciar) {
         paginaActual = 0;
         ultimaPagina = false;
-        productosZara = [];
+        productosOfertas = [];
         mostrarCargandoProductos();
     }
 
     cargandoProductos = true;
 
     try {
-        const response = await fetch(construirUrlCatalogo(), {
-            method: "GET",
-            credentials: "include"
-        });
+        const filtros = obtenerFiltrosCatalogo();
+        const tiendasSeleccionadas = filtros.tiendas;
 
-        if (!response.ok) {
-            throw new Error("No se pudieron cargar los productos");
+        let respuestas = [];
+
+        if (tiendasSeleccionadas.length === 0) {
+            const response = await fetch(construirUrlCatalogo(), {
+                method: "GET",
+                credentials: "include"
+            });
+
+            if (!response.ok) {
+                throw new Error("No se pudieron cargar las ofertas");
+            }
+
+            respuestas.push(await response.json());
+        } else {
+            const promesas = tiendasSeleccionadas.map(tienda => {
+                return fetch(construirUrlCatalogo(tienda), {
+                    method: "GET",
+                    credentials: "include"
+                }).then(response => {
+                    if (!response.ok) {
+                        throw new Error(`No se pudieron cargar ofertas de ${tienda}`);
+                    }
+
+                    return response.json();
+                });
+            });
+
+            respuestas = await Promise.all(promesas);
         }
 
-        const data = await response.json();
-        const productos = Array.isArray(data.productos) ? data.productos : [];
+        const productos = respuestas.flatMap(data =>
+            Array.isArray(data.productos) ? data.productos : []
+        );
 
-        totalProductosCatalogo = data.totalElementos ?? productos.length;
-        ultimaPagina = data.ultimaPagina === true;
-        paginaActual = data.paginaActual ?? paginaActual;
+        totalProductosCatalogo = respuestas.reduce((total, data) => {
+            return total + Number(data.totalElementos ?? 0);
+        }, 0);
+
+        const todasUltimas = respuestas.every(data => data.ultimaPagina === true);
+        ultimaPagina = todasUltimas;
 
         if (reiniciar) {
-            productosZara = [...productos];
+            productosOfertas = [...productos];
         } else {
-            productosZara = [...productosZara, ...productos];
+            productosOfertas = [...productosOfertas, ...productos];
         }
 
         renderizarProductos(productos, reiniciar);
 
     } catch (error) {
-        console.error("Error al cargar productos:", error);
+        console.error("Error al cargar ofertas:", error);
 
         if (!reiniciar && paginaActual > 0) {
             paginaActual--;
@@ -325,11 +384,11 @@ function mostrarCargandoProductos() {
     const contador = document.getElementById("contador-productos");
 
     if (contador) {
-        contador.textContent = "NEW COLLECTION / CARGANDO...";
+        contador.textContent = "OFERTAS / CARGANDO...";
     }
 
     if (grid) {
-        grid.innerHTML = `<p class="sin-resultados">Cargando productos...</p>`;
+        grid.innerHTML = `<p class="sin-resultados">Cargando ofertas...</p>`;
     }
 }
 
@@ -338,11 +397,11 @@ function mostrarErrorProductos() {
     const contador = document.getElementById("contador-productos");
 
     if (contador) {
-        contador.textContent = "NEW COLLECTION / ERROR";
+        contador.textContent = "OFERTAS / ERROR";
     }
 
-    if (grid && productosZara.length === 0) {
-        grid.innerHTML = `<p class="sin-resultados">No se pudieron cargar los productos.</p>`;
+    if (grid && productosOfertas.length === 0) {
+        grid.innerHTML = `<p class="sin-resultados">No se pudieron cargar las ofertas.</p>`;
     }
 }
 
@@ -358,10 +417,10 @@ function renderizarProductos(productos, reiniciar = true) {
         grid.innerHTML = "";
     }
 
-    contador.textContent = `NEW COLLECTION / ${totalProductosCatalogo} PRODUCTOS`;
+    contador.textContent = `OFERTAS / ${totalProductosCatalogo} PRODUCTOS`;
 
     if (productos.length === 0 && reiniciar) {
-        grid.innerHTML = `<p class="sin-resultados">No hay productos que coincidan con los filtros seleccionados.</p>`;
+        grid.innerHTML = `<p class="sin-resultados">No hay ofertas que coincidan con los filtros seleccionados.</p>`;
         return;
     }
 
@@ -372,9 +431,17 @@ function renderizarProductos(productos, reiniciar = true) {
 
 function crearCardProducto(producto) {
     const card = document.createElement("article");
-    card.className = "tarjeta-zara";
+    card.className = "tarjeta-oferta";
 
     const imgWrapper = crearCarruselImagenesProducto(producto);
+
+    const badgeDescuento = document.createElement("span");
+    badgeDescuento.className = "badge-descuento";
+
+    if (producto.porcentajeDescuento != null) {
+        badgeDescuento.textContent = `-${producto.porcentajeDescuento}%`;
+        imgWrapper.appendChild(badgeDescuento);
+    }
 
     const btnFav = document.createElement("button");
     btnFav.className = "btn-fav";
@@ -385,6 +452,19 @@ function crearCardProducto(producto) {
 
     const infoProducto = document.createElement("div");
     infoProducto.className = "info-producto";
+
+    const metaProducto = document.createElement("div");
+    metaProducto.className = "meta-producto";
+
+    const tienda = document.createElement("span");
+    tienda.className = "producto-tienda";
+    tienda.textContent = producto.tienda?.nombre || "Tienda";
+
+    const categoria = document.createElement("span");
+    categoria.className = "producto-categoria";
+    categoria.textContent = producto.categoria?.nombre || "Categoría";
+
+    metaProducto.append(tienda, categoria);
 
     const linkProducto = document.createElement("a");
     linkProducto.href = `fichaProducto.html?id=${producto.id}`;
@@ -399,16 +479,29 @@ function crearCardProducto(producto) {
     const productoFooter = document.createElement("div");
     productoFooter.className = "producto-footer";
 
-    const precio = document.createElement("p");
-    precio.className = "p-final";
-    precio.textContent = formatearPrecioProducto(producto.precio);
+    const precios = document.createElement("div");
+    precios.className = "precios-oferta";
+
+    const precioActual = document.createElement("p");
+    precioActual.className = "precio-actual";
+    precioActual.textContent = formatearPrecioProducto(producto.precio);
+
+    precios.appendChild(precioActual);
+
+    if (producto.precioOriginal != null) {
+        const precioOriginal = document.createElement("p");
+        precioOriginal.className = "precio-original";
+        precioOriginal.textContent = formatearPrecioProducto(producto.precioOriginal);
+
+        precios.appendChild(precioOriginal);
+    }
 
     const btnCarrito = document.createElement("button");
     btnCarrito.className = "btn-carrito";
     btnCarrito.type = "button";
     btnCarrito.textContent = "Añadir";
 
-    productoFooter.append(precio, btnCarrito);
+    productoFooter.append(precios, btnCarrito);
 
     const miniMenuTalla = document.createElement("div");
     miniMenuTalla.className = "mini-menu-talla";
@@ -426,7 +519,7 @@ function crearCardProducto(producto) {
     btnConfirmarCarrito.textContent = "Confirmar";
 
     miniMenuTalla.append(listaTallas, mensajeStock, btnConfirmarCarrito);
-    infoProducto.append(linkProducto, productoFooter, miniMenuTalla);
+    infoProducto.append(metaProducto, linkProducto, productoFooter, miniMenuTalla);
     card.append(imgWrapper, infoProducto);
 
     let tallaSeleccionada = null;
@@ -444,6 +537,7 @@ function crearCardProducto(producto) {
     btnFav.addEventListener("click", async (event) => {
         event.preventDefault();
         event.stopPropagation();
+
         await alternarFavorito(producto, btnFav);
     });
 
@@ -483,9 +577,16 @@ function crearCardProducto(producto) {
             return;
         }
 
-        await agregarProductoAlCarrito(producto, tallaSeleccionada, miniMenuTalla, listaTallas, mensajeStock, () => {
-            tallaSeleccionada = null;
-        });
+        await agregarProductoAlCarrito(
+            producto,
+            tallaSeleccionada,
+            miniMenuTalla,
+            listaTallas,
+            mensajeStock,
+            () => {
+                tallaSeleccionada = null;
+            }
+        );
     });
 
     return card;
@@ -676,6 +777,7 @@ function obtenerImagenesProducto(producto) {
         const imagenesOrdenadas = [...producto.imagenes].sort((a, b) => {
             const ordenA = Number(a.orden ?? 999);
             const ordenB = Number(b.orden ?? 999);
+
             return ordenA - ordenB;
         });
 
@@ -871,7 +973,7 @@ function mostrarModalLogin(mensaje) {
 }
 
 function configurarFiltros() {
-    document.querySelectorAll('input[data-tipo="genero"], input[data-tipo="categoria"]').forEach(input => {
+    document.querySelectorAll('input[data-tipo="tienda"], input[data-tipo="genero"], input[data-tipo="categoria"]').forEach(input => {
         input.addEventListener("change", aplicarFiltros);
     });
 
@@ -914,7 +1016,7 @@ function formatearPrecioProducto(valor) {
     return formateadorEuro.format(Number(valor));
 }
 
-async function iniciarZara() {
+async function iniciarOfertas() {
     try {
         await cargarFavoritosUsuario();
 
@@ -930,4 +1032,4 @@ async function iniciarZara() {
     }
 }
 
-iniciarZara();
+iniciarOfertas();

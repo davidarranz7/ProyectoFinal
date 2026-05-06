@@ -11,6 +11,11 @@ public class ProductoListadoDTO {
     private String nombre;
     private String descripcion;
     private BigDecimal precio;
+
+    private BigDecimal precioOriginal;
+    private Integer porcentajeDescuento;
+    private Boolean enOferta;
+
     private String urlImagen;
     private String urlProducto;
     private Seccion seccion;
@@ -36,6 +41,9 @@ public class ProductoListadoDTO {
         this.nombre = nombre;
         this.descripcion = descripcion;
         this.precio = precio;
+        this.precioOriginal = null;
+        this.porcentajeDescuento = null;
+        this.enOferta = false;
         this.urlImagen = urlImagen;
         this.urlProducto = urlProducto;
         this.seccion = seccion;
@@ -59,6 +67,39 @@ public class ProductoListadoDTO {
         this.nombre = nombre;
         this.descripcion = descripcion;
         this.precio = precio;
+        this.precioOriginal = null;
+        this.porcentajeDescuento = null;
+        this.enOferta = false;
+        this.urlImagen = urlImagen;
+        this.urlProducto = urlProducto;
+        this.seccion = seccion;
+        this.categoria = categoria;
+        this.tienda = tienda;
+        this.tallaStocks = tallaStocks;
+        this.imagenes = imagenes;
+    }
+
+    public ProductoListadoDTO(Long id,
+                              String nombre,
+                              String descripcion,
+                              BigDecimal precio,
+                              BigDecimal precioOriginal,
+                              Integer porcentajeDescuento,
+                              Boolean enOferta,
+                              String urlImagen,
+                              String urlProducto,
+                              Seccion seccion,
+                              CategoriaSimpleDTO categoria,
+                              TiendaSimpleDTO tienda,
+                              List<ProductoTallaStockResponseDTO> tallaStocks,
+                              List<ProductoImagenResponseDTO> imagenes) {
+        this.id = id;
+        this.nombre = nombre;
+        this.descripcion = descripcion;
+        this.precio = precio;
+        this.precioOriginal = precioOriginal;
+        this.porcentajeDescuento = porcentajeDescuento;
+        this.enOferta = enOferta != null ? enOferta : false;
         this.urlImagen = urlImagen;
         this.urlProducto = urlProducto;
         this.seccion = seccion;
@@ -82,6 +123,18 @@ public class ProductoListadoDTO {
 
     public BigDecimal getPrecio() {
         return precio;
+    }
+
+    public BigDecimal getPrecioOriginal() {
+        return precioOriginal;
+    }
+
+    public Integer getPorcentajeDescuento() {
+        return porcentajeDescuento;
+    }
+
+    public Boolean getEnOferta() {
+        return enOferta;
     }
 
     public String getUrlImagen() {
@@ -126,6 +179,18 @@ public class ProductoListadoDTO {
 
     public void setPrecio(BigDecimal precio) {
         this.precio = precio;
+    }
+
+    public void setPrecioOriginal(BigDecimal precioOriginal) {
+        this.precioOriginal = precioOriginal;
+    }
+
+    public void setPorcentajeDescuento(Integer porcentajeDescuento) {
+        this.porcentajeDescuento = porcentajeDescuento;
+    }
+
+    public void setEnOferta(Boolean enOferta) {
+        this.enOferta = enOferta;
     }
 
     public void setUrlImagen(String urlImagen) {

@@ -22,6 +22,14 @@ public class Producto {
 
     private BigDecimal precio;///PAra poder evvitar probelmas de redondeo
 
+    @Column(precision = 10, scale = 2)
+    private BigDecimal precioOriginal;
+
+    private Integer porcentajeDescuento;
+
+    @Column(nullable = false)
+    private Boolean enOferta = false;
+
     private String urlImagen;
 
     private String urlProducto;
@@ -48,11 +56,14 @@ public class Producto {
     }
 
     /// Constructor con parámetros-> Todos los necesarios de un Producto
-    public Producto(Long id, String nombre, String descripcion, BigDecimal precio, String urlImagen, String urlProducto, Seccion seccion, Categoria categoria, Tienda tienda, List<ProductoTallaStock> tallaStocks) {
+    public Producto(Long id, String nombre, String descripcion, BigDecimal precio, BigDecimal precioOriginal, Integer porcentajeDescuento, Boolean enOferta, String urlImagen, String urlProducto, Seccion seccion, Categoria categoria, Tienda tienda, List<ProductoTallaStock> tallaStocks, List<ProductoImagen> imagenes) {
         this.id = id;
         this.nombre = nombre;
         this.descripcion = descripcion;
         this.precio = precio;
+        this.precioOriginal = precioOriginal;
+        this.porcentajeDescuento = porcentajeDescuento;
+        this.enOferta = enOferta != null ? enOferta : false;
         this.urlImagen = urlImagen;
         this.urlProducto = urlProducto;
         this.seccion = seccion;
@@ -60,6 +71,12 @@ public class Producto {
         this.tienda = tienda;
         this.tallaStocks = tallaStocks != null ? tallaStocks : new ArrayList<>();
         this.imagenes = new ArrayList<>();
+
+        if (imagenes != null) {
+            for (ProductoImagen imagen : imagenes) {
+                addImagen(imagen);
+            }
+        }
     }
 
     /// Getters y Setters
@@ -161,5 +178,29 @@ public class Producto {
     public void addImagen(ProductoImagen imagen) {
         this.imagenes.add(imagen);
         imagen.setProducto(this);
+    }
+
+    public BigDecimal getPrecioOriginal() {
+        return precioOriginal;
+    }
+
+    public void setPrecioOriginal(BigDecimal precioOriginal) {
+        this.precioOriginal = precioOriginal;
+    }
+
+    public Integer getPorcentajeDescuento() {
+        return porcentajeDescuento;
+    }
+
+    public void setPorcentajeDescuento(Integer porcentajeDescuento) {
+        this.porcentajeDescuento = porcentajeDescuento;
+    }
+
+    public Boolean getEnOferta() {
+        return enOferta;
+    }
+
+    public void setEnOferta(Boolean enOferta) {
+        this.enOferta = enOferta != null ? enOferta : false;
     }
 }

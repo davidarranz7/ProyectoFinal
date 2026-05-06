@@ -133,6 +133,9 @@ public class ProductoService {
                 productoExistente.setNombre(producto.getNombre());
                 productoExistente.setDescripcion(producto.getDescripcion());
                 productoExistente.setPrecio(producto.getPrecio());
+                productoExistente.setPrecioOriginal(producto.getPrecioOriginal());
+                productoExistente.setPorcentajeDescuento(producto.getPorcentajeDescuento());
+                productoExistente.setEnOferta(producto.getEnOferta() != null ? producto.getEnOferta() : false);
                 productoExistente.setUrlImagen(producto.getUrlImagen());
                 productoExistente.setUrlProducto(producto.getUrlProducto());
                 productoExistente.setSeccion(producto.getSeccion());
@@ -185,6 +188,7 @@ public class ProductoService {
                                                    List<String> categorias,
                                                    String busqueda,
                                                    String orden,
+                                                   Boolean enOferta,
                                                    int page,
                                                    int size) {
         int pagina = Math.max(page, 0);
@@ -205,6 +209,15 @@ public class ProductoService {
                         criteriaBuilder.equal(
                                 criteriaBuilder.lower(tiendaJoin.get("nombre")),
                                 tienda.trim().toLowerCase()
+                        )
+                );
+            }
+
+            if (enOferta != null) {
+                predicates.add(
+                        criteriaBuilder.equal(
+                                root.get("enOferta"),
+                                enOferta
                         )
                 );
             }
@@ -362,6 +375,9 @@ public class ProductoService {
                 producto.getNombre(),
                 producto.getDescripcion(),
                 producto.getPrecio(),
+                producto.getPrecioOriginal(),
+                producto.getPorcentajeDescuento(),
+                producto.getEnOferta(),
                 producto.getUrlImagen(),
                 producto.getUrlProducto(),
                 producto.getSeccion(),
