@@ -81,6 +81,9 @@ public class ZaraScraper implements ScraperTienda {
                 new CategoriaZara("Mujer bolsos", "2417728"),
                 new CategoriaZara("Mujer accesorios", "2417727"),
 
+                new CategoriaZara("Mujer precios especiales", "2419737"),
+                new CategoriaZara("Hombre precios especiales", "2436823"),
+
                 new CategoriaZara("Hombre lino", "2431961"),
                 new CategoriaZara("Hombre camisas", "2431994"),
                 new CategoriaZara("Hombre camisetas", "2432041"),
@@ -93,6 +96,7 @@ public class ZaraScraper implements ScraperTienda {
                 new CategoriaZara("Hombre zapatos", "2436382"),
                 new CategoriaZara("Hombre bolsos", "2436405"),
                 new CategoriaZara("Hombre accesorios", "2436431")
+
         );
     }
 
