@@ -226,6 +226,34 @@ public class ZaraScraper implements ScraperTienda {
         String descripcion = texto(productoJson, "description");
         String keyword = texto(productoJson.path("seo"), "keyword");
 
+        if (estaVacio(descripcion)) {
+            System.out.println("====================================");
+            System.out.println("DEBUG DESCRIPCION ZARA");
+            System.out.println("Producto: " + nombre);
+            System.out.println("Categoria: " + categoriaZara.nombre());
+            System.out.println("Campos raíz del producto:");
+
+            productoJson.fieldNames().forEachRemaining(campo -> {
+                System.out.println("- " + campo);
+            });
+
+            System.out.println("Campos dentro de detail:");
+
+            JsonNode detail = productoJson.path("detail");
+
+            if (!detail.isMissingNode() && !detail.isNull()) {
+                detail.fieldNames().forEachRemaining(campo -> {
+                    System.out.println("- detail." + campo);
+                });
+            }
+
+            System.out.println("description raíz: " + texto(productoJson, "description"));
+            System.out.println("detail.description: " + texto(detail, "description"));
+            System.out.println("detail.longDescription: " + texto(detail, "longDescription"));
+            System.out.println("detail.shortDescription: " + texto(detail, "shortDescription"));
+            System.out.println("====================================");
+        }
+
         if (estaVacio(seoProductId) || estaVacio(productId) || estaVacio(nombre)) {
             return null;
         }
@@ -869,5 +897,7 @@ public class ZaraScraper implements ScraperTienda {
             String nombre,
             String id
     ) {
+
     }
+
 }

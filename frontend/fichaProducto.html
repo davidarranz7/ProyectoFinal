@@ -13,22 +13,44 @@
 <div id="menu-container"></div>
 
 <main class="ficha-container">
+
+    <div class="ficha-volver">
+        <button id="btn-volver" class="btn-volver" type="button">
+            ← Volver
+        </button>
+    </div>
+
     <section class="ficha-producto">
 
-        <div class="ficha-volver">
-            <button id="btn-volver" class="btn-volver" type="button">
-                ← Volver
-            </button>
-        </div>
+        <div class="ficha-galeria">
 
-        <div class="ficha-imagen">
-            <img id="producto-imagen" src="" alt="Imagen del producto">
+            <div class="ficha-imagen">
+                <button id="btn-imagen-anterior" class="btn-imagen-ficha btn-imagen-anterior" type="button" aria-label="Imagen anterior">
+                    ‹
+                </button>
+
+                <img id="producto-imagen" src="" alt="Imagen del producto">
+
+                <button id="btn-imagen-siguiente" class="btn-imagen-ficha btn-imagen-siguiente" type="button" aria-label="Imagen siguiente">
+                    ›
+                </button>
+
+                <div id="contador-imagenes" class="contador-imagenes">
+                    1/1
+                </div>
+            </div>
+
+            <div id="miniaturas-imagenes" class="miniaturas-imagenes"></div>
+
         </div>
 
         <div class="ficha-info">
             <p class="producto-tienda" id="producto-tienda">Tienda</p>
+
             <h1 id="producto-nombre">Nombre del producto</h1>
+
             <p class="producto-precio" id="producto-precio">0,00 €</p>
+
             <p class="producto-categoria" id="producto-categoria">Categoría</p>
 
             <div class="producto-descripcion">
@@ -37,23 +59,92 @@
             </div>
 
             <div class="producto-tallas">
-                <h3>Tallas</h3>
+                <div class="producto-tallas-header">
+                    <h3>Tallas</h3>
+                    <span id="mensaje-stock" class="mensaje-stock">Selecciona una talla</span>
+                </div>
+
                 <div class="tallas-lista" id="tallas-lista"></div>
+
+                <p id="mensaje-talla" class="mensaje-validacion oculto">
+                    Selecciona una talla antes de continuar.
+                </p>
             </div>
 
             <div class="producto-acciones">
-                <button class="btn-principal" id="btn-carrito" type="button">Añadir al carrito</button>
-                <button class="btn-secundario" id="btn-favorito" type="button">Añadir a favoritos</button>
-                <a href="#" class="btn-tienda" id="btn-tienda-original" target="_blank">Ver en tienda original</a>
+                <button class="btn-principal" id="btn-carrito" type="button">
+                    Añadir al carrito
+                </button>
+
+                <button class="btn-secundario" id="btn-favorito" type="button">
+                    Añadir a favoritos
+                </button>
+
+                <a href="#" class="btn-tienda" id="btn-tienda-original" target="_blank" rel="noopener noreferrer">
+                    Ver en tienda original
+                </a>
             </div>
         </div>
 
     </section>
+
 </main>
+
+<div id="modal-login" class="modal-overlay oculto">
+    <div class="modal-contenido">
+        <button id="cerrar-modal" class="modal-cerrar" type="button" aria-label="Cerrar modal">
+            ×
+        </button>
+
+        <span class="modal-etiqueta">Sesión necesaria</span>
+
+        <h2>Inicia sesión para continuar</h2>
+
+        <p id="modal-mensaje">
+            Debes iniciar sesión para realizar esta acción.
+        </p>
+
+        <div class="modal-acciones">
+            <button id="abrir-login-modal" class="btn-modal-principal" type="button">
+                Iniciar sesión
+            </button>
+
+            <button id="cerrar-modal-secundario" class="btn-modal-secundario" type="button">
+                Seguir viendo
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="modal-feedback" class="modal-overlay oculto">
+    <div class="modal-contenido modal-feedback-contenido">
+        <button id="cerrar-feedback" class="modal-cerrar" type="button" aria-label="Cerrar modal">
+            ×
+        </button>
+
+        <span id="feedback-etiqueta" class="modal-etiqueta">Acción completada</span>
+
+        <h2 id="feedback-titulo">Producto añadido</h2>
+
+        <p id="feedback-mensaje">
+            La acción se ha realizado correctamente.
+        </p>
+
+        <div class="modal-acciones">
+            <button id="feedback-aceptar" class="btn-modal-principal" type="button">
+                Aceptar
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="toast-carrito" class="toast-carrito">
+    Añadido al carrito
+</div>
 
 <script src="js/config.js"></script>
 <script src="js/menu.js"></script>
 <script src="js/fichaProducto.js"></script>
-<div id="toast-carrito" class="toast-carrito">Añadido al carrito</div>
+
 </body>
 </html>

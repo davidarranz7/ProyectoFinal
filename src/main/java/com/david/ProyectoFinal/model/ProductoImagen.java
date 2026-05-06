@@ -1,5 +1,6 @@
 package com.david.ProyectoFinal.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 @Entity
@@ -15,6 +16,7 @@ public class ProductoImagen {
 
     private int orden;
 
+    @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "producto_id")
     private Producto producto;
