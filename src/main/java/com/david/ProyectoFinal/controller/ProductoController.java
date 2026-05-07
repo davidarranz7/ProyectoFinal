@@ -47,6 +47,7 @@ public class ProductoController {
             @RequestParam(required = false) String busqueda,
             @RequestParam(required = false) String orden,
             @RequestParam(required = false) Boolean enOferta,
+            @RequestParam(required = false) Boolean nuevaColeccion,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "24") int size
     ) {
@@ -61,7 +62,17 @@ public class ProductoController {
                         + ", size=" + size
         );
 
-        return productoService.buscarProductos(tienda, secciones, categorias, busqueda, orden, enOferta, page, size);
+        return productoService.buscarProductos(
+                tienda,
+                secciones,
+                categorias,
+                busqueda,
+                orden,
+                enOferta,
+                nuevaColeccion,
+                page,
+                size
+        );
     }
 
     @GetMapping("/catalogo/categorias")

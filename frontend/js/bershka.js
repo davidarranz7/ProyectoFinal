@@ -233,8 +233,13 @@ function obtenerFiltrosCatalogo() {
     const secciones = Array.from(
         document.querySelectorAll('input[data-tipo="genero"]:checked')
     ).map(input => {
-        if (input.value === "hombre") return "HOMBRE";
-        if (input.value === "mujer") return "MUJER";
+        if (input.value === "hombre") {
+            return "HOMBRE";
+        }
+
+        if (input.value === "mujer") {
+            return "MUJER";
+        }
 
         return input.value.toUpperCase();
     });
@@ -253,10 +258,19 @@ function construirUrlCatalogo() {
     const filtros = obtenerFiltrosCatalogo();
 
     const params = new URLSearchParams();
+
     params.append("tienda", TIENDA_ACTUAL);
     params.append("page", paginaActual);
     params.append("size", PRODUCTOS_POR_CARGA);
     params.append("orden", ordenCatalogo);
+
+    // En bershka.html solo queremos catálogo normal.
+    // Las ofertas/rebajas irán en otra página aparte.
+    params.append("enOferta", "false");
+
+    // En bershka.html tampoco queremos nueva colección.
+    // Nueva colección irá en nuevaColeccion.html.
+    params.append("nuevaColeccion", "false");
 
     filtros.secciones.forEach(seccion => {
         params.append("seccion", seccion);

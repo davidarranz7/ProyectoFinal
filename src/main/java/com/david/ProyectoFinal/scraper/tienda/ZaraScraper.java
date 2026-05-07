@@ -81,6 +81,8 @@ public class ZaraScraper implements ScraperTienda {
                 new CategoriaZara("Mujer bolsos", "2417728"),
                 new CategoriaZara("Mujer accesorios", "2417727"),
 
+                new CategoriaZara("Mujer nueva colección", "2546081", true),
+
                 new CategoriaZara("Mujer precios especiales", "2419737"),
                 new CategoriaZara("Hombre precios especiales", "2436823"),
 
@@ -96,7 +98,6 @@ public class ZaraScraper implements ScraperTienda {
                 new CategoriaZara("Hombre zapatos", "2436382"),
                 new CategoriaZara("Hombre bolsos", "2436405"),
                 new CategoriaZara("Hombre accesorios", "2436431")
-
         );
     }
 
@@ -114,12 +115,14 @@ public class ZaraScraper implements ScraperTienda {
         int productosDescartados = 0;
         int urlsFallback = 0;
         int productosEnOfertaCategoria = 0;
+        int productosNuevaColeccionCategoria = 0;
 
         System.out.println("====================================");
         System.out.println("PROCESANDO CATEGORÍA ZARA");
         System.out.println("====================================");
         System.out.println("Nombre: " + categoriaZara.nombre());
         System.out.println("ID: " + categoriaZara.id());
+        System.out.println("Nueva colección: " + categoriaZara.nuevaColeccion());
         System.out.println("Endpoint: " + endpoint);
 
         try {
@@ -166,6 +169,10 @@ public class ZaraScraper implements ScraperTienda {
                             productosEnOfertaCategoria++;
                         }
 
+                        if (Boolean.TRUE.equals(producto.getNuevaColeccion())) {
+                            productosNuevaColeccionCategoria++;
+                        }
+
                         if (producto.getUrlProducto() != null && producto.getUrlProducto().contains("slug-fallback-debug")) {
                             urlsFallback++;
                         }
@@ -177,7 +184,25 @@ public class ZaraScraper implements ScraperTienda {
                             continue;
                         }
 
-                        if (productosGlobales.containsKey(claveProducto) || urlsVistas.contains(producto.getUrlProducto())) {
+                        if (productosGlobales.containsKey(claveProducto)) {
+                            Producto productoExistente = productosGlobales.get(claveProducto);
+
+                            if (categoriaZara.nuevaColeccion()) {
+                                productoExistente.setNuevaColeccion(true);
+                            }
+
+                            productosRepetidos++;
+                            continue;
+                        }
+
+                        if (urlsVistas.contains(producto.getUrlProducto())) {
+                            if (categoriaZara.nuevaColeccion()) {
+                                productosGlobales.values().stream()
+                                        .filter(p -> producto.getUrlProducto().equals(p.getUrlProducto()))
+                                        .findFirst()
+                                        .ifPresent(p -> p.setNuevaColeccion(true));
+                            }
+
                             productosRepetidos++;
                             continue;
                         }
@@ -195,6 +220,7 @@ public class ZaraScraper implements ScraperTienda {
             System.out.println("Productos repetidos ignorados: " + productosRepetidos);
             System.out.println("Productos descartados: " + productosDescartados);
             System.out.println("Productos en oferta detectados en categoría: " + productosEnOfertaCategoria);
+            System.out.println("Productos nueva colección detectados en categoría: " + productosNuevaColeccionCategoria);
             System.out.println("URLs fallback generadas: " + urlsFallback);
             System.out.println();
 
@@ -323,6 +349,7 @@ public class ZaraScraper implements ScraperTienda {
         producto.setPrecioOriginal(precioOriginal);
         producto.setPorcentajeDescuento(porcentajeDescuento);
         producto.setEnOferta(enOferta);
+        producto.setNuevaColeccion(categoriaZara.nuevaColeccion());
         producto.setUrlImagen(imagenPrincipal);
         producto.setUrlProducto(urlProducto);
         producto.setSeccion(seccion);
@@ -847,6 +874,10 @@ public class ZaraScraper implements ScraperTienda {
                 .filter(producto -> Boolean.TRUE.equals(producto.getEnOferta()))
                 .count();
 
+        long productosNuevaColeccion = productos.stream()
+                .filter(producto -> Boolean.TRUE.equals(producto.getNuevaColeccion()))
+                .count();
+
         long totalImagenesExtraidas = productos.stream()
                 .filter(producto -> producto.getImagenes() != null)
                 .mapToLong(producto -> producto.getImagenes().size())
@@ -878,6 +909,7 @@ public class ZaraScraper implements ScraperTienda {
         System.out.println("Productos sin precio: " + productosSinPrecio);
         System.out.println("Productos sin URL: " + productosSinUrl);
         System.out.println("Productos en oferta: " + productosEnOferta);
+        System.out.println("Productos nueva colección: " + productosNuevaColeccion);
         System.out.println("Total imágenes extraídas: " + totalImagenesExtraidas);
 
         System.out.println();
@@ -916,6 +948,7 @@ public class ZaraScraper implements ScraperTienda {
                     System.out.println("Precio original: " + producto.getPrecioOriginal());
                     System.out.println("Porcentaje descuento: " + producto.getPorcentajeDescuento());
                     System.out.println("En oferta: " + producto.getEnOferta());
+                    System.out.println("Nueva colección: " + producto.getNuevaColeccion());
                     System.out.println("Sección: " + producto.getSeccion());
                     System.out.println("Categoría: " + (producto.getCategoria() != null ? producto.getCategoria().getNombre() : ""));
                     System.out.println("URL: " + producto.getUrlProducto());
@@ -929,8 +962,12 @@ public class ZaraScraper implements ScraperTienda {
 
     private record CategoriaZara(
             String nombre,
-            String id
+            String id,
+            boolean nuevaColeccion
     ) {
 
+        public CategoriaZara(String nombre, String id) {
+            this(nombre, id, false);
+        }
     }
 }

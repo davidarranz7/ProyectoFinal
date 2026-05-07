@@ -43,6 +43,9 @@ public class Producto {
     @ManyToOne/// Muchos productos pueden pertenecer a una tienda
     private Tienda tienda;
 
+    @Column(name = "nueva_coleccion")
+    private Boolean nuevaColeccion = false;
+
     @OneToMany(mappedBy = "producto", cascade = CascadeType.ALL, orphanRemoval = true)/// Un producto puede tener muchas tallas y stock
     private List<ProductoTallaStock> tallaStocks = new ArrayList<>();
 
@@ -202,5 +205,13 @@ public class Producto {
 
     public void setEnOferta(Boolean enOferta) {
         this.enOferta = enOferta != null ? enOferta : false;
+    }
+
+    public Boolean getNuevaColeccion() {
+        return nuevaColeccion;
+    }
+
+    public void setNuevaColeccion(Boolean nuevaColeccion) {
+        this.nuevaColeccion = nuevaColeccion;
     }
 }

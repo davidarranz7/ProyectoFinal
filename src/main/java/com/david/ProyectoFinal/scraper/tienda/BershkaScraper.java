@@ -124,7 +124,7 @@ public class BershkaScraper implements ScraperTienda {
                 categoriasBershka = obtenerCategoriasBershkaFallback();
             }
 
-            categoriasBershka = anadirCategoriasPromocionBershka(categoriasBershka);
+            categoriasBershka = anadirCategoriasEspecialesBershka(categoriasBershka);
 
             System.out.println("Categorías a procesar: " + categoriasBershka.size());
             System.out.println();
@@ -214,21 +214,22 @@ public class BershkaScraper implements ScraperTienda {
                         "Promociones",
                         "Promo hasta 30%",
                         "mujer/promo-hasta-30%25-n4404.html?celement=1010419519",
-                        "TEST > Mujer > Promociones"
+                        "TEST > Mujer > Promociones",
+                        false
                 )
         );
     }
 
     private List<CategoriaBershka> obtenerCategoriasBershkaFallback() {
         return List.of(
-                new CategoriaBershka(1010193217L, Seccion.MUJER, "Camisetas", "Camisetas", "mujer/ropa/camisetas-c1010193217.html?celement=1010193217", "Mujer > Ropa > Camisetas"),
-                new CategoriaBershka(1010193239L, Seccion.HOMBRE, "Camisetas", "Camisetas", "hombre/ropa/camisetas-c1010193239.html?celement=1010193239", "Hombre > Ropa > Camisetas"),
-                new CategoriaBershka(1010193241L, Seccion.HOMBRE, "Pantalones", "Pantalones", "hombre/ropa/pantalones-c1010193241.html?celement=1010193241", "Hombre > Ropa > Pantalones"),
-                new CategoriaBershka(1010193244L, Seccion.HOMBRE, "Sudaderas", "Sudaderas", "hombre/ropa/sudaderas-c1010193244.html?celement=1010193244", "Hombre > Ropa > Sudaderas")
+                new CategoriaBershka(1010193217L, Seccion.MUJER, "Camisetas", "Camisetas", "mujer/ropa/camisetas-c1010193217.html?celement=1010193217", "Mujer > Ropa > Camisetas", false),
+                new CategoriaBershka(1010193239L, Seccion.HOMBRE, "Camisetas", "Camisetas", "hombre/ropa/camisetas-c1010193239.html?celement=1010193239", "Hombre > Ropa > Camisetas", false),
+                new CategoriaBershka(1010193241L, Seccion.HOMBRE, "Pantalones", "Pantalones", "hombre/ropa/pantalones-c1010193241.html?celement=1010193241", "Hombre > Ropa > Pantalones", false),
+                new CategoriaBershka(1010193244L, Seccion.HOMBRE, "Sudaderas", "Sudaderas", "hombre/ropa/sudaderas-c1010193244.html?celement=1010193244", "Hombre > Ropa > Sudaderas", false)
         );
     }
 
-    private List<CategoriaBershka> anadirCategoriasPromocionBershka(List<CategoriaBershka> categoriasOriginales) {
+    private List<CategoriaBershka> anadirCategoriasEspecialesBershka(List<CategoriaBershka> categoriasOriginales) {
         List<CategoriaBershka> categorias = new ArrayList<>(categoriasOriginales);
         Set<Long> idsVistos = new LinkedHashSet<>();
 
@@ -236,18 +237,41 @@ public class BershkaScraper implements ScraperTienda {
             idsVistos.add(categoria.id());
         }
 
-        CategoriaBershka promoMujer = new CategoriaBershka(
-                1010419519L,
-                Seccion.MUJER,
-                "Promociones",
-                "Promo hasta 30%",
-                "mujer/promo-hasta-30%25-n4404.html?celement=1010419519",
-                "Mujer > Promociones > Promo hasta 30%"
+        List<CategoriaBershka> categoriasEspeciales = List.of(
+                new CategoriaBershka(
+                        1010419519L,
+                        Seccion.MUJER,
+                        "Promociones",
+                        "Promo hasta 30%",
+                        "mujer/promo-hasta-30%25-n4404.html?celement=1010419519",
+                        "Mujer > Promociones > Promo hasta 30%",
+                        false
+                ),
+                new CategoriaBershka(
+                        1010378020L,
+                        Seccion.MUJER,
+                        "Novedades",
+                        "Nueva colección mujer",
+                        "mujer/novedades-n3283.html?celement=1010378020",
+                        "Mujer > Nueva colección",
+                        true
+                ),
+                new CategoriaBershka(
+                        1010378021L,
+                        Seccion.HOMBRE,
+                        "Novedades",
+                        "Nueva colección hombre",
+                        "hombre/novedades-n3745.html?celement=1010378021",
+                        "Hombre > Nueva colección",
+                        true
+                )
         );
 
-        if (!idsVistos.contains(promoMujer.id())) {
-            categorias.add(promoMujer);
-            idsVistos.add(promoMujer.id());
+        for (CategoriaBershka categoriaEspecial : categoriasEspeciales) {
+            if (!idsVistos.contains(categoriaEspecial.id())) {
+                categorias.add(categoriaEspecial);
+                idsVistos.add(categoriaEspecial.id());
+            }
         }
 
         return categorias;
@@ -326,7 +350,8 @@ public class BershkaScraper implements ScraperTienda {
                         categoria,
                         nombre,
                         urlRelativa,
-                        ruta
+                        ruta,
+                        false
                 ));
 
                 idsVistos.add(idCategoria);
@@ -487,6 +512,10 @@ public class BershkaScraper implements ScraperTienda {
     private String detectarCategoriaDesdeUrlYTexto(String href, String texto) {
         String combinado = normalizarTexto(href + " " + texto);
 
+        if (combinado.contains("NOVEDADES") || combinado.contains("NUEVA COLECCION")) {
+            return "Novedades";
+        }
+
         if (combinado.contains("PROMO") || combinado.contains("PROMOCION") || combinado.contains("REBAJA")) {
             return "Promociones";
         }
@@ -617,6 +646,7 @@ public class BershkaScraper implements ScraperTienda {
         int productosSinImagen = 0;
         int productosSinPrecio = 0;
         int productosEnOferta = 0;
+        int productosNuevaColeccion = 0;
         int productosNormales = 0;
 
         System.out.println("====================================");
@@ -627,6 +657,7 @@ public class BershkaScraper implements ScraperTienda {
         System.out.println("Sección fallback: " + categoriaBershka.seccion());
         System.out.println("Categoría origen: " + categoriaBershka.categoria());
         System.out.println("Nombre categoría: " + categoriaBershka.nombre());
+        System.out.println("Nueva colección: " + categoriaBershka.nuevaColeccion());
 
         try {
             List<String> productIds = obtenerProductIdsCategoria(page, categoriaBershka);
@@ -667,6 +698,9 @@ public class BershkaScraper implements ScraperTienda {
                 }
 
                 if (productosGlobales.containsKey(claveProducto)) {
+                    Producto productoExistente = productosGlobales.get(claveProducto);
+                    actualizarProductoExistenteConDatosEspeciales(productoExistente, producto);
+
                     productosRepetidos++;
                     continue;
                 }
@@ -676,6 +710,8 @@ public class BershkaScraper implements ScraperTienda {
 
                 if (Boolean.TRUE.equals(producto.getEnOferta())) {
                     productosEnOferta++;
+                } else if (Boolean.TRUE.equals(producto.getNuevaColeccion())) {
+                    productosNuevaColeccion++;
                 } else {
                     productosNormales++;
                 }
@@ -688,6 +724,7 @@ public class BershkaScraper implements ScraperTienda {
             System.out.println("Productos sin imagen detectados: " + productosSinImagen);
             System.out.println("Productos sin precio detectados: " + productosSinPrecio);
             System.out.println("Productos en oferta: " + productosEnOferta);
+            System.out.println("Productos nueva colección: " + productosNuevaColeccion);
             System.out.println("Productos normales: " + productosNormales);
             System.out.println();
 
@@ -700,6 +737,23 @@ public class BershkaScraper implements ScraperTienda {
             e.printStackTrace();
 
             return false;
+        }
+    }
+
+    private void actualizarProductoExistenteConDatosEspeciales(Producto productoExistente, Producto productoNuevo) {
+        if (productoExistente == null || productoNuevo == null) {
+            return;
+        }
+
+        if (Boolean.TRUE.equals(productoNuevo.getNuevaColeccion())) {
+            productoExistente.setNuevaColeccion(true);
+        }
+
+        if (Boolean.TRUE.equals(productoNuevo.getEnOferta())) {
+            productoExistente.setEnOferta(true);
+            productoExistente.setPrecio(productoNuevo.getPrecio());
+            productoExistente.setPrecioOriginal(productoNuevo.getPrecioOriginal());
+            productoExistente.setPorcentajeDescuento(productoNuevo.getPorcentajeDescuento());
         }
     }
 
@@ -984,6 +1038,7 @@ public class BershkaScraper implements ScraperTienda {
         producto.setPrecioOriginal(infoPrecio.precioOriginal());
         producto.setPorcentajeDescuento(infoPrecio.porcentajeDescuento());
         producto.setEnOferta(infoPrecio.enOferta());
+        producto.setNuevaColeccion(categoriaBershka.nuevaColeccion());
         producto.setUrlImagen(imagenPrincipal);
         producto.setUrlProducto(urlProducto);
         producto.setSeccion(seccion);
@@ -1204,6 +1259,10 @@ public class BershkaScraper implements ScraperTienda {
 
     private String normalizarCategoriaPadreBershka(String categoriaPadre) {
         String origen = normalizarTexto(categoriaPadre);
+
+        if (origen.contains("NOVEDADES") || origen.contains("NUEVA COLECCION")) {
+            return "Novedades";
+        }
 
         if (origen.contains("PROMOCIONES")) {
             return "Promociones";
@@ -1997,8 +2056,13 @@ public class BershkaScraper implements ScraperTienda {
                 .filter(producto -> Boolean.TRUE.equals(producto.getEnOferta()))
                 .count();
 
+        long productosNuevaColeccion = productos.stream()
+                .filter(producto -> Boolean.TRUE.equals(producto.getNuevaColeccion()))
+                .count();
+
         long productosNormales = productos.stream()
-                .filter(producto -> !Boolean.TRUE.equals(producto.getEnOferta()))
+                .filter(producto -> !Boolean.TRUE.equals(producto.getEnOferta())
+                        && !Boolean.TRUE.equals(producto.getNuevaColeccion()))
                 .count();
 
         long totalImagenesExtraidas = productos.stream()
@@ -2032,6 +2096,7 @@ public class BershkaScraper implements ScraperTienda {
         System.out.println("Productos únicos finales: " + productos.size());
         System.out.println("Productos normales: " + productosNormales);
         System.out.println("Productos en oferta: " + productosEnOferta);
+        System.out.println("Productos nueva colección: " + productosNuevaColeccion);
         System.out.println("Productos sin imagen principal: " + productosSinImagen);
         System.out.println("Productos sin precio: " + productosSinPrecio);
         System.out.println("Productos sin URL: " + productosSinUrl);
@@ -2073,6 +2138,7 @@ public class BershkaScraper implements ScraperTienda {
                     System.out.println("Precio original: " + producto.getPrecioOriginal());
                     System.out.println("Descuento: " + producto.getPorcentajeDescuento());
                     System.out.println("En oferta: " + producto.getEnOferta());
+                    System.out.println("Nueva colección: " + producto.getNuevaColeccion());
                     System.out.println("Sección: " + producto.getSeccion());
                     System.out.println("Categoría: " + (producto.getCategoria() != null ? producto.getCategoria().getNombre() : ""));
                     System.out.println("URL: " + producto.getUrlProducto());
@@ -2090,7 +2156,8 @@ public class BershkaScraper implements ScraperTienda {
             String categoria,
             String nombre,
             String url,
-            String ruta
+            String ruta,
+            boolean nuevaColeccion
     ) {
     }
 

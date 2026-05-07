@@ -34,7 +34,10 @@ function mostrarToastFavorito(mensaje = "Favorito actualizado") {
 
 function mostrarToast(mensaje) {
     const toast = document.getElementById("toast-carrito");
-    if (!toast) return;
+
+    if (!toast) {
+        return;
+    }
 
     toast.textContent = mensaje;
     toast.classList.add("activo");
@@ -99,10 +102,12 @@ async function obtenerSesionActual() {
 
         const data = await response.json();
         sesionActual = data;
+
         return data;
     } catch (error) {
         console.error("Error al comprobar sesión:", error);
         sesionActual = null;
+
         return null;
     }
 }
@@ -228,8 +233,14 @@ function obtenerFiltrosCatalogo() {
     const secciones = Array.from(
         document.querySelectorAll('input[data-tipo="genero"]:checked')
     ).map(input => {
-        if (input.value === "hombre") return "HOMBRE";
-        if (input.value === "mujer") return "MUJER";
+        if (input.value === "hombre") {
+            return "HOMBRE";
+        }
+
+        if (input.value === "mujer") {
+            return "MUJER";
+        }
+
         return input.value.toUpperCase();
     });
 
@@ -247,8 +258,15 @@ function construirUrlCatalogo() {
     const filtros = obtenerFiltrosCatalogo();
 
     const params = new URLSearchParams();
+
     params.append("tienda", TIENDA_ACTUAL);
+
+    // En la página normal de Zara NO queremos mostrar ofertas.
     params.append("enOferta", "false");
+
+    // En la página normal de Zara NO queremos mostrar nueva colección.
+    params.append("nuevaColeccion", "false");
+
     params.append("page", paginaActual);
     params.append("size", PRODUCTOS_POR_CARGA);
     params.append("orden", ordenCatalogo);
@@ -444,6 +462,7 @@ function crearCardProducto(producto) {
     btnFav.addEventListener("click", async (event) => {
         event.preventDefault();
         event.stopPropagation();
+
         await alternarFavorito(producto, btnFav);
     });
 
@@ -483,9 +502,16 @@ function crearCardProducto(producto) {
             return;
         }
 
-        await agregarProductoAlCarrito(producto, tallaSeleccionada, miniMenuTalla, listaTallas, mensajeStock, () => {
-            tallaSeleccionada = null;
-        });
+        await agregarProductoAlCarrito(
+            producto,
+            tallaSeleccionada,
+            miniMenuTalla,
+            listaTallas,
+            mensajeStock,
+            () => {
+                tallaSeleccionada = null;
+            }
+        );
     });
 
     return card;
@@ -676,6 +702,7 @@ function obtenerImagenesProducto(producto) {
         const imagenesOrdenadas = [...producto.imagenes].sort((a, b) => {
             const ordenA = Number(a.orden ?? 999);
             const ordenB = Number(b.orden ?? 999);
+
             return ordenA - ordenB;
         });
 

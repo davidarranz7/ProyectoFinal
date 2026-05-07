@@ -167,7 +167,7 @@ async function cargarCategoriasCatalogo() {
             </li>
         `;
 
-        const response = await fetch(`${BASE_URL}/productos/catalogo/categorias?tienda=${TIENDA_ACTUAL}`, {
+        const response = await fetch(`${BASE_URL}/productos/catalogo/categorias?tienda=${TIENDA_ACTUAL}&enOferta=false`, {
             method: "GET",
             credentials: "include"
         });
@@ -257,6 +257,10 @@ function construirUrlCatalogo() {
     params.append("page", paginaActual);
     params.append("size", PRODUCTOS_POR_CARGA);
     params.append("orden", ordenCatalogo);
+
+    // En la página principal de Pull&Bear solo mostramos productos normales.
+    // Las rebajas/ofertas irán en una página aparte.
+    params.append("enOferta", "false");
 
     filtros.secciones.forEach(seccion => {
         params.append("seccion", seccion);

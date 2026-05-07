@@ -136,6 +136,7 @@ public class ProductoService {
                 productoExistente.setPrecioOriginal(producto.getPrecioOriginal());
                 productoExistente.setPorcentajeDescuento(producto.getPorcentajeDescuento());
                 productoExistente.setEnOferta(producto.getEnOferta() != null ? producto.getEnOferta() : false);
+                productoExistente.setNuevaColeccion(producto.getNuevaColeccion() != null ? producto.getNuevaColeccion() : false);
                 productoExistente.setUrlImagen(producto.getUrlImagen());
                 productoExistente.setUrlProducto(producto.getUrlProducto());
                 productoExistente.setSeccion(producto.getSeccion());
@@ -189,6 +190,7 @@ public class ProductoService {
                                                    String busqueda,
                                                    String orden,
                                                    Boolean enOferta,
+                                                   Boolean nuevaColeccion,
                                                    int page,
                                                    int size) {
         int pagina = Math.max(page, 0);
@@ -218,6 +220,14 @@ public class ProductoService {
                         criteriaBuilder.equal(
                                 root.get("enOferta"),
                                 enOferta
+                        )
+                );
+            }
+            if (nuevaColeccion != null) {
+                predicates.add(
+                        criteriaBuilder.equal(
+                                root.get("nuevaColeccion"),
+                                nuevaColeccion
                         )
                 );
             }
