@@ -5,6 +5,8 @@ import com.david.ProyectoFinal.model.Producto;
 import com.david.ProyectoFinal.model.ProductoImagen;
 import com.david.ProyectoFinal.model.Seccion;
 import com.david.ProyectoFinal.model.Tienda;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.StreamReadConstraints;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.playwright.Browser;
@@ -15,10 +17,9 @@ import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
 import com.microsoft.playwright.PlaywrightException;
 import com.microsoft.playwright.options.WaitUntilState;
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.StreamReadConstraints;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -123,6 +124,8 @@ public class BershkaScraper implements ScraperTienda {
                 categoriasBershka = obtenerCategoriasBershkaFallback();
             }
 
+            categoriasBershka = anadirCategoriasPromocionBershka(categoriasBershka);
+
             System.out.println("Categorías a procesar: " + categoriasBershka.size());
             System.out.println();
 
@@ -206,12 +209,12 @@ public class BershkaScraper implements ScraperTienda {
     private List<CategoriaBershka> obtenerCategoriaDebug() {
         return List.of(
                 new CategoriaBershka(
-                        1010193217L,
+                        1010419519L,
                         Seccion.MUJER,
-                        "Camisetas",
-                        "Camisetas",
-                        "mujer/ropa/camisetas-c1010193217.html?celement=1010193217",
-                        "TEST > Mujer > Ropa > Camisetas"
+                        "Promociones",
+                        "Promo hasta 30%",
+                        "mujer/promo-hasta-30%25-n4404.html?celement=1010419519",
+                        "TEST > Mujer > Promociones"
                 )
         );
     }
@@ -223,6 +226,31 @@ public class BershkaScraper implements ScraperTienda {
                 new CategoriaBershka(1010193241L, Seccion.HOMBRE, "Pantalones", "Pantalones", "hombre/ropa/pantalones-c1010193241.html?celement=1010193241", "Hombre > Ropa > Pantalones"),
                 new CategoriaBershka(1010193244L, Seccion.HOMBRE, "Sudaderas", "Sudaderas", "hombre/ropa/sudaderas-c1010193244.html?celement=1010193244", "Hombre > Ropa > Sudaderas")
         );
+    }
+
+    private List<CategoriaBershka> anadirCategoriasPromocionBershka(List<CategoriaBershka> categoriasOriginales) {
+        List<CategoriaBershka> categorias = new ArrayList<>(categoriasOriginales);
+        Set<Long> idsVistos = new LinkedHashSet<>();
+
+        for (CategoriaBershka categoria : categoriasOriginales) {
+            idsVistos.add(categoria.id());
+        }
+
+        CategoriaBershka promoMujer = new CategoriaBershka(
+                1010419519L,
+                Seccion.MUJER,
+                "Promociones",
+                "Promo hasta 30%",
+                "mujer/promo-hasta-30%25-n4404.html?celement=1010419519",
+                "Mujer > Promociones > Promo hasta 30%"
+        );
+
+        if (!idsVistos.contains(promoMujer.id())) {
+            categorias.add(promoMujer);
+            idsVistos.add(promoMujer.id());
+        }
+
+        return categorias;
     }
 
     private List<CategoriaBershka> obtenerCategoriasBershkaDesdeWeb(Page page) {
@@ -390,7 +418,7 @@ public class BershkaScraper implements ScraperTienda {
             return false;
         }
 
-        if (!url.contains("celement=") && !url.matches(".*-c\\d+\\.html.*")) {
+        if (!url.contains("celement=") && !url.matches(".*-c\\d+\\.html.*") && !url.matches(".*-n\\d+\\.html.*")) {
             return false;
         }
 
@@ -429,7 +457,7 @@ public class BershkaScraper implements ScraperTienda {
             }
         }
 
-        Pattern categoryPattern = Pattern.compile("-c(\\d+)\\.html");
+        Pattern categoryPattern = Pattern.compile("-(?:c|n)(\\d+)\\.html");
         Matcher categoryMatcher = categoryPattern.matcher(href);
 
         if (categoryMatcher.find()) {
@@ -459,7 +487,11 @@ public class BershkaScraper implements ScraperTienda {
     private String detectarCategoriaDesdeUrlYTexto(String href, String texto) {
         String combinado = normalizarTexto(href + " " + texto);
 
-        if (combinado.contains("JEANS")) {
+        if (combinado.contains("PROMO") || combinado.contains("PROMOCION") || combinado.contains("REBAJA")) {
+            return "Promociones";
+        }
+
+        if (combinado.contains("JEANS") || combinado.contains("DENIM")) {
             return "Jeans";
         }
 
@@ -516,7 +548,8 @@ public class BershkaScraper implements ScraperTienda {
                 || combinado.contains("BOTINES")
                 || combinado.contains("ZAPATILLAS")
                 || combinado.contains("SANDALIAS")
-                || combinado.contains("MOCASINES")) {
+                || combinado.contains("MOCASINES")
+                || combinado.contains("DEPORTIVO")) {
             return "Zapatos";
         }
 
@@ -583,6 +616,8 @@ public class BershkaScraper implements ScraperTienda {
         int productosDescartados = 0;
         int productosSinImagen = 0;
         int productosSinPrecio = 0;
+        int productosEnOferta = 0;
+        int productosNormales = 0;
 
         System.out.println("====================================");
         System.out.println("PROCESANDO CATEGORÍA BERSHKA");
@@ -604,18 +639,7 @@ public class BershkaScraper implements ScraperTienda {
                 return true;
             }
 
-            List<String> productIdsPendientes = filtrarIdsNoProcesados(productIds, productosGlobales);
-
-            System.out.println("IDs ya procesados antes de productsArray: " + (productIds.size() - productIdsPendientes.size()));
-            System.out.println("IDs pendientes reales: " + productIdsPendientes.size());
-
-            if (productIdsPendientes.isEmpty()) {
-                System.out.println("Categoría sin productos nuevos. Se evita productsArray.");
-                System.out.println();
-                return true;
-            }
-
-            List<JsonNode> productosJson = cargarProductosCategoria(page, categoriaBershka, productIdsPendientes);
+            List<JsonNode> productosJson = cargarProductosCategoria(page, categoriaBershka, productIds);
 
             System.out.println("Productos recibidos desde productsArray: " + productosJson.size());
 
@@ -649,6 +673,12 @@ public class BershkaScraper implements ScraperTienda {
 
                 productosGlobales.put(claveProducto, producto);
                 productosNuevos++;
+
+                if (Boolean.TRUE.equals(producto.getEnOferta())) {
+                    productosEnOferta++;
+                } else {
+                    productosNormales++;
+                }
             }
 
             System.out.println("OK categoría procesada.");
@@ -657,6 +687,8 @@ public class BershkaScraper implements ScraperTienda {
             System.out.println("Productos descartados: " + productosDescartados);
             System.out.println("Productos sin imagen detectados: " + productosSinImagen);
             System.out.println("Productos sin precio detectados: " + productosSinPrecio);
+            System.out.println("Productos en oferta: " + productosEnOferta);
+            System.out.println("Productos normales: " + productosNormales);
             System.out.println();
 
             return true;
@@ -669,27 +701,6 @@ public class BershkaScraper implements ScraperTienda {
 
             return false;
         }
-    }
-
-    private List<String> filtrarIdsNoProcesados(
-            List<String> productIds,
-            Map<String, Producto> productosGlobales
-    ) {
-        List<String> idsPendientes = new ArrayList<>();
-
-        for (String id : productIds) {
-            if (estaVacio(id)) {
-                continue;
-            }
-
-            if (productosGlobales.containsKey(id)) {
-                continue;
-            }
-
-            idsPendientes.add(id);
-        }
-
-        return idsPendientes;
     }
 
     private List<String> obtenerProductIdsCategoria(Page page, CategoriaBershka categoriaBershka) throws Exception {
@@ -783,9 +794,10 @@ public class BershkaScraper implements ScraperTienda {
                     + "/itxrest/3"
                     + "/catalog/store/" + STORE_ID
                     + "/" + CATALOG_ID
-                    + "/productsArray?languageId=" + LANGUAGE_ID
+                    + "/productsArray?categoryId=" + categoriaBershka.id()
                     + "&productIds=" + idsTexto
                     + "&appId=1"
+                    + "&languageId=" + LANGUAGE_ID
                     + "&locale=" + LOCALE;
 
             String referer = BASE_URL + "/es/" + categoriaBershka.url();
@@ -909,12 +921,7 @@ public class BershkaScraper implements ScraperTienda {
             return null;
         }
 
-        JsonNode resumen = primerElemento(productoJson.path("bundleProductSummaries"));
-        JsonNode detail = resumen.path("detail");
-
-        if (detail.isMissingNode() || detail.isNull() || detail.size() == 0) {
-            detail = productoJson.path("detail");
-        }
+        JsonNode detail = obtenerDetailBueno(productoJson);
 
         String descripcion = texto(detail, "longDescription");
 
@@ -922,17 +929,22 @@ public class BershkaScraper implements ScraperTienda {
             descripcion = texto(detail, "description");
         }
 
-        BigDecimal precio = obtenerPrecio(detail);
+        InfoPrecio infoPrecio = obtenerInfoPrecio(detail, mainColorId);
 
-        if (precio == null || precio.compareTo(BigDecimal.ZERO) <= 0) {
-            precio = convertirPrecio(texto(productoJson, "price"));
+        if (infoPrecio == null || infoPrecio.precio() == null || infoPrecio.precio().compareTo(BigDecimal.ZERO) <= 0) {
+            BigDecimal precioRaiz = convertirPrecio(texto(productoJson, "price"));
+
+            if (precioRaiz == null || precioRaiz.compareTo(BigDecimal.ZERO) <= 0) {
+                return null;
+            }
+
+            infoPrecio = new InfoPrecio(precioRaiz, null, null, false, mainColorId);
         }
 
-        if (precio == null || precio.compareTo(BigDecimal.ZERO) <= 0) {
-            return null;
-        }
+        String colorId = !estaVacio(infoPrecio.colorId())
+                ? infoPrecio.colorId()
+                : obtenerColorId(productoJson, detail, mainColorId);
 
-        String colorId = obtenerColorId(productoJson, detail, mainColorId);
         String urlProducto = crearUrlProducto(productUrl, colorId, productUrlParam, id);
 
         if (estaVacio(urlProducto)) {
@@ -968,7 +980,10 @@ public class BershkaScraper implements ScraperTienda {
         Producto producto = new Producto();
         producto.setNombre(nombre);
         producto.setDescripcion(descripcion);
-        producto.setPrecio(precio);
+        producto.setPrecio(infoPrecio.precio());
+        producto.setPrecioOriginal(infoPrecio.precioOriginal());
+        producto.setPorcentajeDescuento(infoPrecio.porcentajeDescuento());
+        producto.setEnOferta(infoPrecio.enOferta());
         producto.setUrlImagen(imagenPrincipal);
         producto.setUrlProducto(urlProducto);
         producto.setSeccion(seccion);
@@ -988,6 +1003,181 @@ public class BershkaScraper implements ScraperTienda {
         }
 
         return producto;
+    }
+
+    private JsonNode obtenerDetailBueno(JsonNode productoJson) {
+        JsonNode detailDirecto = productoJson.path("detail");
+
+        if (detailDirecto.path("colors").isArray() && detailDirecto.path("colors").size() > 0) {
+            return detailDirecto;
+        }
+
+        JsonNode resumen = primerElemento(productoJson.path("bundleProductSummaries"));
+        JsonNode detailResumen = resumen.path("detail");
+
+        if (detailResumen.path("colors").isArray() && detailResumen.path("colors").size() > 0) {
+            return detailResumen;
+        }
+
+        return detailDirecto;
+    }
+
+    private InfoPrecio obtenerInfoPrecio(JsonNode detail, String mainColorId) {
+        JsonNode colors = detail.path("colors");
+
+        if (!colors.isArray()) {
+            return null;
+        }
+
+        InfoPrecio precioColorPrincipal = buscarPrecioEnColorPrincipal(colors, mainColorId);
+
+        if (precioColorPrincipal != null) {
+            return precioColorPrincipal;
+        }
+
+        InfoPrecio primeraOferta = buscarPrimeraOferta(colors);
+
+        if (primeraOferta != null) {
+            return primeraOferta;
+        }
+
+        return buscarPrimerPrecioNormal(colors);
+    }
+
+    private InfoPrecio buscarPrecioEnColorPrincipal(JsonNode colors, String mainColorId) {
+        if (estaVacio(mainColorId)) {
+            return null;
+        }
+
+        String colorBuscado = normalizarColorId(mainColorId);
+
+        for (JsonNode color : colors) {
+            String colorId = texto(color, "id");
+
+            if (!normalizarColorId(colorId).equals(colorBuscado)) {
+                continue;
+            }
+
+            InfoPrecio oferta = buscarOfertaEnColor(color);
+
+            if (oferta != null) {
+                return oferta;
+            }
+
+            return buscarPrecioNormalEnColor(color);
+        }
+
+        return null;
+    }
+
+    private InfoPrecio buscarPrimeraOferta(JsonNode colors) {
+        for (JsonNode color : colors) {
+            InfoPrecio oferta = buscarOfertaEnColor(color);
+
+            if (oferta != null) {
+                return oferta;
+            }
+        }
+
+        return null;
+    }
+
+    private InfoPrecio buscarPrimerPrecioNormal(JsonNode colors) {
+        for (JsonNode color : colors) {
+            InfoPrecio precioNormal = buscarPrecioNormalEnColor(color);
+
+            if (precioNormal != null) {
+                return precioNormal;
+            }
+        }
+
+        return null;
+    }
+
+    private InfoPrecio buscarOfertaEnColor(JsonNode color) {
+        JsonNode sizes = color.path("sizes");
+
+        if (!sizes.isArray()) {
+            return null;
+        }
+
+        for (JsonNode size : sizes) {
+            BigDecimal precio = convertirPrecio(texto(size, "price"));
+            BigDecimal precioOriginal = convertirPrecio(texto(size, "oldPrice"));
+
+            if (precio == null || precioOriginal == null) {
+                continue;
+            }
+
+            if (precio.compareTo(BigDecimal.ZERO) <= 0 || precioOriginal.compareTo(precio) <= 0) {
+                continue;
+            }
+
+            Integer descuento = obtenerPorcentajeDescuento(size, precio, precioOriginal);
+            String colorId = texto(color, "id");
+
+            return new InfoPrecio(precio, precioOriginal, descuento, true, colorId);
+        }
+
+        return null;
+    }
+
+    private InfoPrecio buscarPrecioNormalEnColor(JsonNode color) {
+        JsonNode sizes = color.path("sizes");
+
+        if (!sizes.isArray()) {
+            return null;
+        }
+
+        for (JsonNode size : sizes) {
+            BigDecimal precio = convertirPrecio(texto(size, "price"));
+
+            if (precio == null || precio.compareTo(BigDecimal.ZERO) <= 0) {
+                continue;
+            }
+
+            String colorId = texto(color, "id");
+
+            return new InfoPrecio(precio, null, null, false, colorId);
+        }
+
+        return null;
+    }
+
+    private Integer obtenerPorcentajeDescuento(JsonNode size, BigDecimal precio, BigDecimal precioOriginal) {
+        String descuentoTexto = texto(size.path("discountsPercentages"), "oldPriceDiscount");
+
+        if (!estaVacio(descuentoTexto)) {
+            try {
+                return Integer.parseInt(descuentoTexto.trim());
+            } catch (Exception ignored) {
+            }
+        }
+
+        try {
+            BigDecimal diferencia = precioOriginal.subtract(precio);
+            BigDecimal porcentaje = diferencia
+                    .multiply(BigDecimal.valueOf(100))
+                    .divide(precioOriginal, 0, RoundingMode.HALF_UP);
+
+            return porcentaje.intValue();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private String normalizarColorId(String colorId) {
+        if (estaVacio(colorId)) {
+            return "";
+        }
+
+        String limpio = colorId.trim();
+
+        while (limpio.length() > 1 && limpio.startsWith("0")) {
+            limpio = limpio.substring(1);
+        }
+
+        return limpio;
     }
 
     private String normalizarCategoriaBershka(
@@ -1014,6 +1204,10 @@ public class BershkaScraper implements ScraperTienda {
 
     private String normalizarCategoriaPadreBershka(String categoriaPadre) {
         String origen = normalizarTexto(categoriaPadre);
+
+        if (origen.contains("PROMOCIONES")) {
+            return "Promociones";
+        }
 
         if (origen.contains("JEANS")) {
             return "Jeans";
@@ -1090,8 +1284,268 @@ public class BershkaScraper implements ScraperTienda {
                 || origen.contains("BASICOS")
                 || origen.contains("NOVEDADES")
                 || origen.contains("REBAJAS")
+                || origen.contains("PROMOCIONES")
+                || origen.contains("PROMO")
                 || origen.contains("TOTAL LOOK")
                 || origen.contains("OTROS");
+    }
+
+    private String normalizarCategoria(
+            String nombreProducto,
+            String familyName,
+            String subFamilyName,
+            String categoriaOrigen,
+            String nombreCategoriaMenu
+    ) {
+        String nombre = normalizarTexto(nombreProducto);
+        String familia = normalizarTexto(familyName);
+        String subfamilia = normalizarTexto(subFamilyName);
+        String origen = normalizarTexto(categoriaOrigen);
+        String menu = normalizarTexto(nombreCategoriaMenu);
+        String textoCompleto = unirTextos(nombre, familia, subfamilia, origen, menu);
+
+        if (esPerfume(textoCompleto)) {
+            return "Perfumes";
+        }
+
+        if (esLenceria(textoCompleto)) {
+            return "Lencería";
+        }
+
+        if (esBano(textoCompleto)) {
+            return "Baño";
+        }
+
+        if (esZapato(textoCompleto)) {
+            return "Zapatos";
+        }
+
+        if (esBolso(textoCompleto)) {
+            return "Bolsos";
+        }
+
+        if (esAccesorio(textoCompleto)) {
+            return "Accesorios";
+        }
+
+        if (esConjunto(textoCompleto)) {
+            return "Conjuntos";
+        }
+
+        if (esJeans(textoCompleto)) {
+            return "Jeans";
+        }
+
+        if (empiezaPorAlgunaPalabra(nombre, "VESTIDO", "MONO")) {
+            return "Vestidos";
+        }
+
+        if (empiezaPorAlgunaPalabra(nombre, "FALDA")) {
+            return "Faldas";
+        }
+
+        if (empiezaPorAlgunaPalabra(nombre, "CAMISA", "SOBRECAMISA", "BLUSA")) {
+            return "Camisas";
+        }
+
+        if (empiezaPorAlgunaPalabra(nombre, "POLO")) {
+            return "Polos";
+        }
+
+        if (empiezaPorAlgunaPalabra(nombre, "CAMISETA", "TOP", "BODY", "CORSET")) {
+            return "Camisetas";
+        }
+
+        if (empiezaPorAlgunaPalabra(nombre, "CHAQUETA", "CAZADORA", "BOMBER", "BLAZER", "GABARDINA", "TRENCH", "ABRIGO", "CHALECO")) {
+            return "Chaquetas";
+        }
+
+        if (empiezaPorAlgunaPalabra(nombre, "SUDADERA")) {
+            return "Sudaderas";
+        }
+
+        if (empiezaPorAlgunaPalabra(nombre, "JERSEY", "CARDIGAN", "CÁRDIGAN")) {
+            return "Punto";
+        }
+
+        if (empiezaPorAlgunaPalabra(nombre, "PANTALON", "PANTALÓN", "LEGGING", "LEGGINGS", "JOGGER")) {
+            return "Pantalones";
+        }
+
+        if (empiezaPorAlgunaPalabra(nombre, "BERMUDA", "SHORT", "SHORTS", "JORTS")) {
+            return "Bermudas";
+        }
+
+        if (contieneAlgunaPalabra(familia, "VESTIDO", "MONO")) {
+            return "Vestidos";
+        }
+
+        if (contieneAlgunaPalabra(familia, "FALDA")) {
+            return "Faldas";
+        }
+
+        if (contieneAlgunaPalabra(familia, "CAMISA", "BLUSA")) {
+            return "Camisas";
+        }
+
+        if (contieneAlgunaPalabra(familia, "POLO")) {
+            return "Polos";
+        }
+
+        if (contieneAlgunaPalabra(familia, "CAMISETA", "TOP", "BODY")) {
+            return "Camisetas";
+        }
+
+        if (contieneAlgunaPalabra(familia, "SUDADERA")) {
+            return "Sudaderas";
+        }
+
+        if (contieneAlgunaPalabra(familia, "JERSEY", "PUNTO", "CARDIGAN")) {
+            return "Punto";
+        }
+
+        if (contieneAlgunaPalabra(familia, "PANTALON", "LEGGING", "JOGGER")) {
+            return "Pantalones";
+        }
+
+        if (contieneAlgunaPalabra(familia, "BERMUDA", "SHORT")) {
+            return "Bermudas";
+        }
+
+        if (origen.contains("JEANS")) {
+            return "Jeans";
+        }
+
+        if (origen.contains("VESTIDOS")) {
+            return "Vestidos";
+        }
+
+        if (origen.contains("FALDAS")) {
+            return "Faldas";
+        }
+
+        if (origen.contains("BERMUDAS") || origen.contains("SHORTS")) {
+            return "Bermudas";
+        }
+
+        if (origen.contains("PANTALONES")) {
+            return "Pantalones";
+        }
+
+        if (origen.contains("CAMISAS") || origen.contains("BLUSAS")) {
+            return "Camisas";
+        }
+
+        if (origen.contains("POLOS")) {
+            return "Polos";
+        }
+
+        if (origen.contains("CAMISETAS") || origen.contains("TOPS")) {
+            return "Camisetas";
+        }
+
+        if (origen.contains("CAZADORAS")
+                || origen.contains("GABARDINAS")
+                || origen.contains("BLAZERS")
+                || origen.contains("CHAQUETAS")
+                || origen.contains("ABRIGOS")) {
+            return "Chaquetas";
+        }
+
+        if (origen.contains("SUDADERAS")) {
+            return "Sudaderas";
+        }
+
+        if (origen.contains("PUNTO")) {
+            return "Punto";
+        }
+
+        if (origen.contains("BANO")) {
+            return "Baño";
+        }
+
+        if (origen.contains("CHANDAL")) {
+            return "Chándal";
+        }
+
+        if (origen.contains("ZAPATOS")) {
+            return "Zapatos";
+        }
+
+        if (origen.contains("BOLSOS") || origen.contains("MOCHILAS")) {
+            return "Bolsos";
+        }
+
+        if (origen.contains("ACCESORIOS")) {
+            return "Accesorios";
+        }
+
+        return "Otros";
+    }
+
+    private boolean esJeans(String texto) {
+        return contieneAlgunaPalabra(texto,
+                "JEANS", "DENIM", "VAQUERO", "VAQUERA"
+        );
+    }
+
+    private boolean esConjunto(String texto) {
+        return contieneAlgunaPalabra(texto,
+                "SET", "CONJUNTO"
+        );
+    }
+
+    private boolean esPerfume(String texto) {
+        return contieneAlgunaPalabra(texto,
+                "PERFUME", "EAU", "TOILETTE", "COLONIA", "FRAGANCIA",
+                "ML", "DESO", "DEODORANT", "BLACK STEEL", "BLUE STONE",
+                "MAGNET", "MERCER", "VENICE", "SILVER MIST", "WTR"
+        );
+    }
+
+    private boolean esLenceria(String texto) {
+        return contieneAlgunaPalabra(texto,
+                "BRAGUITA", "BRASILEÑA", "BRASILENA", "SUJETADOR",
+                "TANGA", "CULOTTE", "BOXER", "BOXERS", "LENCERIA",
+                "LENCERÍA", "ENCAJE", "PLUMETI"
+        );
+    }
+
+    private boolean esBano(String texto) {
+        return contieneAlgunaPalabra(texto,
+                "BIKINI", "BAÑADOR", "BANADOR", "BAÑO", "BANO"
+        );
+    }
+
+    private boolean esZapato(String texto) {
+        return contieneAlgunaPalabra(texto,
+                "ZAPATO", "ZAPATILLA", "ZAPATILLAS", "BOTA", "BOTAS",
+                "BOTIN", "BOTÍN", "BOTINES", "SANDALIA", "SANDALIAS",
+                "MOCASIN", "MOCASÍN", "ALPARGATA", "BAILARINA",
+                "MULE", "TACON", "TACÓN", "RUNNING", "CALZADO",
+                "DEPORTIVO", "DEPORTIVOS", "SNEAKER", "SNEAKERS",
+                "SKATE", "PLATAFORMA"
+        );
+    }
+
+    private boolean esBolso(String texto) {
+        return contieneAlgunaPalabra(texto,
+                "BOLSO", "MOCHILA", "CARTERA", "MONEDERO",
+                "RIÑONERA", "RINONERA", "NECESER", "SHOPPER",
+                "BANDOLERA"
+        );
+    }
+
+    private boolean esAccesorio(String texto) {
+        return contieneAlgunaPalabra(texto,
+                "ACCESORIO", "CINTURON", "CINTURÓN", "GORRA",
+                "GORRO", "SOMBRERO", "PAÑUELO", "PANUELO",
+                "BUFANDA", "GAFAS", "LLAVERO", "COLLAR",
+                "PENDIENTE", "PULSERA", "ANILLO", "CALCETIN",
+                "CALCETÍN", "CALCETINES", "BISUTERIA", "BISUTERÍA",
+                "BANDANA", "BEANIE", "CORBATA", "FUNDA",
+                "PINZA", "PINZAS", "CINTA", "CINTAS", "PACK"
+        );
     }
 
     private String obtenerClaveProducto(JsonNode productoJson, Producto producto) {
@@ -1128,36 +1582,6 @@ public class BershkaScraper implements ScraperTienda {
         }
 
         return urlLimpia;
-    }
-
-    private BigDecimal obtenerPrecio(JsonNode detail) {
-        JsonNode colors = detail.path("colors");
-
-        if (!colors.isArray()) {
-            return null;
-        }
-
-        for (JsonNode color : colors) {
-            JsonNode sizes = color.path("sizes");
-
-            if (!sizes.isArray()) {
-                continue;
-            }
-
-            for (JsonNode size : sizes) {
-                String precioTexto = texto(size, "price");
-
-                if (!estaVacio(precioTexto)) {
-                    BigDecimal precio = convertirPrecio(precioTexto);
-
-                    if (precio != null && precio.compareTo(BigDecimal.ZERO) > 0) {
-                        return precio;
-                    }
-                }
-            }
-        }
-
-        return null;
     }
 
     private String obtenerColorId(JsonNode productoJson, JsonNode detail, String mainColorId) {
@@ -1417,226 +1841,6 @@ public class BershkaScraper implements ScraperTienda {
         return seccionFallback;
     }
 
-    private String normalizarCategoria(
-            String nombreProducto,
-            String familyName,
-            String subFamilyName,
-            String categoriaOrigen,
-            String nombreCategoriaMenu
-    ) {
-        String nombre = normalizarTexto(nombreProducto);
-        String familia = normalizarTexto(familyName);
-        String subfamilia = normalizarTexto(subFamilyName);
-        String origen = normalizarTexto(categoriaOrigen);
-        String menu = normalizarTexto(nombreCategoriaMenu);
-        String textoCompleto = unirTextos(nombre, familia, subfamilia, origen, menu);
-
-        if (empiezaPorAlgunaPalabra(nombre, "VESTIDO", "MONO")) {
-            return "Vestidos";
-        }
-
-        if (empiezaPorAlgunaPalabra(nombre, "FALDA")) {
-            return "Faldas";
-        }
-
-        if (esZapato(textoCompleto)) {
-            return "Zapatos";
-        }
-
-        if (esBolso(textoCompleto)) {
-            return "Bolsos";
-        }
-
-        if (esAccesorio(textoCompleto)) {
-            return "Accesorios";
-        }
-
-        if (empiezaPorAlgunaPalabra(nombre, "CAMISA", "SOBRECAMISA", "BLUSA")) {
-            return "Camisas";
-        }
-
-        if (empiezaPorAlgunaPalabra(nombre, "POLO")) {
-            return "Polos";
-        }
-
-        if (empiezaPorAlgunaPalabra(nombre, "CAMISETA", "TOP", "BODY", "CORSET")) {
-            return "Camisetas";
-        }
-
-        if (empiezaPorAlgunaPalabra(nombre, "CHAQUETA", "CAZADORA", "BOMBER", "BLAZER", "GABARDINA", "TRENCH", "ABRIGO", "CHALECO")) {
-            return "Chaquetas";
-        }
-
-        if (empiezaPorAlgunaPalabra(nombre, "SUDADERA")) {
-            return "Sudaderas";
-        }
-
-        if (empiezaPorAlgunaPalabra(nombre, "JERSEY", "CARDIGAN", "CÁRDIGAN")) {
-            return "Punto";
-        }
-
-        if (empiezaPorAlgunaPalabra(nombre, "BIKINI", "BAÑADOR", "BANADOR")) {
-            return "Baño";
-        }
-
-        if (empiezaPorAlgunaPalabra(nombre, "PANTALON", "PANTALÓN", "LEGGING", "LEGGINGS", "JOGGER")) {
-            if (contieneAlgunaPalabra(textoCompleto, "DENIM", "JEANS", "VAQUERO", "VAQUERA")) {
-                return "Jeans";
-            }
-
-            return "Pantalones";
-        }
-
-        if (empiezaPorAlgunaPalabra(nombre, "BERMUDA", "SHORT", "SHORTS", "JORTS")) {
-            if (contieneAlgunaPalabra(textoCompleto, "DENIM", "JEANS", "VAQUERO", "VAQUERA")) {
-                return "Jeans";
-            }
-
-            return "Bermudas";
-        }
-
-        if (contieneAlgunaPalabra(familia, "VESTIDO", "MONO")) {
-            return "Vestidos";
-        }
-
-        if (contieneAlgunaPalabra(familia, "FALDA")) {
-            return "Faldas";
-        }
-
-        if (contieneAlgunaPalabra(familia, "CAMISA", "BLUSA")) {
-            return "Camisas";
-        }
-
-        if (contieneAlgunaPalabra(familia, "POLO")) {
-            return "Polos";
-        }
-
-        if (contieneAlgunaPalabra(familia, "CAMISETA", "TOP", "BODY")) {
-            return "Camisetas";
-        }
-
-        if (contieneAlgunaPalabra(familia, "SUDADERA")) {
-            return "Sudaderas";
-        }
-
-        if (contieneAlgunaPalabra(familia, "JERSEY", "PUNTO", "CARDIGAN")) {
-            return "Punto";
-        }
-
-        if (contieneAlgunaPalabra(familia, "PANTALON", "LEGGING", "JOGGER")) {
-            if (contieneAlgunaPalabra(textoCompleto, "DENIM", "JEANS", "VAQUERO", "VAQUERA")) {
-                return "Jeans";
-            }
-
-            return "Pantalones";
-        }
-
-        if (contieneAlgunaPalabra(familia, "BERMUDA", "SHORT")) {
-            if (contieneAlgunaPalabra(textoCompleto, "DENIM", "JEANS", "VAQUERO", "VAQUERA")) {
-                return "Jeans";
-            }
-
-            return "Bermudas";
-        }
-
-        if (origen.contains("JEANS")) {
-            return "Jeans";
-        }
-
-        if (origen.contains("VESTIDOS")) {
-            return "Vestidos";
-        }
-
-        if (origen.contains("FALDAS")) {
-            return "Faldas";
-        }
-
-        if (origen.contains("BERMUDAS") || origen.contains("SHORTS")) {
-            return "Bermudas";
-        }
-
-        if (origen.contains("PANTALONES")) {
-            return "Pantalones";
-        }
-
-        if (origen.contains("CAMISAS") || origen.contains("BLUSAS")) {
-            return "Camisas";
-        }
-
-        if (origen.contains("POLOS")) {
-            return "Polos";
-        }
-
-        if (origen.contains("CAMISETAS") || origen.contains("TOPS")) {
-            return "Camisetas";
-        }
-
-        if (origen.contains("CAZADORAS")
-                || origen.contains("GABARDINAS")
-                || origen.contains("BLAZERS")
-                || origen.contains("CHAQUETAS")
-                || origen.contains("ABRIGOS")) {
-            return "Chaquetas";
-        }
-
-        if (origen.contains("SUDADERAS")) {
-            return "Sudaderas";
-        }
-
-        if (origen.contains("PUNTO")) {
-            return "Punto";
-        }
-
-        if (origen.contains("BANO")) {
-            return "Baño";
-        }
-
-        if (origen.contains("CHANDAL")) {
-            return "Chándal";
-        }
-
-        if (origen.contains("ZAPATOS")) {
-            return "Zapatos";
-        }
-
-        if (origen.contains("BOLSOS") || origen.contains("MOCHILAS")) {
-            return "Bolsos";
-        }
-
-        if (origen.contains("ACCESORIOS")) {
-            return "Accesorios";
-        }
-
-        return "Otros";
-    }
-
-    private boolean esZapato(String texto) {
-        return contieneAlgunaPalabra(texto,
-                "ZAPATO", "ZAPATILLA", "BOTA", "BOTIN", "BOTÍN",
-                "SANDALIA", "MOCASIN", "MOCASÍN", "ALPARGATA",
-                "BAILARINA", "MULE", "TACON", "TACÓN", "RUNNING",
-                "CALZADO"
-        );
-    }
-
-    private boolean esBolso(String texto) {
-        return contieneAlgunaPalabra(texto,
-                "BOLSO", "MOCHILA", "CARTERA", "MONEDERO",
-                "RIÑONERA", "RINONERA", "NECESER", "SHOPPER",
-                "BANDOLERA"
-        );
-    }
-
-    private boolean esAccesorio(String texto) {
-        return contieneAlgunaPalabra(texto,
-                "ACCESORIO", "CINTURON", "CINTURÓN", "GORRA",
-                "GORRO", "SOMBRERO", "PAÑUELO", "PANUELO",
-                "BUFANDA", "GAFAS", "LLAVERO", "COLLAR",
-                "PENDIENTE", "PULSERA", "ANILLO", "CALCETIN",
-                "CALCETÍN", "BISUTERIA", "BISUTERÍA"
-        );
-    }
-
     private List<List<String>> dividirEnBloques(List<String> elementos, int tamanoBloque) {
         List<List<String>> bloques = new ArrayList<>();
 
@@ -1649,13 +1853,13 @@ public class BershkaScraper implements ScraperTienda {
     }
 
     private BigDecimal convertirPrecio(String precioTexto) {
-        if (precioTexto == null || precioTexto.isBlank()) {
+        if (precioTexto == null || precioTexto.isBlank() || "null".equalsIgnoreCase(precioTexto.trim())) {
             return null;
         }
 
         try {
             BigDecimal precioCentimos = new BigDecimal(precioTexto.trim());
-            return precioCentimos.divide(BigDecimal.valueOf(100));
+            return precioCentimos.divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
         } catch (Exception e) {
             return null;
         }
@@ -1789,6 +1993,14 @@ public class BershkaScraper implements ScraperTienda {
                 .filter(producto -> estaVacio(producto.getUrlProducto()))
                 .count();
 
+        long productosEnOferta = productos.stream()
+                .filter(producto -> Boolean.TRUE.equals(producto.getEnOferta()))
+                .count();
+
+        long productosNormales = productos.stream()
+                .filter(producto -> !Boolean.TRUE.equals(producto.getEnOferta()))
+                .count();
+
         long totalImagenesExtraidas = productos.stream()
                 .filter(producto -> producto.getImagenes() != null)
                 .mapToLong(producto -> producto.getImagenes().size())
@@ -1818,6 +2030,8 @@ public class BershkaScraper implements ScraperTienda {
         System.out.println("Categorías OK: " + categoriasOk);
         System.out.println("Categorías fallidas/bloqueadas: " + categoriasFallidas);
         System.out.println("Productos únicos finales: " + productos.size());
+        System.out.println("Productos normales: " + productosNormales);
+        System.out.println("Productos en oferta: " + productosEnOferta);
         System.out.println("Productos sin imagen principal: " + productosSinImagen);
         System.out.println("Productos sin precio: " + productosSinPrecio);
         System.out.println("Productos sin URL: " + productosSinUrl);
@@ -1856,6 +2070,9 @@ public class BershkaScraper implements ScraperTienda {
                     System.out.println("------------------------------------");
                     System.out.println("Nombre: " + producto.getNombre());
                     System.out.println("Precio: " + producto.getPrecio());
+                    System.out.println("Precio original: " + producto.getPrecioOriginal());
+                    System.out.println("Descuento: " + producto.getPorcentajeDescuento());
+                    System.out.println("En oferta: " + producto.getEnOferta());
                     System.out.println("Sección: " + producto.getSeccion());
                     System.out.println("Categoría: " + (producto.getCategoria() != null ? producto.getCategoria().getNombre() : ""));
                     System.out.println("URL: " + producto.getUrlProducto());
@@ -1880,6 +2097,15 @@ public class BershkaScraper implements ScraperTienda {
     private record RespuestaFetch(
             int statusCode,
             String body
+    ) {
+    }
+
+    private record InfoPrecio(
+            BigDecimal precio,
+            BigDecimal precioOriginal,
+            Integer porcentajeDescuento,
+            boolean enOferta,
+            String colorId
     ) {
     }
 }

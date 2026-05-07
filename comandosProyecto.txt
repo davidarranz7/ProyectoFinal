@@ -23,3 +23,103 @@ docker compose up -d frontend
 docker exec -it ropa_mariadb mariadb -u root -p
 
 luul xgdm zcer aode
+
+////////////////////////////////////////////////////////////////
+
+DELETE pi
+FROM producto_imagenes pi
+JOIN productos p ON pi.producto_id = p.id
+JOIN tiendas t ON p.tienda_id = t.id
+WHERE t.nombre = 'PullAndBear';
+
+DELETE pts
+FROM producto_talla_stock pts
+JOIN productos p ON pts.producto_id = p.id
+JOIN tiendas t ON p.tienda_id = t.id
+WHERE t.nombre = 'PullAndBear';
+
+DELETE f
+FROM favoritos f
+JOIN productos p ON f.producto_id = p.id
+JOIN tiendas t ON p.tienda_id = t.id
+WHERE t.nombre = 'PullAndBear';
+
+DELETE ic
+FROM items_carrito ic
+JOIN productos p ON ic.producto_id = p.id
+JOIN tiendas t ON p.tienda_id = t.id
+WHERE t.nombre = 'PullAndBear';
+
+DELETE p
+FROM productos p
+JOIN tiendas t ON p.tienda_id = t.id
+WHERE t.nombre = 'PullAndBear';
+
+/////////////////////////////////////////////
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -45,8 +45,6 @@ public class PullAndBearScraper implements ScraperTienda {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-
-
     @Override
     public String getNombreTienda() {
         return "PullAndBear";
@@ -305,6 +303,7 @@ public class PullAndBearScraper implements ScraperTienda {
         int productosDescartados = 0;
         int productosSinImagen = 0;
         int productosSinPrecio = 0;
+        int productosEnOferta = 0;
 
         System.out.println("====================================");
         System.out.println("PROCESANDO CATEGORÍA PULL&BEAR");
@@ -369,6 +368,10 @@ public class PullAndBearScraper implements ScraperTienda {
                     continue;
                 }
 
+                if (Boolean.TRUE.equals(producto.getEnOferta())) {
+                    productosEnOferta++;
+                }
+
                 productosGlobales.put(claveProducto, producto);
                 productosNuevos++;
             }
@@ -379,6 +382,7 @@ public class PullAndBearScraper implements ScraperTienda {
             System.out.println("Productos descartados: " + productosDescartados);
             System.out.println("Productos sin imagen detectados: " + productosSinImagen);
             System.out.println("Productos sin precio detectados: " + productosSinPrecio);
+            System.out.println("Productos en oferta detectados: " + productosEnOferta);
             System.out.println();
 
             return true;
@@ -403,7 +407,10 @@ public class PullAndBearScraper implements ScraperTienda {
                 continue;
             }
 
-            if (productosGlobales.containsKey(id)) {
+            boolean yaProcesado = productosGlobales.keySet().stream()
+                    .anyMatch(clave -> clave.contains("pelement=" + id) || clave.endsWith("/" + id));
+
+            if (yaProcesado) {
                 continue;
             }
 
@@ -622,12 +629,7 @@ public class PullAndBearScraper implements ScraperTienda {
             return null;
         }
 
-        JsonNode resumen = primerElemento(productoJson.path("bundleProductSummaries"));
-        JsonNode detail = resumen.path("detail");
-
-        if (detail.isMissingNode() || detail.isNull() || detail.size() == 0) {
-            detail = productoJson.path("detail");
-        }
+        JsonNode detail = obtenerDetailReal(productoJson);
 
         String descripcion = texto(detail, "longDescription");
 
@@ -635,10 +637,18 @@ public class PullAndBearScraper implements ScraperTienda {
             descripcion = texto(detail, "description");
         }
 
-        BigDecimal precio = obtenerPrecio(detail);
+        DatosPrecioPullBear datosPrecio = obtenerDatosPrecio(detail);
+
+        BigDecimal precio = datosPrecio.precio();
+        BigDecimal precioOriginal = datosPrecio.precioOriginal();
+        Integer porcentajeDescuento = datosPrecio.porcentajeDescuento();
+        boolean enOferta = datosPrecio.enOferta();
 
         if (precio == null || precio.compareTo(BigDecimal.ZERO) <= 0) {
             precio = convertirPrecio(texto(productoJson, "price"));
+            precioOriginal = null;
+            porcentajeDescuento = null;
+            enOferta = false;
         }
 
         if (precio == null || precio.compareTo(BigDecimal.ZERO) <= 0) {
@@ -678,6 +688,9 @@ public class PullAndBearScraper implements ScraperTienda {
         producto.setNombre(nombre);
         producto.setDescripcion(descripcion);
         producto.setPrecio(precio);
+        producto.setPrecioOriginal(precioOriginal);
+        producto.setPorcentajeDescuento(porcentajeDescuento);
+        producto.setEnOferta(enOferta);
         producto.setUrlImagen(imagenPrincipal);
         producto.setUrlProducto(urlProducto);
         producto.setSeccion(seccion);
@@ -697,6 +710,78 @@ public class PullAndBearScraper implements ScraperTienda {
         }
 
         return producto;
+    }
+
+    private JsonNode obtenerDetailReal(JsonNode productoJson) {
+        JsonNode resumen = primerElemento(productoJson.path("bundleProductSummaries"));
+        JsonNode detailResumen = resumen.path("detail");
+
+        if (detailResumen.isObject() && detailResumen.size() > 0) {
+            JsonNode colors = detailResumen.path("colors");
+
+            if (colors.isArray() && colors.size() > 0) {
+                return detailResumen;
+            }
+        }
+
+        JsonNode detailProducto = productoJson.path("detail");
+
+        if (detailProducto.isObject() && detailProducto.size() > 0) {
+            return detailProducto;
+        }
+
+        return objectMapper.createObjectNode();
+    }
+
+    private DatosPrecioPullBear obtenerDatosPrecio(JsonNode detail) {
+        JsonNode colors = detail.path("colors");
+
+        if (!colors.isArray()) {
+            return new DatosPrecioPullBear(null, null, null, false);
+        }
+
+        for (JsonNode color : colors) {
+            JsonNode sizes = color.path("sizes");
+
+            if (!sizes.isArray()) {
+                continue;
+            }
+
+            for (JsonNode size : sizes) {
+                BigDecimal precio = convertirPrecio(texto(size, "price"));
+                BigDecimal precioOriginal = convertirPrecio(texto(size, "oldPrice"));
+
+                Integer porcentajeDescuento = null;
+
+                JsonNode descuentos = size.path("discountsPercentages");
+
+                if (!descuentos.isMissingNode() && !descuentos.isNull()) {
+                    String descuentoTexto = texto(descuentos, "oldPriceDiscount");
+
+                    if (!estaVacio(descuentoTexto)) {
+                        try {
+                            porcentajeDescuento = Integer.parseInt(descuentoTexto);
+                        } catch (NumberFormatException ignored) {
+                        }
+                    }
+                }
+
+                boolean enOferta = precio != null
+                        && precioOriginal != null
+                        && precioOriginal.compareTo(precio) > 0;
+
+                if (precio != null && precio.compareTo(BigDecimal.ZERO) > 0) {
+                    return new DatosPrecioPullBear(
+                            precio,
+                            precioOriginal,
+                            porcentajeDescuento,
+                            enOferta
+                    );
+                }
+            }
+        }
+
+        return new DatosPrecioPullBear(null, null, null, false);
     }
 
     private String normalizarCategoriaPullBear(
@@ -832,36 +917,6 @@ public class PullAndBearScraper implements ScraperTienda {
         }
 
         return urlLimpia;
-    }
-
-    private BigDecimal obtenerPrecio(JsonNode detail) {
-        JsonNode colors = detail.path("colors");
-
-        if (!colors.isArray()) {
-            return null;
-        }
-
-        for (JsonNode color : colors) {
-            JsonNode sizes = color.path("sizes");
-
-            if (!sizes.isArray()) {
-                continue;
-            }
-
-            for (JsonNode size : sizes) {
-                String precioTexto = texto(size, "price");
-
-                if (!estaVacio(precioTexto)) {
-                    BigDecimal precio = convertirPrecio(precioTexto);
-
-                    if (precio != null && precio.compareTo(BigDecimal.ZERO) > 0) {
-                        return precio;
-                    }
-                }
-            }
-        }
-
-        return null;
     }
 
     private String obtenerColorId(JsonNode productoJson, JsonNode detail, String mainColorId) {
@@ -1398,6 +1453,10 @@ public class PullAndBearScraper implements ScraperTienda {
                 .filter(producto -> estaVacio(producto.getUrlProducto()))
                 .count();
 
+        long productosEnOferta = productos.stream()
+                .filter(producto -> Boolean.TRUE.equals(producto.getEnOferta()))
+                .count();
+
         long totalImagenesExtraidas = productos.stream()
                 .filter(producto -> producto.getImagenes() != null)
                 .mapToLong(producto -> producto.getImagenes().size())
@@ -1430,6 +1489,7 @@ public class PullAndBearScraper implements ScraperTienda {
         System.out.println("Productos sin imagen principal: " + productosSinImagen);
         System.out.println("Productos sin precio: " + productosSinPrecio);
         System.out.println("Productos sin URL: " + productosSinUrl);
+        System.out.println("Productos en oferta: " + productosEnOferta);
         System.out.println("Total imágenes extraídas: " + totalImagenesExtraidas);
 
         System.out.println();
@@ -1465,6 +1525,9 @@ public class PullAndBearScraper implements ScraperTienda {
                     System.out.println("------------------------------------");
                     System.out.println("Nombre: " + producto.getNombre());
                     System.out.println("Precio: " + producto.getPrecio());
+                    System.out.println("Precio original: " + producto.getPrecioOriginal());
+                    System.out.println("Porcentaje descuento: " + producto.getPorcentajeDescuento());
+                    System.out.println("En oferta: " + producto.getEnOferta());
                     System.out.println("Sección: " + producto.getSeccion());
                     System.out.println("Categoría: " + (producto.getCategoria() != null ? producto.getCategoria().getNombre() : ""));
                     System.out.println("URL: " + producto.getUrlProducto());
@@ -1489,6 +1552,14 @@ public class PullAndBearScraper implements ScraperTienda {
     private record RespuestaFetch(
             int statusCode,
             String body
+    ) {
+    }
+
+    private record DatosPrecioPullBear(
+            BigDecimal precio,
+            BigDecimal precioOriginal,
+            Integer porcentajeDescuento,
+            boolean enOferta
     ) {
     }
 }
