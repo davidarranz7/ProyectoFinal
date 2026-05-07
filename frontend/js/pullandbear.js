@@ -167,10 +167,13 @@ async function cargarCategoriasCatalogo() {
             </li>
         `;
 
-        const response = await fetch(`${BASE_URL}/productos/catalogo/categorias?tienda=${TIENDA_ACTUAL}&enOferta=false`, {
-            method: "GET",
-            credentials: "include"
-        });
+        const response = await fetch(
+            `${BASE_URL}/productos/catalogo/categorias?tienda=${TIENDA_ACTUAL}`,
+            {
+                method: "GET",
+                credentials: "include"
+            }
+        );
 
         if (!response.ok) {
             throw new Error("No se pudieron cargar las categorías");
@@ -233,8 +236,13 @@ function obtenerFiltrosCatalogo() {
     const secciones = Array.from(
         document.querySelectorAll('input[data-tipo="genero"]:checked')
     ).map(input => {
-        if (input.value === "hombre") return "HOMBRE";
-        if (input.value === "mujer") return "MUJER";
+        if (input.value === "hombre") {
+            return "HOMBRE";
+        }
+
+        if (input.value === "mujer") {
+            return "MUJER";
+        }
 
         return input.value.toUpperCase();
     });
@@ -253,14 +261,19 @@ function construirUrlCatalogo() {
     const filtros = obtenerFiltrosCatalogo();
 
     const params = new URLSearchParams();
+
     params.append("tienda", TIENDA_ACTUAL);
     params.append("page", paginaActual);
     params.append("size", PRODUCTOS_POR_CARGA);
     params.append("orden", ordenCatalogo);
 
-    // En la página principal de Pull&Bear solo mostramos productos normales.
-    // Las rebajas/ofertas irán en una página aparte.
+    // En pullandbear.html solo queremos catálogo normal.
+    // Las ofertas/rebajas irán en otra página aparte.
     params.append("enOferta", "false");
+
+    // En pullandbear.html tampoco queremos nueva colección.
+    // Nueva colección irá en nuevaColeccion.html.
+    params.append("nuevaColeccion", "false");
 
     filtros.secciones.forEach(seccion => {
         params.append("seccion", seccion);

@@ -17,6 +17,7 @@ import com.microsoft.playwright.PlaywrightException;
 import com.microsoft.playwright.options.WaitUntilState;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -174,18 +175,21 @@ public class PullAndBearScraper implements ScraperTienda {
     private List<CategoriaPullBear> obtenerCategoriaDebug() {
         return List.of(
                 new CategoriaPullBear(
-                        1030204633L,
+                        1030017536L,
                         Seccion.MUJER,
-                        "Camisetas",
-                        "Manga corta",
-                        "mujer/ropa/camisetas/manga-corta-n6547",
-                        "TEST > Mujer > Colección > Camisetas > Manga corta"
+                        "Nueva colección",
+                        "Novedades mujer",
+                        "mujer/novedades-n6491",
+                        "TEST > Mujer > Nueva colección > Novedades"
                 )
         );
     }
 
     private List<CategoriaPullBear> obtenerCategoriasPullBear() {
         return List.of(
+                new CategoriaPullBear(1030017536L, Seccion.MUJER, "Nueva colección", "Novedades mujer", "mujer/novedades-n6491", "Mujer > Nueva colección > Novedades"),
+                new CategoriaPullBear(1030017537L, Seccion.HOMBRE, "Nueva colección", "Novedades hombre", "hombre/novedades-n6280", "Hombre > Nueva colección > Novedades"),
+
                 new CategoriaPullBear(1030204693L, Seccion.MUJER, "Jeans", "Ver todo", "mujer/ropa/jeans-n6581", "Mujer > Colección > Jeans > Ver todo"),
                 new CategoriaPullBear(1030526548L, Seccion.MUJER, "Jeans", "Baggy | Barrel", "mujer/ropa/jeans/baggy-n7649", "Mujer > Colección > Jeans > Baggy | Barrel"),
 
@@ -304,6 +308,8 @@ public class PullAndBearScraper implements ScraperTienda {
         int productosSinImagen = 0;
         int productosSinPrecio = 0;
         int productosEnOferta = 0;
+        int productosNuevaColeccion = 0;
+        int productosNormales = 0;
 
         System.out.println("====================================");
         System.out.println("PROCESANDO CATEGORÍA PULL&BEAR");
@@ -313,6 +319,7 @@ public class PullAndBearScraper implements ScraperTienda {
         System.out.println("Sección: " + categoriaPullBear.seccion());
         System.out.println("Categoría origen: " + categoriaPullBear.categoria());
         System.out.println("Nombre categoría: " + categoriaPullBear.nombre());
+        System.out.println("Es nueva colección: " + esCategoriaNuevaColeccion(categoriaPullBear));
 
         try {
             List<String> productIds = obtenerProductIdsCategoria(page, categoriaPullBear);
@@ -368,12 +375,21 @@ public class PullAndBearScraper implements ScraperTienda {
                     continue;
                 }
 
+                productosGlobales.put(claveProducto, producto);
+                productosNuevos++;
+
                 if (Boolean.TRUE.equals(producto.getEnOferta())) {
                     productosEnOferta++;
                 }
 
-                productosGlobales.put(claveProducto, producto);
-                productosNuevos++;
+                if (Boolean.TRUE.equals(producto.getNuevaColeccion())) {
+                    productosNuevaColeccion++;
+                }
+
+                if (!Boolean.TRUE.equals(producto.getEnOferta())
+                        && !Boolean.TRUE.equals(producto.getNuevaColeccion())) {
+                    productosNormales++;
+                }
             }
 
             System.out.println("OK categoría procesada.");
@@ -383,6 +399,8 @@ public class PullAndBearScraper implements ScraperTienda {
             System.out.println("Productos sin imagen detectados: " + productosSinImagen);
             System.out.println("Productos sin precio detectados: " + productosSinPrecio);
             System.out.println("Productos en oferta detectados: " + productosEnOferta);
+            System.out.println("Productos nueva colección: " + productosNuevaColeccion);
+            System.out.println("Productos normales: " + productosNormales);
             System.out.println();
 
             return true;
@@ -684,6 +702,8 @@ public class PullAndBearScraper implements ScraperTienda {
         Categoria categoria = new Categoria();
         categoria.setNombre(nombreCategoria);
 
+        boolean nuevaColeccion = esCategoriaNuevaColeccion(categoriaPullBear);
+
         Producto producto = new Producto();
         producto.setNombre(nombre);
         producto.setDescripcion(descripcion);
@@ -691,6 +711,7 @@ public class PullAndBearScraper implements ScraperTienda {
         producto.setPrecioOriginal(precioOriginal);
         producto.setPorcentajeDescuento(porcentajeDescuento);
         producto.setEnOferta(enOferta);
+        producto.setNuevaColeccion(nuevaColeccion);
         producto.setUrlImagen(imagenPrincipal);
         producto.setUrlProducto(urlProducto);
         producto.setSeccion(seccion);
@@ -710,6 +731,15 @@ public class PullAndBearScraper implements ScraperTienda {
         }
 
         return producto;
+    }
+
+    private boolean esCategoriaNuevaColeccion(CategoriaPullBear categoriaPullBear) {
+        if (categoriaPullBear == null) {
+            return false;
+        }
+
+        return categoriaPullBear.id() == 1030017536L
+                || categoriaPullBear.id() == 1030017537L;
     }
 
     private JsonNode obtenerDetailReal(JsonNode productoJson) {
@@ -751,23 +781,11 @@ public class PullAndBearScraper implements ScraperTienda {
                 BigDecimal precio = convertirPrecio(texto(size, "price"));
                 BigDecimal precioOriginal = convertirPrecio(texto(size, "oldPrice"));
 
-                Integer porcentajeDescuento = null;
-
-                JsonNode descuentos = size.path("discountsPercentages");
-
-                if (!descuentos.isMissingNode() && !descuentos.isNull()) {
-                    String descuentoTexto = texto(descuentos, "oldPriceDiscount");
-
-                    if (!estaVacio(descuentoTexto)) {
-                        try {
-                            porcentajeDescuento = Integer.parseInt(descuentoTexto);
-                        } catch (NumberFormatException ignored) {
-                        }
-                    }
-                }
+                Integer porcentajeDescuento = obtenerPorcentajeDescuento(size, precio, precioOriginal);
 
                 boolean enOferta = precio != null
                         && precioOriginal != null
+                        && precio.compareTo(BigDecimal.ZERO) > 0
                         && precioOriginal.compareTo(precio) > 0;
 
                 if (precio != null && precio.compareTo(BigDecimal.ZERO) > 0) {
@@ -782,6 +800,36 @@ public class PullAndBearScraper implements ScraperTienda {
         }
 
         return new DatosPrecioPullBear(null, null, null, false);
+    }
+
+    private Integer obtenerPorcentajeDescuento(JsonNode size, BigDecimal precio, BigDecimal precioOriginal) {
+        String descuentoTexto = texto(size.path("discountsPercentages"), "oldPriceDiscount");
+
+        if (!estaVacio(descuentoTexto)) {
+            try {
+                return Integer.parseInt(descuentoTexto.trim());
+            } catch (Exception ignored) {
+            }
+        }
+
+        if (precio == null || precioOriginal == null) {
+            return null;
+        }
+
+        if (precio.compareTo(BigDecimal.ZERO) <= 0 || precioOriginal.compareTo(precio) <= 0) {
+            return null;
+        }
+
+        try {
+            BigDecimal diferencia = precioOriginal.subtract(precio);
+
+            return diferencia
+                    .multiply(BigDecimal.valueOf(100))
+                    .divide(precioOriginal, 0, RoundingMode.HALF_UP)
+                    .intValue();
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private String normalizarCategoriaPullBear(
@@ -807,6 +855,10 @@ public class PullAndBearScraper implements ScraperTienda {
 
     private String normalizarCategoriaPadrePullBear(String categoriaPadre) {
         String origen = normalizarTexto(categoriaPadre);
+
+        if (origen.contains("NUEVA COLECCION") || origen.contains("NOVEDADES")) {
+            return "Otros";
+        }
 
         if (origen.contains("JEANS")) {
             return "Jeans";
@@ -877,7 +929,9 @@ public class PullAndBearScraper implements ScraperTienda {
     private boolean esCategoriaMixtaPullBear(String categoriaPadre) {
         String origen = normalizarTexto(categoriaPadre);
 
-        return origen.contains("BASICOS")
+        return origen.contains("NUEVA COLECCION")
+                || origen.contains("NOVEDADES")
+                || origen.contains("BASICOS")
                 || origen.contains("TOTAL LOOK")
                 || origen.contains("CON LINO")
                 || origen.contains("CHANDAL");
@@ -1313,13 +1367,13 @@ public class PullAndBearScraper implements ScraperTienda {
     }
 
     private BigDecimal convertirPrecio(String precioTexto) {
-        if (precioTexto == null || precioTexto.isBlank()) {
+        if (precioTexto == null || precioTexto.isBlank() || "null".equalsIgnoreCase(precioTexto.trim())) {
             return null;
         }
 
         try {
             BigDecimal precioCentimos = new BigDecimal(precioTexto.trim());
-            return precioCentimos.divide(BigDecimal.valueOf(100));
+            return precioCentimos.divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
         } catch (Exception e) {
             return null;
         }
@@ -1457,6 +1511,15 @@ public class PullAndBearScraper implements ScraperTienda {
                 .filter(producto -> Boolean.TRUE.equals(producto.getEnOferta()))
                 .count();
 
+        long productosNuevaColeccion = productos.stream()
+                .filter(producto -> Boolean.TRUE.equals(producto.getNuevaColeccion()))
+                .count();
+
+        long productosNormales = productos.stream()
+                .filter(producto -> !Boolean.TRUE.equals(producto.getEnOferta())
+                        && !Boolean.TRUE.equals(producto.getNuevaColeccion()))
+                .count();
+
         long totalImagenesExtraidas = productos.stream()
                 .filter(producto -> producto.getImagenes() != null)
                 .mapToLong(producto -> producto.getImagenes().size())
@@ -1486,10 +1549,12 @@ public class PullAndBearScraper implements ScraperTienda {
         System.out.println("Categorías OK: " + categoriasOk);
         System.out.println("Categorías fallidas/bloqueadas: " + categoriasFallidas);
         System.out.println("Productos únicos finales: " + productos.size());
+        System.out.println("Productos en oferta: " + productosEnOferta);
+        System.out.println("Productos nueva colección: " + productosNuevaColeccion);
+        System.out.println("Productos normales: " + productosNormales);
         System.out.println("Productos sin imagen principal: " + productosSinImagen);
         System.out.println("Productos sin precio: " + productosSinPrecio);
         System.out.println("Productos sin URL: " + productosSinUrl);
-        System.out.println("Productos en oferta: " + productosEnOferta);
         System.out.println("Total imágenes extraídas: " + totalImagenesExtraidas);
 
         System.out.println();
@@ -1528,6 +1593,7 @@ public class PullAndBearScraper implements ScraperTienda {
                     System.out.println("Precio original: " + producto.getPrecioOriginal());
                     System.out.println("Porcentaje descuento: " + producto.getPorcentajeDescuento());
                     System.out.println("En oferta: " + producto.getEnOferta());
+                    System.out.println("Nueva colección: " + producto.getNuevaColeccion());
                     System.out.println("Sección: " + producto.getSeccion());
                     System.out.println("Categoría: " + (producto.getCategoria() != null ? producto.getCategoria().getNombre() : ""));
                     System.out.println("URL: " + producto.getUrlProducto());
