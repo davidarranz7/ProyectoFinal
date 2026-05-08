@@ -647,6 +647,10 @@ public class PullAndBearScraper implements ScraperTienda {
             return null;
         }
 
+        if (normalizarTexto(nombre).contains("SHOP THE LOOK")) {
+            return null;
+        }
+
         JsonNode detail = obtenerDetailReal(productoJson);
 
         String descripcion = texto(detail, "longDescription");
@@ -840,7 +844,7 @@ public class PullAndBearScraper implements ScraperTienda {
     ) {
         String padre = normalizarCategoriaPadrePullBear(categoriaPadre);
 
-        if (!esCategoriaMixtaPullBear(categoriaPadre)) {
+        if (!estaVacio(padre) && !esCategoriaMixtaPullBear(categoriaPadre)) {
             return padre;
         }
 
@@ -857,7 +861,7 @@ public class PullAndBearScraper implements ScraperTienda {
         String origen = normalizarTexto(categoriaPadre);
 
         if (origen.contains("NUEVA COLECCION") || origen.contains("NOVEDADES")) {
-            return "Otros";
+            return "";
         }
 
         if (origen.contains("JEANS")) {
@@ -1209,7 +1213,7 @@ public class PullAndBearScraper implements ScraperTienda {
             return "Pantalones";
         }
 
-        if (empiezaPorAlgunaPalabra(nombre, "BERMUDA", "SHORT", "SHORTS", "JORTS")) {
+        if (empiezaPorAlgunaPalabra(nombre, "BERMUDA", "BERMUDAS", "SHORT", "SHORTS", "JORTS")) {
             if (contieneAlgunaPalabra(textoCompleto, "DENIM", "JEANS", "VAQUERO", "VAQUERA")) {
                 return "Jeans";
             }
@@ -1253,7 +1257,7 @@ public class PullAndBearScraper implements ScraperTienda {
             return "Pantalones";
         }
 
-        if (contieneAlgunaPalabra(familia, "BERMUDA", "SHORT")) {
+        if (contieneAlgunaPalabra(familia, "BERMUDA", "BERMUDAS", "SHORT", "SHORTS")) {
             if (contieneAlgunaPalabra(textoCompleto, "DENIM", "JEANS", "VAQUERO", "VAQUERA")) {
                 return "Jeans";
             }
@@ -1330,28 +1334,55 @@ public class PullAndBearScraper implements ScraperTienda {
 
     private boolean esZapato(String texto) {
         return contieneAlgunaPalabra(texto,
-                "ZAPATO", "ZAPATILLA", "BOTA", "BOTIN", "BOTÍN",
-                "SANDALIA", "MOCASIN", "MOCASÍN", "ALPARGATA",
-                "BAILARINA", "MULE", "TACON", "TACÓN", "RUNNING",
+                "ZAPATO", "ZAPATOS",
+                "ZAPATILLA", "ZAPATILLAS",
+                "BOTA", "BOTAS",
+                "BOTIN", "BOTÍN", "BOTINES",
+                "SANDALIA", "SANDALIAS",
+                "MOCASIN", "MOCASÍN", "MOCASINES",
+                "ALPARGATA", "ALPARGATAS",
+                "BAILARINA", "BAILARINAS",
+                "MULE", "MULES",
+                "TACON", "TACÓN", "TACONES",
+                "RUNNING",
                 "CALZADO"
         );
     }
 
     private boolean esBolso(String texto) {
         return contieneAlgunaPalabra(texto,
-                "BOLSO", "MOCHILA", "CARTERA", "MONEDERO",
-                "RIÑONERA", "RINONERA", "NECESER", "SHOPPER",
-                "BANDOLERA"
+                "BOLSO", "BOLSOS",
+                "MOCHILA", "MOCHILAS",
+                "CARTERA", "CARTERAS",
+                "MONEDERO", "MONEDEROS",
+                "RIÑONERA", "RIÑONERAS",
+                "RINONERA", "RINONERAS",
+                "NECESER", "NECESERES",
+                "SHOPPER", "SHOPPERS",
+                "BANDOLERA", "BANDOLERAS"
         );
     }
 
     private boolean esAccesorio(String texto) {
         return contieneAlgunaPalabra(texto,
-                "ACCESORIO", "CINTURON", "CINTURÓN", "GORRA",
-                "GORRO", "SOMBRERO", "PAÑUELO", "PANUELO",
-                "BUFANDA", "GAFAS", "LLAVERO", "COLLAR",
-                "PENDIENTE", "PULSERA", "ANILLO", "CALCETIN",
-                "CALCETÍN", "BISUTERIA", "BISUTERÍA"
+                "ACCESORIO", "ACCESORIOS",
+                "CINTURON", "CINTURÓN", "CINTURONES",
+                "GORRA", "GORRAS",
+                "GORRO", "GORROS",
+                "SOMBRERO", "SOMBREROS",
+                "PAÑUELO", "PAÑUELOS",
+                "PANUELO", "PANUELOS",
+                "BUFANDA", "BUFANDAS",
+                "GAFAS",
+                "LLAVERO", "LLAVEROS",
+                "COLLAR", "COLLARES",
+                "PENDIENTE", "PENDIENTES",
+                "PULSERA", "PULSERAS",
+                "ANILLO", "ANILLOS",
+                "CALCETIN", "CALCETÍN", "CALCETINES",
+                "BISUTERIA", "BISUTERÍA",
+                "PERFUME", "PERFUMES",
+                "FRAGANCIA", "FRAGANCIAS"
         );
     }
 

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nueva colección | MODA</title>
+
+    <link rel="stylesheet" href="css/menu.css">
+    <link rel="stylesheet" href="css/nuevaColeccion.css">
+</head>
+<body>
+
+<div id="menu-container"></div>
+
+<header class="nueva-hero">
+    <div class="nueva-hero-contenido">
+        <p class="nueva-eyebrow">New arrivals</p>
+
+        <h1>Nueva<br>colección</h1>
+
+        <p class="nueva-subtitulo">
+            Descubre las últimas novedades de Zara, Pull&Bear y Bershka reunidas en un solo catálogo.
+        </p>
+    </div>
+</header>
+
+<main class="nueva-layout">
+
+    <aside class="filtros-nueva">
+
+        <div class="filtros-bloque">
+            <h3>Tienda</h3>
+
+            <ul>
+                <li>
+                    <label class="filtro-item">
+                        <input type="checkbox" class="filtro-check" data-tipo="tienda" value="Zara">
+                        <span class="filtro-label-texto">Zara</span>
+                        <span class="filtro-linea"></span>
+                    </label>
+                </li>
+
+                <li>
+                    <label class="filtro-item">
+                        <input type="checkbox" class="filtro-check" data-tipo="tienda" value="PullAndBear">
+                        <span class="filtro-label-texto">Pull&Bear</span>
+                        <span class="filtro-linea"></span>
+                    </label>
+                </li>
+
+                <li>
+                    <label class="filtro-item">
+                        <input type="checkbox" class="filtro-check" data-tipo="tienda" value="Bershka">
+                        <span class="filtro-label-texto">Bershka</span>
+                        <span class="filtro-linea"></span>
+                    </label>
+                </li>
+            </ul>
+        </div>
+
+        <div class="filtros-bloque">
+            <h3>Sección</h3>
+
+            <ul>
+                <li>
+                    <label class="filtro-item">
+                        <input type="checkbox" class="filtro-check" data-tipo="genero" value="mujer">
+                        <span class="filtro-label-texto">Mujer</span>
+                        <span class="filtro-linea"></span>
+                    </label>
+                </li>
+
+                <li>
+                    <label class="filtro-item">
+                        <input type="checkbox" class="filtro-check" data-tipo="genero" value="hombre">
+                        <span class="filtro-label-texto">Hombre</span>
+                        <span class="filtro-linea"></span>
+                    </label>
+                </li>
+            </ul>
+        </div>
+
+        <div class="filtros-bloque">
+            <h3>Categorías</h3>
+
+            <ul id="lista-categorias-filtro">
+                <li>
+                    <span class="filtro-label-texto">Cargando categorías...</span>
+                </li>
+            </ul>
+        </div>
+
+    </aside>
+
+    <section class="catalogo-nueva">
+
+        <div class="catalogo-cabecera">
+            <div>
+                <p id="contador-productos" class="contador-productos">
+                    NUEVA COLECCIÓN / CARGANDO...
+                </p>
+
+                <h2>Últimas novedades</h2>
+            </div>
+
+            <div class="catalogo-controles">
+                <select id="orden-catalogo" class="orden-catalogo">
+                    <option value="recientes">Más recientes</option>
+                    <option value="precioAsc">Precio menor a mayor</option>
+                    <option value="precioDesc">Precio mayor a menor</option>
+                    <option value="nombreAsc">Nombre A-Z</option>
+                    <option value="nombreDesc">Nombre Z-A</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="grid-productos" class="grid-nueva">
+            <p class="sin-resultados">Cargando productos...</p>
+        </div>
+
+    </section>
+
+</main>
+
+<div id="modal-login" class="modal-overlay">
+    <div class="modal-contenido">
+        <button id="cerrar-modal" class="modal-cerrar" type="button">×</button>
+
+        <span class="modal-etiqueta">Sesión necesaria</span>
+
+        <h2>Inicia sesión para continuar</h2>
+
+        <p id="modal-mensaje">
+            Debes iniciar sesión para realizar esta acción.
+        </p>
+
+        <div class="modal-acciones">
+            <button id="abrir-login-modal" class="btn-modal-principal" type="button">
+                Iniciar sesión
+            </button>
+
+            <button id="cerrar-modal-secundario" class="btn-modal-secundario" type="button">
+                Seguir viendo
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="toast-carrito" class="toast-carrito">
+    Añadido al carrito
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/menu.js"></script>
+<script src="js/nuevaColeccion.js"></script>
+
+</body>
+</html>

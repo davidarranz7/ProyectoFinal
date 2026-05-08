@@ -413,7 +413,59 @@ public class ZaraScraper implements ScraperTienda {
         String origen = normalizarTexto(categoriaOrigen);
         String keywordNormalizado = normalizarTexto(keyword);
 
-        String textoDenim = unirTextos(nombre, familia, subfamilia, origen, keywordNormalizado);
+        String textoCompleto = unirTextos(nombre, familia, subfamilia, origen, keywordNormalizado);
+        String textoDenim = textoCompleto;
+
+        // BELLEZA / PERFUMES / COSMÉTICA
+        if (contieneAlgunaPalabra(textoCompleto,
+                "PERFUME", "PERFUMES", "EDP",
+                "LACA", "UNAS", "UÑAS",
+                "ZARA", "HAIR",
+                "CERA", "GEL", "FIJACION", "FIJACIÓN",
+                "POLVO", "TEXTURIZANTE",
+                "MAQUILLAJE", "COSMETICA", "COSMÉTICA"
+        )) {
+            if (contieneAlgunaPalabra(textoCompleto,
+                    "PERFUME", "PERFUMES", "EDP",
+                    "LACA", "UNAS", "UÑAS",
+                    "HAIR", "CERA", "GEL", "FIJACION", "FIJACIÓN",
+                    "POLVO", "TEXTURIZANTE",
+                    "MAQUILLAJE", "COSMETICA", "COSMÉTICA"
+            )) {
+                return "Belleza";
+            }
+        }
+
+        // ROPA INTERIOR
+        if (empiezaPorAlgunaPalabra(nombre,
+                "TANGA", "SUJETADOR", "BRAGUITA", "BRAGA", "CULOTTE", "BODY LENCERO"
+        )) {
+            return "Ropa interior";
+        }
+
+        // BODY normal lo dejamos como camiseta/top
+        if (empiezaPorAlgunaPalabra(nombre, "BODY")) {
+            return "Camisetas";
+        }
+
+        // ACCESORIOS QUE ANTES CAÍAN EN OTROS
+        if (contieneAlgunaPalabra(textoCompleto,
+                "PENDIENTE", "PENDIENTES",
+                "PULSERA", "PULSERAS",
+                "ANILLO", "ANILLOS",
+                "COLLAR", "COLLARES",
+                "GORRO", "GORROS",
+                "GORRA", "GORRAS",
+                "SOMBRERO", "SOMBREROS",
+                "CALCETIN", "CALCETÍN", "CALCETINES",
+                "CINTURON", "CINTURÓN", "CINTURONES",
+                "PANUELO", "PAÑUELO", "PANUELOS", "PAÑUELOS",
+                "BUFANDA", "BUFANDAS",
+                "GAFAS", "LLAVERO", "LLAVEROS",
+                "CORBATA", "CORBATAS"
+        )) {
+            return "Accesorios";
+        }
 
         if (empiezaPorAlgunaPalabra(nombre, "VESTIDO")) {
             return "Vestidos";
@@ -435,7 +487,7 @@ public class ZaraScraper implements ScraperTienda {
             return "Bolsos";
         }
 
-        if (empiezaPorAlgunaPalabra(nombre, "CINTURON", "GORRA", "SOMBRERO", "PANUELO", "BUFANDA", "CORBATA", "GAFAS", "LLAVERO", "COLLAR", "PENDIENTE")) {
+        if (empiezaPorAlgunaPalabra(nombre, "CINTURON", "GORRA", "GORRO", "SOMBRERO", "PANUELO", "PAÑUELO", "BUFANDA", "CORBATA", "GAFAS", "LLAVERO", "COLLAR", "PENDIENTE", "PENDIENTES")) {
             return "Accesorios";
         }
 
