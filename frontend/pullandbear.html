@@ -13,6 +13,7 @@
 <div id="menu-container"></div>
 
 <main class="pull-container">
+
     <aside class="sidebar-filtros">
 
         <div class="filtro-seccion">
@@ -47,21 +48,10 @@
             </ul>
         </div>
 
-        <div class="filtro-seccion filtro-orden">
-            <h3>Ordenar</h3>
-
-            <select id="orden-catalogo">
-                <option value="recientes">Más recientes</option>
-                <option value="precioAsc">Precio: menor a mayor</option>
-                <option value="precioDesc">Precio: mayor a menor</option>
-                <option value="nombreAsc">Nombre: A-Z</option>
-                <option value="nombreDesc">Nombre: Z-A</option>
-            </select>
-        </div>
-
     </aside>
 
     <section class="contenido-productos">
+
         <header class="pull-header">
             <div class="pull-header-content">
                 <span class="pull-tag">NEW SEASON</span>
@@ -76,8 +66,27 @@
             </div>
         </header>
 
+        <div class="catalogo-cabecera-pull">
+            <div>
+                <p class="catalogo-eyebrow">Catálogo Pull&amp;Bear</p>
+                <h2>Productos disponibles</h2>
+            </div>
+
+            <div class="catalogo-controles-pull">
+                <select id="orden-catalogo">
+                    <option value="recientes">Más recientes</option>
+                    <option value="precioAsc">Precio: menor a mayor</option>
+                    <option value="precioDesc">Precio: mayor a menor</option>
+                    <option value="nombreAsc">Nombre: A-Z</option>
+                    <option value="nombreDesc">Nombre: Z-A</option>
+                </select>
+            </div>
+        </div>
+
         <div class="grid-pull" id="grid-productos"></div>
+
     </section>
+
 </main>
 
 <div id="modal-login" class="modal">
@@ -106,7 +115,9 @@
     </div>
 </div>
 
-<div id="toast-carrito" class="toast-carrito">Añadido al carrito</div>
+<div id="toast-carrito" class="toast-carrito">
+    Añadido al carrito
+</div>
 
 <script src="js/config.js"></script>
 <script src="js/menu.js"></script>

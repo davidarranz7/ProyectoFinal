@@ -13,6 +13,7 @@
 <div id="menu-container"></div>
 
 <main class="bershka-container">
+
     <aside class="sidebar-filtros">
 
         <div class="filtro-seccion">
@@ -47,23 +48,14 @@
             </ul>
         </div>
 
-        <div class="filtro-seccion filtro-orden">
-            <h3>Ordenar</h3>
-
-            <select id="orden-catalogo">
-                <option value="recientes">Más recientes</option>
-                <option value="precioAsc">Precio: menor a mayor</option>
-                <option value="precioDesc">Precio: mayor a menor</option>
-                <option value="nombreAsc">Nombre: A-Z</option>
-                <option value="nombreDesc">Nombre: Z-A</option>
-            </select>
-        </div>
-
     </aside>
 
     <section class="contenido-productos">
+
         <header class="bershka-header">
             <div class="bershka-header-content">
+                <span class="bershka-tag">TREND EDIT</span>
+
                 <h1>BERSHKA</h1>
 
                 <p id="contador-productos">TREND EDIT / 0 PRODUCTOS</p>
@@ -74,8 +66,27 @@
             </div>
         </header>
 
+        <div class="catalogo-cabecera-bershka">
+            <div>
+                <p class="catalogo-eyebrow">Catálogo Bershka</p>
+                <h2>Productos disponibles</h2>
+            </div>
+
+            <div class="catalogo-controles-bershka">
+                <select id="orden-catalogo">
+                    <option value="recientes">Más recientes</option>
+                    <option value="precioAsc">Precio: menor a mayor</option>
+                    <option value="precioDesc">Precio: mayor a menor</option>
+                    <option value="nombreAsc">Nombre: A-Z</option>
+                    <option value="nombreDesc">Nombre: Z-A</option>
+                </select>
+            </div>
+        </div>
+
         <div class="grid-bershka" id="grid-productos"></div>
+
     </section>
+
 </main>
 
 <div id="modal-login" class="modal">
@@ -104,7 +115,9 @@
     </div>
 </div>
 
-<div id="toast-carrito" class="toast-carrito">Añadido al carrito</div>
+<div id="toast-carrito" class="toast-carrito">
+    Añadido al carrito
+</div>
 
 <script src="js/config.js"></script>
 <script src="js/menu.js"></script>

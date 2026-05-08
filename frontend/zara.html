@@ -13,10 +13,12 @@
 <div id="menu-container"></div>
 
 <main class="zara-container">
+
     <aside class="sidebar-filtros">
 
         <div class="filtro-seccion">
             <h3>Género</h3>
+
             <ul>
                 <li>
                     <label class="filtro-item">
@@ -46,21 +48,10 @@
             </ul>
         </div>
 
-        <div class="filtro-seccion filtro-orden">
-            <h3>Ordenar</h3>
-
-            <select id="orden-catalogo">
-                <option value="recientes">Más recientes</option>
-                <option value="precioAsc">Precio: menor a mayor</option>
-                <option value="precioDesc">Precio: mayor a menor</option>
-                <option value="nombreAsc">Nombre: A-Z</option>
-                <option value="nombreDesc">Nombre: Z-A</option>
-            </select>
-        </div>
-
     </aside>
 
     <section class="contenido-productos">
+
         <header class="zara-header">
             <div class="zara-header-content">
                 <h1>ZARA</h1>
@@ -73,8 +64,27 @@
             </div>
         </header>
 
+        <div class="catalogo-cabecera-zara">
+            <div>
+                <p class="catalogo-eyebrow">Catálogo Zara</p>
+                <h2>Productos disponibles</h2>
+            </div>
+
+            <div class="catalogo-controles-zara">
+                <select id="orden-catalogo">
+                    <option value="recientes">Más recientes</option>
+                    <option value="precioAsc">Precio: menor a mayor</option>
+                    <option value="precioDesc">Precio: mayor a menor</option>
+                    <option value="nombreAsc">Nombre: A-Z</option>
+                    <option value="nombreDesc">Nombre: Z-A</option>
+                </select>
+            </div>
+        </div>
+
         <div class="grid-zara" id="grid-productos"></div>
+
     </section>
+
 </main>
 
 <div id="modal-login" class="modal">
@@ -103,7 +113,9 @@
     </div>
 </div>
 
-<div id="toast-carrito" class="toast-carrito">Añadido al carrito</div>
+<div id="toast-carrito" class="toast-carrito">
+    Añadido al carrito
+</div>
 
 <script src="js/config.js"></script>
 <script src="js/menu.js"></script>

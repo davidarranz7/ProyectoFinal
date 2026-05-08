@@ -5,16 +5,34 @@
     box-sizing: border-box;
 }
 
+html, body {
+    scroll-behavior: smooth;
+}
+
 body {
     font-family: Arial, sans-serif;
     background: #fbfaf7;
     color: #111111;
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+}
+
+/* MENÚ FIJO */
+#menu-container {
+    width: 100%;
+    min-height: 72px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 5001;
+    overflow: visible;
 }
 
 /* HERO */
 .nueva-hero {
     width: 100%;
-    padding: 100px 28px 66px;
+    padding: 140px 28px 66px;
     background:
         linear-gradient(135deg, rgba(245, 239, 229, 0.96), rgba(255, 255, 255, 0.82)),
         radial-gradient(circle at top right, rgba(0,0,0,0.10), transparent 34%),
@@ -662,8 +680,12 @@ body {
 }
 
 @media (max-width: 680px) {
+    #menu-container {
+        min-height: 64px;
+    }
+
     .nueva-hero {
-        padding: 82px 18px 48px;
+        padding: 118px 18px 48px;
     }
 
     .nueva-layout {

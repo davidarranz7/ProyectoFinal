@@ -34,6 +34,10 @@ body::before {
     pointer-events: none;
 }
 
+/* ============================= */
+/* MENÚ */
+/* ============================= */
+
 #menu-container {
     width: 100%;
     min-height: 72px;
@@ -43,6 +47,10 @@ body::before {
     z-index: 5001;
     overflow: visible;
 }
+
+/* ============================= */
+/* LAYOUT */
+/* ============================= */
 
 .zara-container {
     width: min(1400px, 92%);
@@ -160,42 +168,7 @@ body::before {
 }
 
 /* ============================= */
-/* ORDENAR */
-/* ============================= */
-
-.filtro-orden {
-    padding-top: 6px;
-}
-
-#orden-catalogo {
-    width: 100%;
-    min-height: 46px;
-    padding: 0 14px;
-    border: 1px solid rgba(17, 17, 17, 0.22);
-    background: rgba(255, 255, 255, 0.88);
-    color: #111;
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    outline: none;
-    cursor: pointer;
-    backdrop-filter: blur(8px);
-    transition: border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
-}
-
-#orden-catalogo:hover {
-    border-color: rgba(17, 17, 17, 0.45);
-    background: rgba(255, 255, 255, 0.96);
-}
-
-#orden-catalogo:focus {
-    border-color: #111;
-    box-shadow: 0 0 0 4px rgba(17, 17, 17, 0.08);
-}
-
-/* ============================= */
-/* HEADER */
+/* CONTENIDO */
 /* ============================= */
 
 .contenido-productos {
@@ -203,6 +176,10 @@ body::before {
     flex-direction: column;
     gap: 24px;
 }
+
+/* ============================= */
+/* HEADER */
+/* ============================= */
 
 .zara-header {
     position: relative;
@@ -255,6 +232,66 @@ body::before {
     font-size: 14px;
     line-height: 1.7;
     letter-spacing: 0.08em;
+}
+
+/* ============================= */
+/* CABECERA CATÁLOGO / ORDENAR */
+/* ============================= */
+
+.catalogo-cabecera-zara {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 24px;
+    padding: 22px 0 6px;
+}
+
+.catalogo-eyebrow {
+    font-size: 0.72rem;
+    color: rgba(17, 17, 17, 0.55);
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    margin-bottom: 8px;
+}
+
+.catalogo-cabecera-zara h2 {
+    font-size: clamp(1.6rem, 3vw, 2.35rem);
+    font-weight: 700;
+    letter-spacing: -0.05em;
+    color: #111;
+}
+
+.catalogo-controles-zara {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+#orden-catalogo {
+    min-width: 230px;
+    min-height: 46px;
+    padding: 0 14px;
+    border: 1px solid rgba(17, 17, 17, 0.26);
+    background: rgba(255, 255, 255, 0.88);
+    color: #111;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    outline: none;
+    cursor: pointer;
+    backdrop-filter: blur(8px);
+    transition: border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+}
+
+#orden-catalogo:hover {
+    border-color: rgba(17, 17, 17, 0.55);
+    background: rgba(255, 255, 255, 0.96);
+}
+
+#orden-catalogo:focus {
+    border-color: #111;
+    box-shadow: 0 0 0 4px rgba(17, 17, 17, 0.08);
 }
 
 /* ============================= */
@@ -618,7 +655,7 @@ body::before {
     display: none;
     justify-content: center;
     align-items: center;
-    z-index: 3000;
+    z-index: 9000;
 }
 
 .modal-overlay {
@@ -729,7 +766,7 @@ body::before {
     letter-spacing: 0.14em;
     text-transform: uppercase;
     box-shadow: 0 12px 30px rgba(0,0,0,0.18);
-    z-index: 6000;
+    z-index: 9200;
     opacity: 0;
     transform: translateY(-10px);
     pointer-events: none;
@@ -750,6 +787,7 @@ body::before {
         opacity: 0;
         transform: translateY(12px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -777,7 +815,7 @@ body::before {
         position: static;
         padding: 18px 0 8px;
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 24px;
     }
 
@@ -792,6 +830,10 @@ body::before {
     .zara-header {
         min-height: 360px;
         padding: 28px;
+    }
+
+    .catalogo-cabecera-zara {
+        padding-top: 12px;
     }
 }
 
@@ -809,6 +851,15 @@ body::before {
     .sidebar-filtros {
         grid-template-columns: 1fr;
         gap: 22px;
+    }
+
+    .catalogo-cabecera-zara {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    #orden-catalogo {
+        width: 100%;
     }
 
     .grid-zara {

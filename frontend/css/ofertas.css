@@ -5,16 +5,34 @@
     box-sizing: border-box;
 }
 
+html, body {
+    scroll-behavior: smooth;
+}
+
 body {
     font-family: Arial, sans-serif;
     background: #ffffff;
     color: #111111;
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+}
+
+/* MENÚ FIJO */
+#menu-container {
+    width: 100%;
+    min-height: 72px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 5001;
+    overflow: visible;
 }
 
 /* HERO */
 .ofertas-hero {
     width: 100%;
-    padding: 95px 28px 62px;
+    padding: 135px 28px 62px;
     background:
         linear-gradient(135deg, rgba(0,0,0,0.74), rgba(0,0,0,0.35)),
         radial-gradient(circle at top right, rgba(255,255,255,0.22), transparent 32%),
@@ -671,8 +689,12 @@ body {
 }
 
 @media (max-width: 680px) {
+    #menu-container {
+        min-height: 64px;
+    }
+
     .ofertas-hero {
-        padding: 82px 18px 48px;
+        padding: 118px 18px 48px;
     }
 
     .ofertas-layout {
