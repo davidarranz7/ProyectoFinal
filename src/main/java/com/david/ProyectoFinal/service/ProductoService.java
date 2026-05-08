@@ -13,6 +13,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -61,19 +63,57 @@ public class ProductoService {
         Producto producto = productoRepository.findById(id).orElse(null);
 
         if (producto != null) {
+            BigDecimal precioAnterior = producto.getPrecio();
+            BigDecimal precioNuevo = productoActualizado.getPrecio();
+
             producto.setNombre(productoActualizado.getNombre());
             producto.setDescripcion(productoActualizado.getDescripcion());
-            producto.setPrecio(productoActualizado.getPrecio());
+            producto.setPrecio(precioNuevo);
             producto.setUrlImagen(productoActualizado.getUrlImagen());
             producto.setUrlProducto(productoActualizado.getUrlProducto());
             producto.setSeccion(productoActualizado.getSeccion());
             producto.setCategoria(productoActualizado.getCategoria());
             producto.setTienda(productoActualizado.getTienda());
 
+            aplicarOfertaSiPrecioBaja(producto, precioAnterior, precioNuevo);
+
             return productoRepository.save(producto);
         }
 
         return null;
+    }
+
+    private void aplicarOfertaSiPrecioBaja(Producto producto, BigDecimal precioAnterior, BigDecimal precioNuevo) {
+        if (producto == null || precioAnterior == null || precioNuevo == null) {
+            return;
+        }
+
+        if (precioAnterior.compareTo(BigDecimal.ZERO) <= 0 || precioNuevo.compareTo(BigDecimal.ZERO) <= 0) {
+            return;
+        }
+
+        if (precioNuevo.compareTo(precioAnterior) < 0) {
+            producto.setPrecioOriginal(precioAnterior);
+            producto.setEnOferta(true);
+
+            BigDecimal descuento = precioAnterior
+                    .subtract(precioNuevo)
+                    .multiply(BigDecimal.valueOf(100))
+                    .divide(precioAnterior, 0, RoundingMode.HALF_UP);
+
+            producto.setPorcentajeDescuento(descuento.intValue());
+            producto.setNuevaColeccion(false);
+            return;
+        }
+
+        if (Boolean.TRUE.equals(producto.getEnOferta())
+                && producto.getPrecioOriginal() != null
+                && precioNuevo.compareTo(producto.getPrecioOriginal()) >= 0) {
+
+            producto.setPrecioOriginal(null);
+            producto.setPorcentajeDescuento(null);
+            producto.setEnOferta(false);
+        }
     }
 
     public List<Producto> scrapearYGuardar() {
