@@ -47,12 +47,6 @@ public class ZaraScraper implements ScraperTienda {
         tienda.setNombre("Zara");
         tienda.setUrl("https://www.zara.com");
 
-        System.out.println("====================================");
-        System.out.println("SCRAPING ZARA - API JSON");
-        System.out.println("====================================");
-        System.out.println("Categorías a procesar: " + categoriasZara.size());
-        System.out.println();
-
         for (CategoriaZara categoriaZara : categoriasZara) {
             procesarCategoria(categoriaZara, productosGlobales, urlsVistas, tienda);
         }
@@ -117,21 +111,11 @@ public class ZaraScraper implements ScraperTienda {
         int productosEnOfertaCategoria = 0;
         int productosNuevaColeccionCategoria = 0;
 
-        System.out.println("====================================");
-        System.out.println("PROCESANDO CATEGORÍA ZARA");
-        System.out.println("====================================");
-        System.out.println("Nombre: " + categoriaZara.nombre());
-        System.out.println("ID: " + categoriaZara.id());
-        System.out.println("Nueva colección: " + categoriaZara.nuevaColeccion());
-        System.out.println("Endpoint: " + endpoint);
-
         try {
             JsonNode root = hacerPeticion(endpoint);
             JsonNode productGroups = root.path("productGroups");
 
             if (!productGroups.isArray()) {
-                System.out.println("No existe productGroups o no es array.");
-                System.out.println();
                 return;
             }
 
@@ -214,20 +198,7 @@ public class ZaraScraper implements ScraperTienda {
                 }
             }
 
-            System.out.println("OK categoría procesada.");
-            System.out.println("Productos brutos encontrados: " + productosBrutos);
-            System.out.println("Productos nuevos añadidos: " + productosNuevos);
-            System.out.println("Productos repetidos ignorados: " + productosRepetidos);
-            System.out.println("Productos descartados: " + productosDescartados);
-            System.out.println("Productos en oferta detectados en categoría: " + productosEnOfertaCategoria);
-            System.out.println("Productos nueva colección detectados en categoría: " + productosNuevaColeccionCategoria);
-            System.out.println("URLs fallback generadas: " + urlsFallback);
-            System.out.println();
-
         } catch (Exception e) {
-            System.out.println("ERROR procesando categoría: " + categoriaZara.nombre());
-            System.out.println("Mensaje: " + e.getMessage());
-            System.out.println();
         }
     }
 
@@ -245,9 +216,6 @@ public class ZaraScraper implements ScraperTienda {
                 HttpResponse.BodyHandlers.ofString()
         );
 
-        System.out.println("HTTP status: " + response.statusCode());
-        System.out.println("Longitud respuesta: " + response.body().length());
-
         if (response.statusCode() < 200 || response.statusCode() >= 300) {
             throw new RuntimeException("Respuesta HTTP no válida: " + response.statusCode());
         }
@@ -261,34 +229,6 @@ public class ZaraScraper implements ScraperTienda {
         String nombre = texto(productoJson, "name");
         String descripcion = texto(productoJson, "description");
         String keyword = texto(productoJson.path("seo"), "keyword");
-
-        if (estaVacio(descripcion)) {
-            System.out.println("====================================");
-            System.out.println("DEBUG DESCRIPCION ZARA");
-            System.out.println("Producto: " + nombre);
-            System.out.println("Categoria: " + categoriaZara.nombre());
-            System.out.println("Campos raíz del producto:");
-
-            productoJson.fieldNames().forEachRemaining(campo -> {
-                System.out.println("- " + campo);
-            });
-
-            System.out.println("Campos dentro de detail:");
-
-            JsonNode detail = productoJson.path("detail");
-
-            if (!detail.isMissingNode() && !detail.isNull()) {
-                detail.fieldNames().forEachRemaining(campo -> {
-                    System.out.println("- detail." + campo);
-                });
-            }
-
-            System.out.println("description raíz: " + texto(productoJson, "description"));
-            System.out.println("detail.description: " + texto(detail, "description"));
-            System.out.println("detail.longDescription: " + texto(detail, "longDescription"));
-            System.out.println("detail.shortDescription: " + texto(detail, "shortDescription"));
-            System.out.println("====================================");
-        }
 
         if (estaVacio(seoProductId) || estaVacio(productId) || estaVacio(nombre)) {
             return null;
@@ -416,7 +356,6 @@ public class ZaraScraper implements ScraperTienda {
         String textoCompleto = unirTextos(nombre, familia, subfamilia, origen, keywordNormalizado);
         String textoDenim = textoCompleto;
 
-        // BELLEZA / PERFUMES / COSMÉTICA
         if (contieneAlgunaPalabra(textoCompleto,
                 "PERFUME", "PERFUMES", "EDP",
                 "LACA", "UNAS", "UÑAS",
@@ -436,19 +375,16 @@ public class ZaraScraper implements ScraperTienda {
             }
         }
 
-        // ROPA INTERIOR
         if (empiezaPorAlgunaPalabra(nombre,
                 "TANGA", "SUJETADOR", "BRAGUITA", "BRAGA", "CULOTTE", "BODY LENCERO"
         )) {
             return "Ropa interior";
         }
 
-        // BODY normal lo dejamos como camiseta/top
         if (empiezaPorAlgunaPalabra(nombre, "BODY")) {
             return "Camisetas";
         }
 
-        // ACCESORIOS QUE ANTES CAÍAN EN OTROS
         if (contieneAlgunaPalabra(textoCompleto,
                 "PENDIENTE", "PENDIENTES",
                 "PULSERA", "PULSERAS",
@@ -910,106 +846,6 @@ public class ZaraScraper implements ScraperTienda {
     }
 
     private void imprimirResumenFinal(List<Producto> productos) {
-        long productosSinImagen = productos.stream()
-                .filter(producto -> estaVacio(producto.getUrlImagen()))
-                .count();
-
-        long productosSinPrecio = productos.stream()
-                .filter(producto -> producto.getPrecio() == null || producto.getPrecio().compareTo(BigDecimal.ZERO) <= 0)
-                .count();
-
-        long productosSinUrl = productos.stream()
-                .filter(producto -> estaVacio(producto.getUrlProducto()))
-                .count();
-
-        long productosEnOferta = productos.stream()
-                .filter(producto -> Boolean.TRUE.equals(producto.getEnOferta()))
-                .count();
-
-        long productosNuevaColeccion = productos.stream()
-                .filter(producto -> Boolean.TRUE.equals(producto.getNuevaColeccion()))
-                .count();
-
-        long totalImagenesExtraidas = productos.stream()
-                .filter(producto -> producto.getImagenes() != null)
-                .mapToLong(producto -> producto.getImagenes().size())
-                .sum();
-
-        Map<String, Long> conteoPorCategoria = new LinkedHashMap<>();
-        Map<Seccion, Long> conteoPorSeccion = new LinkedHashMap<>();
-
-        for (Producto producto : productos) {
-            String categoria = producto.getCategoria() != null
-                    ? producto.getCategoria().getNombre()
-                    : "Sin categoría";
-
-            conteoPorCategoria.put(categoria, conteoPorCategoria.getOrDefault(categoria, 0L) + 1);
-
-            Seccion seccion = producto.getSeccion() != null
-                    ? producto.getSeccion()
-                    : Seccion.UNISEX;
-
-            conteoPorSeccion.put(seccion, conteoPorSeccion.getOrDefault(seccion, 0L) + 1);
-        }
-
-        System.out.println();
-        System.out.println("====================================");
-        System.out.println("RESUMEN FINAL ZARA");
-        System.out.println("====================================");
-        System.out.println("Productos únicos finales: " + productos.size());
-        System.out.println("Productos sin imagen principal: " + productosSinImagen);
-        System.out.println("Productos sin precio: " + productosSinPrecio);
-        System.out.println("Productos sin URL: " + productosSinUrl);
-        System.out.println("Productos en oferta: " + productosEnOferta);
-        System.out.println("Productos nueva colección: " + productosNuevaColeccion);
-        System.out.println("Total imágenes extraídas: " + totalImagenesExtraidas);
-
-        System.out.println();
-        System.out.println("====================================");
-        System.out.println("PRODUCTOS POR SECCIÓN");
-        System.out.println("====================================");
-
-        conteoPorSeccion.forEach((seccion, total) ->
-                System.out.println(seccion + ": " + total)
-        );
-
-        System.out.println();
-        System.out.println("====================================");
-        System.out.println("PRODUCTOS POR CATEGORÍA");
-        System.out.println("====================================");
-
-        conteoPorCategoria.forEach((categoria, total) ->
-                System.out.println(categoria + ": " + total)
-        );
-
-        System.out.println();
-        System.out.println("====================================");
-        System.out.println("PRIMEROS 30 PRODUCTOS");
-        System.out.println("====================================");
-
-        productos.stream()
-                .limit(30)
-                .forEach(producto -> {
-                    int totalImagenesProducto = producto.getImagenes() != null
-                            ? producto.getImagenes().size()
-                            : 0;
-
-                    System.out.println("------------------------------------");
-                    System.out.println("Nombre: " + producto.getNombre());
-                    System.out.println("Precio: " + producto.getPrecio());
-                    System.out.println("Precio original: " + producto.getPrecioOriginal());
-                    System.out.println("Porcentaje descuento: " + producto.getPorcentajeDescuento());
-                    System.out.println("En oferta: " + producto.getEnOferta());
-                    System.out.println("Nueva colección: " + producto.getNuevaColeccion());
-                    System.out.println("Sección: " + producto.getSeccion());
-                    System.out.println("Categoría: " + (producto.getCategoria() != null ? producto.getCategoria().getNombre() : ""));
-                    System.out.println("URL: " + producto.getUrlProducto());
-                    System.out.println("Imagen principal: " + producto.getUrlImagen());
-                    System.out.println("Total imágenes: " + totalImagenesProducto);
-                });
-
-        System.out.println();
-        System.out.println("SCRAPING ZARA TERMINADO.");
     }
 
     private record CategoriaZara(

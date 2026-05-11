@@ -66,17 +66,6 @@ public class PullAndBearScraper implements ScraperTienda {
         int categoriasOk = 0;
         int categoriasFallidas = 0;
 
-        System.out.println("====================================");
-        System.out.println("SCRAPING PULL&BEAR - PLAYWRIGHT FETCH API");
-        System.out.println("====================================");
-        System.out.println("Categorías a procesar: " + categoriasPullBear.size());
-        System.out.println("Modo una categoría debug: " + MODO_UNA_CATEGORIA_DEBUG);
-        System.out.println("Headless: " + HEADLESS);
-        System.out.println("Store ID: " + STORE_ID);
-        System.out.println("Catalog ID: " + CATALOG_ID);
-        System.out.println("Language ID: " + LANGUAGE_ID);
-        System.out.println();
-
         try (Playwright playwright = Playwright.create()) {
             Browser browser = lanzarNavegador(playwright);
 
@@ -111,9 +100,6 @@ public class PullAndBearScraper implements ScraperTienda {
             browser.close();
 
         } catch (Exception e) {
-            System.out.println("ERROR GENERAL EN SCRAPER PULL&BEAR");
-            System.out.println("Mensaje: " + e.getMessage());
-            e.printStackTrace();
         }
 
         List<Producto> productosFinales = new ArrayList<>(productosGlobales.values());
@@ -125,13 +111,11 @@ public class PullAndBearScraper implements ScraperTienda {
 
     private Browser lanzarNavegador(Playwright playwright) {
         try {
-            System.out.println("Intentando abrir Google Chrome real...");
             return playwright.chromium().launch(new BrowserType.LaunchOptions()
                     .setChannel("chrome")
                     .setHeadless(HEADLESS)
             );
         } catch (PlaywrightException e) {
-            System.out.println("No se pudo abrir Google Chrome real. Usando Chromium de Playwright...");
             return playwright.chromium().launch(new BrowserType.LaunchOptions()
                     .setHeadless(HEADLESS)
             );
@@ -139,10 +123,6 @@ public class PullAndBearScraper implements ScraperTienda {
     }
 
     private void prepararPaginaInicial(Page page) {
-        System.out.println("====================================");
-        System.out.println("PREPARANDO NAVEGADOR PULL&BEAR");
-        System.out.println("====================================");
-
         try {
             page.navigate(BASE_URL + "/es/", new Page.NavigateOptions()
                     .setWaitUntil(WaitUntilState.DOMCONTENTLOADED)
@@ -152,14 +132,7 @@ public class PullAndBearScraper implements ScraperTienda {
             esperar(3000);
             aceptarCookiesSiAparece(page);
 
-            System.out.println("Página inicial cargada.");
-            System.out.println("URL actual: " + page.url());
-            System.out.println();
-
         } catch (Exception e) {
-            System.out.println("No se pudo preparar la página inicial.");
-            System.out.println("Mensaje: " + e.getMessage());
-            System.out.println();
         }
     }
 
@@ -167,7 +140,6 @@ public class PullAndBearScraper implements ScraperTienda {
         try {
             page.locator("button:has-text('Aceptar')").first().click(new Locator.ClickOptions().setTimeout(2500));
             esperar(1000);
-            System.out.println("Cookies aceptadas.");
         } catch (Exception ignored) {
         }
     }
@@ -302,114 +274,44 @@ public class PullAndBearScraper implements ScraperTienda {
             Map<String, Producto> productosGlobales,
             Tienda tienda
     ) {
-        int productosNuevos = 0;
-        int productosRepetidos = 0;
-        int productosDescartados = 0;
-        int productosSinImagen = 0;
-        int productosSinPrecio = 0;
-        int productosEnOferta = 0;
-        int productosNuevaColeccion = 0;
-        int productosNormales = 0;
-
-        System.out.println("====================================");
-        System.out.println("PROCESANDO CATEGORÍA PULL&BEAR");
-        System.out.println("====================================");
-        System.out.println("Ruta: " + categoriaPullBear.ruta());
-        System.out.println("ID: " + categoriaPullBear.id());
-        System.out.println("Sección: " + categoriaPullBear.seccion());
-        System.out.println("Categoría origen: " + categoriaPullBear.categoria());
-        System.out.println("Nombre categoría: " + categoriaPullBear.nombre());
-        System.out.println("Es nueva colección: " + esCategoriaNuevaColeccion(categoriaPullBear));
-
         try {
             List<String> productIds = obtenerProductIdsCategoria(page, categoriaPullBear);
 
-            System.out.println("IDs encontrados: " + productIds.size());
-
             if (productIds.isEmpty()) {
-                System.out.println("Categoría sin productos.");
-                System.out.println();
                 return true;
             }
 
             List<String> productIdsPendientes = filtrarIdsNoProcesados(productIds, productosGlobales);
 
-            System.out.println("IDs ya procesados antes de productsArray: " + (productIds.size() - productIdsPendientes.size()));
-            System.out.println("IDs pendientes reales: " + productIdsPendientes.size());
-
             if (productIdsPendientes.isEmpty()) {
-                System.out.println("Categoría sin productos nuevos. Se evita productsArray.");
-                System.out.println();
                 return true;
             }
 
             List<JsonNode> productosJson = cargarProductosCategoria(page, categoriaPullBear, productIdsPendientes);
 
-            System.out.println("Productos recibidos desde productsArray: " + productosJson.size());
-
             for (JsonNode productoJson : productosJson) {
                 Producto producto = convertirJsonAProducto(productoJson, categoriaPullBear, tienda);
 
                 if (producto == null) {
-                    productosDescartados++;
                     continue;
-                }
-
-                if (estaVacio(producto.getUrlImagen())) {
-                    productosSinImagen++;
-                }
-
-                if (producto.getPrecio() == null || producto.getPrecio().compareTo(BigDecimal.ZERO) <= 0) {
-                    productosSinPrecio++;
                 }
 
                 String claveProducto = obtenerClaveProducto(productoJson, producto);
 
                 if (estaVacio(claveProducto)) {
-                    productosDescartados++;
                     continue;
                 }
 
                 if (productosGlobales.containsKey(claveProducto)) {
-                    productosRepetidos++;
                     continue;
                 }
 
                 productosGlobales.put(claveProducto, producto);
-                productosNuevos++;
-
-                if (Boolean.TRUE.equals(producto.getEnOferta())) {
-                    productosEnOferta++;
-                }
-
-                if (Boolean.TRUE.equals(producto.getNuevaColeccion())) {
-                    productosNuevaColeccion++;
-                }
-
-                if (!Boolean.TRUE.equals(producto.getEnOferta())
-                        && !Boolean.TRUE.equals(producto.getNuevaColeccion())) {
-                    productosNormales++;
-                }
             }
-
-            System.out.println("OK categoría procesada.");
-            System.out.println("Productos nuevos añadidos: " + productosNuevos);
-            System.out.println("Productos repetidos ignorados: " + productosRepetidos);
-            System.out.println("Productos descartados: " + productosDescartados);
-            System.out.println("Productos sin imagen detectados: " + productosSinImagen);
-            System.out.println("Productos sin precio detectados: " + productosSinPrecio);
-            System.out.println("Productos en oferta detectados: " + productosEnOferta);
-            System.out.println("Productos nueva colección: " + productosNuevaColeccion);
-            System.out.println("Productos normales: " + productosNormales);
-            System.out.println();
 
             return true;
 
         } catch (Exception e) {
-            System.out.println("Categoría saltada por error/bloqueo.");
-            System.out.println("Mensaje: " + e.getMessage());
-            System.out.println();
-
             return false;
         }
     }
@@ -513,8 +415,6 @@ public class PullAndBearScraper implements ScraperTienda {
         List<JsonNode> productos = new ArrayList<>();
         List<List<String>> bloques = dividirEnBloques(productIds, TAMANO_BLOQUE_PRODUCTOS);
 
-        System.out.println("Bloques productsArray a cargar: " + bloques.size());
-
         for (List<String> bloque : bloques) {
             String idsTexto = String.join(",", bloque);
 
@@ -550,8 +450,6 @@ public class PullAndBearScraper implements ScraperTienda {
         RespuestaFetch respuesta = fetchDesdeNavegador(page, endpoint, referer);
 
         if (respuesta.statusCode() == 403) {
-            System.out.println("403 detectado. Reintentando una vez desde la URL de categoría...");
-
             try {
                 page.navigate(referer, new Page.NavigateOptions()
                         .setWaitUntil(WaitUntilState.DOMCONTENTLOADED)
@@ -561,24 +459,12 @@ public class PullAndBearScraper implements ScraperTienda {
                 esperar(PAUSA_REINTENTO_403_MS);
                 aceptarCookiesSiAparece(page);
             } catch (Exception e) {
-                System.out.println("No se pudo navegar al referer.");
-                System.out.println("Mensaje navegación: " + e.getMessage());
             }
 
             respuesta = fetchDesdeNavegador(page, endpoint, referer);
         }
 
         if (respuesta.statusCode() < 200 || respuesta.statusCode() >= 300) {
-            System.out.println("====================================");
-            System.out.println("RESPUESTA ERROR PULL&BEAR");
-            System.out.println("====================================");
-            System.out.println("Endpoint: " + endpoint);
-            System.out.println("Referer: " + referer);
-            System.out.println("Status: " + respuesta.statusCode());
-            System.out.println("Body corto:");
-            imprimirBodyCorto(respuesta.body());
-            System.out.println("====================================");
-
             throw new RuntimeException("Respuesta HTTP no válida: " + respuesta.statusCode());
         }
 
@@ -619,10 +505,7 @@ public class PullAndBearScraper implements ScraperTienda {
         JsonNode respuestaJson = objectMapper.readTree(String.valueOf(resultado));
 
         int status = respuestaJson.path("status").asInt();
-        int length = respuestaJson.path("length").asInt();
         String body = respuestaJson.path("body").asText("");
-
-        System.out.println("FETCH navegador status: " + status + " | longitud: " + length);
 
         return new RespuestaFetch(status, body);
     }
@@ -1510,13 +1393,6 @@ public class PullAndBearScraper implements ScraperTienda {
     }
 
     private void imprimirBodyCorto(String body) {
-        if (body == null) {
-            System.out.println("");
-            return;
-        }
-
-        int limite = Math.min(body.length(), 700);
-        System.out.println(body.substring(0, limite));
     }
 
     private String userAgent() {
@@ -1526,114 +1402,6 @@ public class PullAndBearScraper implements ScraperTienda {
     }
 
     private void imprimirResumenFinal(List<Producto> productos, int categoriasOk, int categoriasFallidas) {
-        long productosSinImagen = productos.stream()
-                .filter(producto -> estaVacio(producto.getUrlImagen()))
-                .count();
-
-        long productosSinPrecio = productos.stream()
-                .filter(producto -> producto.getPrecio() == null || producto.getPrecio().compareTo(BigDecimal.ZERO) <= 0)
-                .count();
-
-        long productosSinUrl = productos.stream()
-                .filter(producto -> estaVacio(producto.getUrlProducto()))
-                .count();
-
-        long productosEnOferta = productos.stream()
-                .filter(producto -> Boolean.TRUE.equals(producto.getEnOferta()))
-                .count();
-
-        long productosNuevaColeccion = productos.stream()
-                .filter(producto -> Boolean.TRUE.equals(producto.getNuevaColeccion()))
-                .count();
-
-        long productosNormales = productos.stream()
-                .filter(producto -> !Boolean.TRUE.equals(producto.getEnOferta())
-                        && !Boolean.TRUE.equals(producto.getNuevaColeccion()))
-                .count();
-
-        long totalImagenesExtraidas = productos.stream()
-                .filter(producto -> producto.getImagenes() != null)
-                .mapToLong(producto -> producto.getImagenes().size())
-                .sum();
-
-        Map<String, Long> conteoPorCategoria = new LinkedHashMap<>();
-        Map<Seccion, Long> conteoPorSeccion = new LinkedHashMap<>();
-
-        for (Producto producto : productos) {
-            String categoria = producto.getCategoria() != null
-                    ? producto.getCategoria().getNombre()
-                    : "Sin categoría";
-
-            conteoPorCategoria.put(categoria, conteoPorCategoria.getOrDefault(categoria, 0L) + 1);
-
-            Seccion seccion = producto.getSeccion() != null
-                    ? producto.getSeccion()
-                    : Seccion.UNISEX;
-
-            conteoPorSeccion.put(seccion, conteoPorSeccion.getOrDefault(seccion, 0L) + 1);
-        }
-
-        System.out.println();
-        System.out.println("====================================");
-        System.out.println("RESUMEN FINAL PULL&BEAR");
-        System.out.println("====================================");
-        System.out.println("Categorías OK: " + categoriasOk);
-        System.out.println("Categorías fallidas/bloqueadas: " + categoriasFallidas);
-        System.out.println("Productos únicos finales: " + productos.size());
-        System.out.println("Productos en oferta: " + productosEnOferta);
-        System.out.println("Productos nueva colección: " + productosNuevaColeccion);
-        System.out.println("Productos normales: " + productosNormales);
-        System.out.println("Productos sin imagen principal: " + productosSinImagen);
-        System.out.println("Productos sin precio: " + productosSinPrecio);
-        System.out.println("Productos sin URL: " + productosSinUrl);
-        System.out.println("Total imágenes extraídas: " + totalImagenesExtraidas);
-
-        System.out.println();
-        System.out.println("====================================");
-        System.out.println("PRODUCTOS POR SECCIÓN");
-        System.out.println("====================================");
-
-        conteoPorSeccion.forEach((seccion, total) ->
-                System.out.println(seccion + ": " + total)
-        );
-
-        System.out.println();
-        System.out.println("====================================");
-        System.out.println("PRODUCTOS POR CATEGORÍA");
-        System.out.println("====================================");
-
-        conteoPorCategoria.forEach((categoria, total) ->
-                System.out.println(categoria + ": " + total)
-        );
-
-        System.out.println();
-        System.out.println("====================================");
-        System.out.println("PRIMEROS 30 PRODUCTOS");
-        System.out.println("====================================");
-
-        productos.stream()
-                .limit(30)
-                .forEach(producto -> {
-                    int totalImagenesProducto = producto.getImagenes() != null
-                            ? producto.getImagenes().size()
-                            : 0;
-
-                    System.out.println("------------------------------------");
-                    System.out.println("Nombre: " + producto.getNombre());
-                    System.out.println("Precio: " + producto.getPrecio());
-                    System.out.println("Precio original: " + producto.getPrecioOriginal());
-                    System.out.println("Porcentaje descuento: " + producto.getPorcentajeDescuento());
-                    System.out.println("En oferta: " + producto.getEnOferta());
-                    System.out.println("Nueva colección: " + producto.getNuevaColeccion());
-                    System.out.println("Sección: " + producto.getSeccion());
-                    System.out.println("Categoría: " + (producto.getCategoria() != null ? producto.getCategoria().getNombre() : ""));
-                    System.out.println("URL: " + producto.getUrlProducto());
-                    System.out.println("Imagen principal: " + producto.getUrlImagen());
-                    System.out.println("Total imágenes: " + totalImagenesProducto);
-                });
-
-        System.out.println();
-        System.out.println("SCRAPING PULL&BEAR TERMINADO.");
     }
 
     private record CategoriaPullBear(
