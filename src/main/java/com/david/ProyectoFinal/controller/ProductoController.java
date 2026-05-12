@@ -4,6 +4,7 @@ package com.david.ProyectoFinal.controller;
 import com.david.ProyectoFinal.dto.ProductoPageResponseDTO;
 import com.david.ProyectoFinal.dto.ProductoTallaStockDTO;
 import com.david.ProyectoFinal.dto.ProductoTallaStockResponseDTO;
+import com.david.ProyectoFinal.dto.ResultadoScrapingDTO;
 import com.david.ProyectoFinal.model.Producto;
 import com.david.ProyectoFinal.model.Seccion;
 import com.david.ProyectoFinal.service.ProductoService;
@@ -101,30 +102,30 @@ public class ProductoController {
     }
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/scrapear/total")
-    public ResponseEntity<List<Producto>> scrapearProductos(){
-        List<Producto> productos = productoService.scrapearYGuardar();
-        return ResponseEntity.ok(productos);
+    public ResponseEntity<ResultadoScrapingDTO> scrapearProductos() {
+        ResultadoScrapingDTO resultado = productoService.scrapearYGuardarConResultado();
+        return ResponseEntity.ok(resultado);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/scrapear/zara")
-    public ResponseEntity<List<Producto>> scrapearProductosZara() {
-        List<Producto> productos = productoService.scrapearZaraYGuardar();
-        return ResponseEntity.ok(productos);
+    public ResponseEntity<ResultadoScrapingDTO> scrapearProductosZara() {
+        ResultadoScrapingDTO resultado = productoService.scrapearZaraYGuardarConResultado();
+        return ResponseEntity.ok(resultado);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/scrapear/bershka")
-    public ResponseEntity<List<Producto>> scrapearProductosBershka() {
-        List<Producto> productos = productoService.scrapearBershkaYGuardar();
-        return ResponseEntity.ok(productos);
+    public ResponseEntity<ResultadoScrapingDTO> scrapearProductosBershka() {
+        ResultadoScrapingDTO resultado = productoService.scrapearBershkaYGuardarConResultado();
+        return ResponseEntity.ok(resultado);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/scrapear/pullandbear")
-    public ResponseEntity<List<Producto>> scrapearProductosPullAndBear() {
-        List<Producto> productos = productoService.scrapearPullAndBearYGuardar();
-        return ResponseEntity.ok(productos);
+    public ResponseEntity<ResultadoScrapingDTO> scrapearProductosPullAndBear() {
+        ResultadoScrapingDTO resultado = productoService.scrapearPullAndBearYGuardarConResultado();
+        return ResponseEntity.ok(resultado);
     }
 
     @PreAuthorize("hasRole('ADMIN')")

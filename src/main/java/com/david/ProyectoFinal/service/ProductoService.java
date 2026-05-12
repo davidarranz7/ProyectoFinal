@@ -116,30 +116,99 @@ public class ProductoService {
         }
     }
 
-    public List<Producto> scrapearYGuardar() {
+    public ResultadoScrapingDTO scrapearYGuardarConResultado() {
+        long inicio = System.currentTimeMillis();
+
         List<Producto> productosScrapeados = gestorScraping.scrapearTodo();
-        return guardarProductosScrapeados(productosScrapeados);
+
+        ResultadoScrapingDTO resultado = guardarProductosScrapeadosConResultado(
+                "Scraping completo",
+                productosScrapeados
+        );
+
+        resultado.setDuracionMs(System.currentTimeMillis() - inicio);
+
+        return resultado;
     }
 
-    public List<Producto> scrapearZaraYGuardar() {
+    public ResultadoScrapingDTO scrapearZaraYGuardarConResultado() {
+        long inicio = System.currentTimeMillis();
+
         List<Producto> productosScrapeados = gestorScraping.scrapearZara();
-        return guardarProductosScrapeados(productosScrapeados);
+
+        ResultadoScrapingDTO resultado = guardarProductosScrapeadosConResultado(
+                "Zara",
+                productosScrapeados
+        );
+
+        resultado.setDuracionMs(System.currentTimeMillis() - inicio);
+
+        return resultado;
     }
 
-    public List<Producto> scrapearBershkaYGuardar() {
+    public ResultadoScrapingDTO scrapearBershkaYGuardarConResultado() {
+        long inicio = System.currentTimeMillis();
+
         List<Producto> productosScrapeados = gestorScraping.scrapearBershka();
-        return guardarProductosScrapeados(productosScrapeados);
+
+        ResultadoScrapingDTO resultado = guardarProductosScrapeadosConResultado(
+                "Bershka",
+                productosScrapeados
+        );
+
+        resultado.setDuracionMs(System.currentTimeMillis() - inicio);
+
+        return resultado;
     }
 
-    public List<Producto> scrapearPullAndBearYGuardar() {
+    public ResultadoScrapingDTO scrapearPullAndBearYGuardarConResultado() {
+        long inicio = System.currentTimeMillis();
+
         List<Producto> productosScrapeados = gestorScraping.scrapearPullAndBear();
-        return guardarProductosScrapeados(productosScrapeados);
+
+        ResultadoScrapingDTO resultado = guardarProductosScrapeadosConResultado(
+                "Pull&Bear",
+                productosScrapeados
+        );
+
+        resultado.setDuracionMs(System.currentTimeMillis() - inicio);
+
+        return resultado;
     }
 
-    private List<Producto> guardarProductosScrapeados(List<Producto> productosScrapeados) {
-        List<Producto> productosGuardados = new ArrayList<>();
+    private ResultadoScrapingDTO guardarProductosScrapeadosConResultado(String nombreProceso, List<Producto> productosScrapeados) {
+        ResultadoScrapingDTO resultado = new ResultadoScrapingDTO(nombreProceso);
+        Map<String, ResultadoScrapingTiendaDTO> resultadosPorTienda = new LinkedHashMap<>();
+
+        if (productosScrapeados == null || productosScrapeados.isEmpty()) {
+            resultado.setResultadosPorTienda(new ArrayList<>(resultadosPorTienda.values()));
+            return resultado;
+        }
 
         for (Producto producto : productosScrapeados) {
+            if (producto == null) {
+                continue;
+            }
+
+            String nombreTienda = obtenerNombreTiendaScraping(producto);
+
+            ResultadoScrapingTiendaDTO resultadoTienda = resultadosPorTienda.computeIfAbsent(
+                    nombreTienda,
+                    ResultadoScrapingTiendaDTO::new
+            );
+
+            resultado.sumarProductoEncontrado();
+            resultadoTienda.sumarProductoEncontrado();
+
+            if (productoSinImagen(producto)) {
+                resultado.sumarProductoSinImagen();
+                resultadoTienda.sumarProductoSinImagen();
+            }
+
+            if (productoSinPrecio(producto)) {
+                resultado.sumarProductoSinPrecio();
+                resultadoTienda.sumarProductoSinPrecio();
+            }
 
             Tienda tiendaScrapeada = producto.getTienda();
 
@@ -165,7 +234,11 @@ public class ProductoService {
                 }
             }
 
-            Optional<Producto> existente = productoRepository.findByUrlProducto(producto.getUrlProducto());
+            Optional<Producto> existente = Optional.empty();
+
+            if (producto.getUrlProducto() != null && !producto.getUrlProducto().isBlank()) {
+                existente = productoRepository.findByUrlProducto(producto.getUrlProducto());
+            }
 
             if (existente.isPresent()) {
                 Producto productoExistente = existente.get();
@@ -183,13 +256,43 @@ public class ProductoService {
                 productoExistente.setCategoria(producto.getCategoria());
                 productoExistente.setTienda(producto.getTienda());
 
-                productosGuardados.add(productoRepository.save(productoExistente));
+                productoRepository.save(productoExistente);
+
+                resultado.sumarProductoActualizado();
+                resultado.sumarProductoGuardado();
+
+                resultadoTienda.sumarProductoActualizado();
+                resultadoTienda.sumarProductoGuardado();
             } else {
-                productosGuardados.add(productoRepository.save(producto));
+                productoRepository.save(producto);
+
+                resultado.sumarProductoNuevo();
+                resultado.sumarProductoGuardado();
+
+                resultadoTienda.sumarProductoNuevo();
+                resultadoTienda.sumarProductoGuardado();
             }
         }
 
-        return productosGuardados;
+        resultado.setResultadosPorTienda(new ArrayList<>(resultadosPorTienda.values()));
+
+        return resultado;
+    }
+
+    private String obtenerNombreTiendaScraping(Producto producto) {
+        if (producto == null || producto.getTienda() == null || producto.getTienda().getNombre() == null) {
+            return "Sin tienda";
+        }
+
+        return producto.getTienda().getNombre();
+    }
+
+    private boolean productoSinImagen(Producto producto) {
+        return producto.getUrlImagen() == null || producto.getUrlImagen().isBlank();
+    }
+
+    private boolean productoSinPrecio(Producto producto) {
+        return producto.getPrecio() == null || producto.getPrecio().compareTo(BigDecimal.ZERO) <= 0;
     }
 
     public List<Producto> obtenerPorTienda(String nombreTienda) {

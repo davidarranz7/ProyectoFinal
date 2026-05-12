@@ -70,6 +70,17 @@ function obtenerReferencias() {
         scrapingEstadoBox: document.getElementById("scraping-estado-box"),
         scrapingUltimaAccion: document.getElementById("scraping-ultima-accion"),
 
+        scrapingResultadoPanel: document.getElementById("scraping-resultado-panel"),
+        scrapingResultadoTitulo: document.getElementById("scraping-resultado-titulo"),
+        scrapingResultadoDuracion: document.getElementById("scraping-resultado-duracion"),
+        scrapingTotalEncontrados: document.getElementById("scraping-total-encontrados"),
+        scrapingTotalGuardados: document.getElementById("scraping-total-guardados"),
+        scrapingTotalNuevos: document.getElementById("scraping-total-nuevos"),
+        scrapingTotalActualizados: document.getElementById("scraping-total-actualizados"),
+        scrapingTotalSinImagen: document.getElementById("scraping-total-sin-imagen"),
+        scrapingTotalSinPrecio: document.getElementById("scraping-total-sin-precio"),
+        scrapingTiendasLista: document.getElementById("scraping-tiendas-lista"),
+
         btnScrapingZara: document.getElementById("btn-scraping-zara"),
         btnScrapingBershka: document.getElementById("btn-scraping-bershka"),
         btnScrapingPull: document.getElementById("btn-scraping-pull"),
@@ -1048,8 +1059,6 @@ async function cargarIncidencias(refs, state, silencioso = false) {
     }
 }
 
-
-
 function ordenarIncidenciasParaAdmin(incidencias) {
     return [...incidencias].sort((a, b) => {
         const prioridadA = obtenerPrioridadIncidencia(a.estadoIncidencia);
@@ -1093,21 +1102,36 @@ async function ejecutarScraping(refs, state, url, nombre, boton, textoOriginal) 
         });
 
         if (!response.ok) {
-            throw new Error(`Error HTTP ${response.status}`);
+            let mensajeError = `Error HTTP ${response.status}`;
+
+            try {
+                const texto = await response.text();
+                if (texto) mensajeError = texto;
+            } catch (_) {}
+
+            throw new Error(mensajeError);
         }
 
-        const productos = await response.json();
-        const total = Array.isArray(productos) ? productos.length : 0;
+        const data = await response.json();
+        const resultado = normalizarResultadoScraping(data, nombre);
 
-        actualizarEstadoScraping(refs, "Completado", `${nombre} finalizado. Productos procesados: ${total}`, "success");
-        mostrarMensaje(refs, `${nombre} completado correctamente.`, "ok");
+        pintarResultadoScraping(refs, resultado);
+
+        actualizarEstadoScraping(
+            refs,
+            "Completado",
+            `${resultado.nombreProceso} finalizado. Encontrados: ${formatearNumero(resultado.totalProductosEncontrados)} · Nuevos: ${formatearNumero(resultado.totalProductosNuevos)} · Actualizados: ${formatearNumero(resultado.totalProductosActualizados)}`,
+            "success"
+        );
+
+        mostrarMensaje(refs, `${resultado.nombreProceso} completado correctamente.`, "ok");
 
         await cargarProductos(refs, state, true);
         await cargarMetricas(refs);
     } catch (error) {
         console.error(`Error en ${nombre}:`, error);
         actualizarEstadoScraping(refs, "Error", `Falló ${nombre}`, "error");
-        mostrarMensaje(refs, `Error al ejecutar ${nombre}.`, "error");
+        mostrarMensaje(refs, error.message || `Error al ejecutar ${nombre}.`, "error");
     } finally {
         restaurarBoton(boton, textoOriginal);
     }
@@ -1129,6 +1153,198 @@ function actualizarEstadoScraping(refs, estado, detalle, tipo) {
 
         refs.chipScraping.textContent = estado;
     }
+}
+
+function normalizarResultadoScraping(data, nombreFallback) {
+    if (Array.isArray(data)) {
+        return crearResultadoScrapingDesdeLista(data, nombreFallback);
+    }
+
+    const resultadosPorTienda = Array.isArray(data?.resultadosPorTienda)
+        ? data.resultadosPorTienda
+        : [];
+
+    return {
+        nombreProceso: data?.nombreProceso || nombreFallback || "Scraping",
+        totalProductosEncontrados: numeroSeguro(data?.totalProductosEncontrados),
+        totalProductosGuardados: numeroSeguro(data?.totalProductosGuardados),
+        totalProductosNuevos: numeroSeguro(data?.totalProductosNuevos),
+        totalProductosActualizados: numeroSeguro(data?.totalProductosActualizados),
+        totalProductosSinImagen: numeroSeguro(data?.totalProductosSinImagen),
+        totalProductosSinPrecio: numeroSeguro(data?.totalProductosSinPrecio),
+        duracionMs: numeroSeguro(data?.duracionMs),
+        resultadosPorTienda
+    };
+}
+
+function crearResultadoScrapingDesdeLista(productos, nombreProceso) {
+    const resultadosPorTienda = new Map();
+
+    productos.forEach((producto) => {
+        const tienda = producto?.tienda?.nombre || "Sin tienda";
+
+        if (!resultadosPorTienda.has(tienda)) {
+            resultadosPorTienda.set(tienda, {
+                tienda,
+                productosEncontrados: 0,
+                productosGuardados: 0,
+                productosNuevos: 0,
+                productosActualizados: 0,
+                productosSinImagen: 0,
+                productosSinPrecio: 0
+            });
+        }
+
+        const resumenTienda = resultadosPorTienda.get(tienda);
+
+        resumenTienda.productosEncontrados++;
+        resumenTienda.productosGuardados++;
+
+        if (!producto?.urlImagen) {
+            resumenTienda.productosSinImagen++;
+        }
+
+        if (!producto?.precio || Number(producto.precio) <= 0) {
+            resumenTienda.productosSinPrecio++;
+        }
+    });
+
+    const totalSinImagen = productos.filter((producto) => !producto?.urlImagen).length;
+    const totalSinPrecio = productos.filter((producto) => !producto?.precio || Number(producto.precio) <= 0).length;
+
+    return {
+        nombreProceso: nombreProceso || "Scraping",
+        totalProductosEncontrados: productos.length,
+        totalProductosGuardados: productos.length,
+        totalProductosNuevos: 0,
+        totalProductosActualizados: 0,
+        totalProductosSinImagen: totalSinImagen,
+        totalProductosSinPrecio: totalSinPrecio,
+        duracionMs: 0,
+        resultadosPorTienda: Array.from(resultadosPorTienda.values())
+    };
+}
+
+function pintarResultadoScraping(refs, resultado) {
+    if (!refs.scrapingResultadoPanel) return;
+
+    refs.scrapingResultadoPanel.style.display = "block";
+
+    if (refs.scrapingResultadoTitulo) {
+        refs.scrapingResultadoTitulo.textContent = `${resultado.nombreProceso} finalizado`;
+    }
+
+    if (refs.scrapingResultadoDuracion) {
+        refs.scrapingResultadoDuracion.textContent = formatearDuracionScraping(resultado.duracionMs);
+    }
+
+    pintarNumeroScraping(refs.scrapingTotalEncontrados, resultado.totalProductosEncontrados);
+    pintarNumeroScraping(refs.scrapingTotalGuardados, resultado.totalProductosGuardados);
+    pintarNumeroScraping(refs.scrapingTotalNuevos, resultado.totalProductosNuevos);
+    pintarNumeroScraping(refs.scrapingTotalActualizados, resultado.totalProductosActualizados);
+    pintarNumeroScraping(refs.scrapingTotalSinImagen, resultado.totalProductosSinImagen);
+    pintarNumeroScraping(refs.scrapingTotalSinPrecio, resultado.totalProductosSinPrecio);
+
+    renderizarResultadoPorTienda(refs, resultado.resultadosPorTienda);
+}
+
+function renderizarResultadoPorTienda(refs, resultadosPorTienda) {
+    if (!refs.scrapingTiendasLista) return;
+
+    limpiarContenedor(refs.scrapingTiendasLista);
+
+    if (!Array.isArray(resultadosPorTienda) || resultadosPorTienda.length === 0) {
+        refs.scrapingTiendasLista.appendChild(
+            el("p", {
+                className: "texto-box-vacio",
+                text: "No hay datos por tienda para este proceso."
+            })
+        );
+        return;
+    }
+
+    resultadosPorTienda.forEach((resultadoTienda) => {
+        refs.scrapingTiendasLista.appendChild(crearCardResultadoTienda(resultadoTienda));
+    });
+}
+
+function crearCardResultadoTienda(resultadoTienda) {
+    const card = el("article", {
+        className: "scraping-tienda-card"
+    });
+
+    const header = el("div", {
+        className: "scraping-tienda-header"
+    });
+
+    header.appendChild(el("h5", {
+        text: resultadoTienda.tienda || "Sin tienda"
+    }));
+
+    card.appendChild(header);
+
+    const datos = el("div", {
+        className: "scraping-tienda-datos"
+    });
+
+    datos.append(
+        crearDatoResultadoScraping("Encontrados", resultadoTienda.productosEncontrados),
+        crearDatoResultadoScraping("Guardados", resultadoTienda.productosGuardados),
+        crearDatoResultadoScraping("Nuevos", resultadoTienda.productosNuevos),
+        crearDatoResultadoScraping("Actualizados", resultadoTienda.productosActualizados),
+        crearDatoResultadoScraping("Sin imagen", resultadoTienda.productosSinImagen),
+        crearDatoResultadoScraping("Sin precio", resultadoTienda.productosSinPrecio)
+    );
+
+    card.appendChild(datos);
+
+    return card;
+}
+
+function crearDatoResultadoScraping(label, valor) {
+    const item = el("div", {
+        className: "scraping-tienda-dato"
+    });
+
+    item.append(
+        el("span", { text: label }),
+        el("strong", { text: formatearNumero(valor) })
+    );
+
+    return item;
+}
+
+function pintarNumeroScraping(elemento, valor) {
+    if (!elemento) return;
+    elemento.textContent = formatearNumero(valor);
+}
+
+function formatearDuracionScraping(duracionMs) {
+    const ms = numeroSeguro(duracionMs);
+
+    if (ms <= 0) {
+        return "Duración no disponible";
+    }
+
+    const segundosTotales = Math.round(ms / 1000);
+
+    if (segundosTotales < 60) {
+        return `${segundosTotales} s`;
+    }
+
+    const minutos = Math.floor(segundosTotales / 60);
+    const segundos = segundosTotales % 60;
+
+    return `${minutos} min ${segundos} s`;
+}
+
+function formatearNumero(valor) {
+    return numeroSeguro(valor).toLocaleString("es-ES");
+}
+
+function numeroSeguro(valor) {
+    const numero = Number(valor);
+    return Number.isFinite(numero) ? numero : 0;
 }
 
 /* =========================
@@ -3024,7 +3240,6 @@ function formatearTipoIncidenciaTexto(tipo) {
         default: return tipo || "Sin tipo";
     }
 }
-
 
 /* =========================
    CONFIRMACIÓN ENTREGA QR
