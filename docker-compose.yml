@@ -11,23 +11,32 @@ services:
     volumes:
       - ./init:/docker-entrypoint-initdb.d
       - mariadb_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mariadb-admin ping -h 127.0.0.1 -uroot -proot || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
   app:
     build: .
     container_name: ropa-app
     restart: always
     depends_on:
-      - mariadb
+      mariadb:
+        condition: service_healthy
     ports:
       - "8080:8080"
     environment:
       SPRING_DATASOURCE_URL: jdbc:mariadb://mariadb:3306/ropa_db
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
+
   frontend:
     build: ./frontend
     container_name: ropa-frontend
     restart: always
     ports:
       - "8081:80"
+
 volumes:
   mariadb_data:
