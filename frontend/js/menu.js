@@ -51,6 +51,8 @@ function inicializarMenu() {
     const btnCerrarCarrito = document.getElementById("cerrar-carrito");
     const btnIrCarrito = document.getElementById("btn-ir-carrito");
 
+    const buscadorGlobalMenu = document.getElementById("buscador-global-menu");
+
     async function obtenerSesionActual() {
         try {
             const response = await fetch(`${BASE_URL}/auth/session`, {
@@ -82,6 +84,17 @@ function inicializarMenu() {
             if (profileMenu) profileMenu.style.display = "none";
             if (btnAbrirCarritoMenu) btnAbrirCarritoMenu.style.display = "none";
         }
+    }
+
+    function ejecutarBusquedaGlobal() {
+        const textoBusqueda = buscadorGlobalMenu?.value.trim();
+
+        if (!textoBusqueda) {
+            return;
+        }
+
+        const busquedaCodificada = encodeURIComponent(textoBusqueda);
+        window.location.href = `resultadosBusqueda.html?busqueda=${busquedaCodificada}`;
     }
 
     function abrirLogin() {
@@ -338,6 +351,15 @@ function inicializarMenu() {
 
     actualizarEstadoUsuario();
     actualizarContadorCarrito();
+
+    if (buscadorGlobalMenu) {
+        buscadorGlobalMenu.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                ejecutarBusquedaGlobal();
+            }
+        });
+    }
 
     if (loginLink) {
         loginLink.addEventListener("click", abrirLogin);

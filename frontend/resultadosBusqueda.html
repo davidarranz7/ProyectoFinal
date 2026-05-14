@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Resultados de búsqueda</title>
+
+    <link rel="stylesheet" href="css/menu.css" />
+    <link rel="stylesheet" href="css/resultadosBusqueda.css" />
+</head>
+<body>
+
+<div id="menu-container"></div>
+
+<main class="resultados-page">
+
+    <section class="resultados-hero">
+        <p class="resultados-eyebrow">Búsqueda global</p>
+
+        <h1>
+            Resultados para:
+            <span id="texto-busqueda">...</span>
+        </h1>
+
+        <p class="resultados-subtitle">
+            Encuentra productos de Zara, Bershka, Pull&amp;Bear, ofertas y nueva colección desde una única búsqueda.
+        </p>
+    </section>
+
+    <section class="resultados-panel">
+
+        <div class="resultados-toolbar">
+            <div class="resultados-toolbar-left">
+                <p id="contador-resultados" class="contador-resultados">
+                    Buscando productos...
+                </p>
+            </div>
+
+            <div class="resultados-toolbar-right">
+                <select id="filtro-tienda-resultados">
+                    <option value="">Todas las tiendas</option>
+                    <option value="Zara">Zara</option>
+                    <option value="Bershka">Bershka</option>
+                    <option value="PullAndBear">Pull&amp;Bear</option>
+                </select>
+
+                <select id="filtro-seccion-resultados">
+                    <option value="">Todas las secciones</option>
+                    <option value="MUJER">Mujer</option>
+                    <option value="HOMBRE">Hombre</option>
+                    <option value="UNISEX">Unisex</option>
+                </select>
+
+                <select id="orden-resultados">
+                    <option value="recientes">Más recientes</option>
+                    <option value="precio-asc">Precio: menor a mayor</option>
+                    <option value="precio-desc">Precio: mayor a menor</option>
+                    <option value="nombre-asc">Nombre A-Z</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="estado-resultados" class="estado-resultados">
+            Cargando resultados...
+        </div>
+
+        <div id="grid-resultados" class="grid-resultados">
+            <!-- Aquí se pintarán los productos desde resultadosBusqueda.js -->
+        </div>
+
+        <div id="sentinel-resultados" class="sentinel-resultados"></div>
+
+    </section>
+
+</main>
+
+<script src="js/config.js"></script>
+<script src="js/resultadosBusqueda.js"></script>
+<script src="js/menu.js"></script>
+
+</body>
+</html>
