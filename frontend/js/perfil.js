@@ -316,9 +316,9 @@ function configurarFormularioPerfil(usuarioId) {
                 );
             }
 
-            mostrarMensaje("Perfil actualizado correctamente.", "ok");
-            mostrarValidacionCampo("nombre", "Nombre guardado correctamente", true);
-            mostrarValidacionCampo("email", "Email guardado correctamente", true);
+            mostrarMensaje("Cambios guardados.", "ok");
+            mostrarValidacionCampo("nombre", "Nombre guardado", true);
+            mostrarValidacionCampo("email", "Email guardado", true);
 
             estadoValidacionPerfil.nombreValido = true;
             estadoValidacionPerfil.emailValido = true;
@@ -392,7 +392,7 @@ function configurarValidacionEnVivoPerfil(usuarioId) {
                 return;
             }
 
-            mostrarValidacionCampo("nombre", "Comprobando disponibilidad...", true);
+            mostrarValidacionCampo("nombre", "Comprobando...", true);
 
             timeoutValidacionNombre = setTimeout(async () => {
                 await validarNombreEnVivo(usuarioId);
@@ -416,7 +416,7 @@ function configurarValidacionEnVivoPerfil(usuarioId) {
                 return;
             }
 
-            mostrarValidacionCampo("email", "Comprobando disponibilidad...", true);
+            mostrarValidacionCampo("email", "Comprobando...", true);
 
             timeoutValidacionEmail = setTimeout(async () => {
                 await validarEmailEnVivo(usuarioId);
@@ -429,7 +429,7 @@ async function validarNombreEnVivo(usuarioId) {
     const nombre = obtenerValor("nombre");
 
     if (nombre.toLowerCase() === valoresOriginalesPerfil.nombre.trim().toLowerCase()) {
-        mostrarValidacionCampo("nombre", "Es tu nombre actual", true);
+        mostrarValidacionCampo("nombre", "Sin cambios", true);
         estadoValidacionPerfil.nombreValido = true;
         actualizarEstadoBotonGuardarPerfil();
         return;
@@ -448,7 +448,7 @@ async function validarNombreEnVivo(usuarioId) {
             throw new Error(obtenerMensajeErrorAmigable(texto, "perfil"));
         }
 
-        mostrarValidacionCampo("nombre", data?.mensaje || "Nombre validado", !!data?.disponible);
+        mostrarValidacionCampo("nombre", data?.mensaje || "Disponible", !!data?.disponible);
         estadoValidacionPerfil.nombreValido = !!data?.disponible;
         actualizarEstadoBotonGuardarPerfil();
     } catch (error) {
@@ -463,7 +463,7 @@ async function validarEmailEnVivo(usuarioId) {
     const email = obtenerValor("email");
 
     if (email.toLowerCase() === valoresOriginalesPerfil.email.trim().toLowerCase()) {
-        mostrarValidacionCampo("email", "Es tu email actual", true);
+        mostrarValidacionCampo("email", "Sin cambios", true);
         estadoValidacionPerfil.emailValido = true;
         actualizarEstadoBotonGuardarPerfil();
         return;
@@ -482,7 +482,7 @@ async function validarEmailEnVivo(usuarioId) {
             throw new Error(obtenerMensajeErrorAmigable(texto, "perfil"));
         }
 
-        mostrarValidacionCampo("email", data?.mensaje || "Email validado", !!data?.disponible);
+        mostrarValidacionCampo("email", data?.mensaje || "Disponible", !!data?.disponible);
         estadoValidacionPerfil.emailValido = !!data?.disponible;
         actualizarEstadoBotonGuardarPerfil();
     } catch (error) {
@@ -885,7 +885,7 @@ async function guardarFotoRecortada(usuarioId) {
         }
 
         cerrarModalRecorteFoto();
-        mostrarMensaje("Foto de perfil actualizada correctamente.", "ok");
+        mostrarMensaje("Foto actualizada.", "ok");
     } catch (error) {
         console.error("Error al guardar foto recortada:", error);
         mostrarMensajeModalRecorte(error.message || "No se pudo guardar la foto.");
@@ -1085,7 +1085,7 @@ function configurarFormularioPassword(usuarioId) {
             }
 
             formPassword.reset();
-            mostrarMensaje("Contraseña actualizada correctamente.", "ok");
+            mostrarMensaje("Contraseña actualizada.", "ok");
         } catch (error) {
             console.error("Error al cambiar contraseña:", error);
             mostrarMensaje(error.message || "No se pudo actualizar la contraseña.");
@@ -1180,7 +1180,7 @@ function configurarTarjetas(usuarioId) {
 
                 formTarjeta.reset();
                 ocultarElemento(modalTarjeta);
-                mostrarMensaje("Tarjeta guardada correctamente.", "ok");
+                mostrarMensaje("Tarjeta guardada.", "ok");
                 await cargarTarjetas(usuarioId);
             } catch (error) {
                 console.error("Error al guardar tarjeta:", error);
@@ -1284,7 +1284,7 @@ function configurarModalEliminarTarjeta(usuarioId) {
                 }
 
                 cerrarModal();
-                mostrarMensaje("Tarjeta eliminada correctamente.", "ok");
+                mostrarMensaje("Tarjeta eliminada.", "ok");
                 await cargarTarjetas(usuarioId);
             } catch (error) {
                 console.error("Error al eliminar tarjeta:", error);
@@ -1405,7 +1405,7 @@ function crearTarjetaAgregar() {
     box.type = "button";
     box.className = "add-card";
     box.dataset.action = "anadir-tarjeta";
-    box.textContent = "Añadir nueva tarjeta de pago";
+    box.textContent = "Añadir tarjeta";
     return box;
 }
 
@@ -1540,7 +1540,7 @@ function configurarDirecciones(usuarioId) {
 
                 cerrarModalDireccionLocal();
                 mostrarMensaje(
-                    direccionIdEnEdicion ? "Dirección actualizada correctamente." : "Dirección añadida correctamente.",
+                    direccionIdEnEdicion ? "Dirección actualizada." : "Dirección añadida.",
                     "ok"
                 );
                 await cargarDirecciones(usuarioId);
@@ -1634,8 +1634,8 @@ function crearDireccionCard(direccion) {
     titulo.textContent = direccion.alias || "Dirección";
     const subtitulo = document.createElement("p");
     subtitulo.textContent = direccion.principal
-        ? "Dirección principal para tus pedidos"
-        : "Dirección guardada";
+        ? "Principal"
+        : "Guardada";
     topLeft.append(titulo, subtitulo);
 
     top.appendChild(topLeft);
@@ -1678,7 +1678,7 @@ function crearDireccionCard(direccion) {
     if (direccion.principal) {
         const textoPrincipal = document.createElement("span");
         textoPrincipal.className = "texto-principal-actual";
-        textoPrincipal.textContent = "Dirección principal actual";
+        textoPrincipal.textContent = "Principal actual";
         acciones.appendChild(textoPrincipal);
     } else {
         const btnPrincipal = document.createElement("button");
@@ -1705,7 +1705,7 @@ function crearDireccionAgregar() {
     box.type = "button";
     box.className = "add-card-direccion";
     box.dataset.action = "anadir-direccion";
-    box.textContent = "Añadir nueva dirección";
+    box.textContent = "Añadir dirección";
     return box;
 }
 
@@ -1839,7 +1839,7 @@ function configurarModalEliminarDireccion(usuarioId) {
                 }
 
                 cerrarModal();
-                mostrarMensaje("Dirección eliminada correctamente.", "ok");
+                mostrarMensaje("Dirección eliminada.", "ok");
                 await cargarDirecciones(usuarioId);
             } catch (error) {
                 console.error("Error al eliminar dirección:", error);

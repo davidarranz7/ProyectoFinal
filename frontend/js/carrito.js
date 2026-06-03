@@ -72,9 +72,6 @@ async function cargarCarrito() {
             const precio = Number(producto.precio);
             const subtotalProducto = precio * cantidad;
 
-            console.log("Producto carrito:", producto);
-            console.log("Tallas carrito:", producto.tallaStocks);
-
             totalCalculado += subtotalProducto;
 
             const article = document.createElement("article");
@@ -93,16 +90,16 @@ async function cargarCarrito() {
                         </select>
                     </p>
 
-                    <p class="item-precio"><strong>Precio:</strong> ${precio.toFixed(2)} €</p>
+                    <p class="item-precio"><strong>Precio unidad:</strong> ${precio.toFixed(2)} €</p>
                 </div>
 
                 <div class="item-acciones">
                     <div class="cantidad-control">
-                        <button class="btn-restar">-</button>
+                        <button class="btn-restar" type="button" aria-label="Restar unidad">-</button>
                         <span>${cantidad}</span>
-                        <button class="btn-sumar">+</button>
+                        <button class="btn-sumar" type="button" aria-label="Sumar unidad">+</button>
                     </div>
-                    <button class="btn-eliminar">Eliminar</button>
+                    <button class="btn-eliminar" type="button">Eliminar</button>
                 </div>
             `;
 
