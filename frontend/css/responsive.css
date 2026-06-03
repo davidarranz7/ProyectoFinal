@@ -1,0 +1,562 @@
+/* Ajustes responsive globales para toda la web */
+
+html {
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    overflow-x: hidden;
+}
+
+img,
+video,
+canvas,
+iframe {
+    max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+    font: inherit;
+}
+
+.modal-panel,
+.modal-box,
+.feedback-modal,
+.incidencia-card,
+.recovery-card,
+.reset-card,
+.login-wrapper {
+    max-width: calc(100vw - 24px);
+}
+
+.modal-panel,
+.modal-box,
+.feedback-modal {
+    max-height: 92dvh;
+    overflow-y: auto;
+}
+
+.modal-actions,
+.producto-acciones,
+.hero-links,
+.order-actions,
+.perfil-actions,
+.confirmacion-entrega-actions {
+    flex-wrap: wrap;
+}
+
+@media (max-width: 1180px) {
+    .zara-container,
+    .bershka-container,
+    .pull-container,
+    .hombre-container,
+    .mujer-container,
+    .nueva-layout,
+    .ofertas-layout {
+        width: min(100% - 32px, 1440px);
+        grid-template-columns: 1fr !important;
+        gap: 24px;
+    }
+
+    .sidebar-filtros,
+    .filtros-nueva,
+    .filtros-ofertas {
+        position: static !important;
+        top: auto !important;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 18px;
+        width: 100%;
+        padding: 16px !important;
+        border: 1px solid rgba(17, 17, 17, 0.10) !important;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.82) !important;
+        box-shadow: 0 12px 34px rgba(20, 18, 16, 0.06);
+    }
+
+    .filtro-seccion,
+    .filtros-bloque {
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+    }
+
+    .filtro-seccion ul,
+    .filtros-bloque ul {
+        flex-direction: row !important;
+        flex-wrap: wrap;
+        gap: 10px 16px;
+    }
+
+    .filtro-item {
+        min-height: 36px !important;
+    }
+
+    .filtro-linea {
+        display: none !important;
+    }
+
+    .catalogo-cabecera,
+    .catalogo-cabecera-zara,
+    .catalogo-cabecera-bershka,
+    .catalogo-cabecera-pull,
+    .resultados-toolbar,
+    .destacado-header {
+        align-items: flex-start !important;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .catalogo-controles,
+    .catalogo-controles-zara,
+    .catalogo-controles-bershka,
+    .catalogo-controles-pull,
+    .resultados-toolbar-right {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+}
+
+@media (max-width: 1024px) {
+    .nav-container {
+        align-items: flex-start;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .nav-left {
+        min-height: 42px;
+        display: flex;
+        align-items: center;
+    }
+
+    .nav-menu {
+        order: 3;
+        width: 100%;
+        gap: 10px;
+        overflow-x: auto;
+        flex-wrap: nowrap !important;
+        padding: 2px 2px 8px;
+        scrollbar-width: none;
+    }
+
+    .nav-menu::-webkit-scrollbar {
+        display: none;
+    }
+
+    .nav-link,
+    .dropdown-content a {
+        white-space: nowrap;
+    }
+
+    .nav-right {
+        margin-left: auto;
+        max-width: calc(100% - 140px);
+    }
+
+    .nav-right input {
+        width: min(260px, 42vw);
+    }
+
+    .tiendas-grid,
+    .grid-productos-home,
+    .grid-resultados,
+    .grid-nueva,
+    .grid-ofertas {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+
+    .contenedor-carrito,
+    .checkout-layout,
+    .perfil-hero,
+    .perfil-layout,
+    .ficha-producto,
+    .layout,
+    .incidencias-layout {
+        grid-template-columns: 1fr !important;
+    }
+
+    .carrito-resumen,
+    .resumen-checkout,
+    .perfil-sidebar,
+    .right-panel,
+    .incidencias-info {
+        position: static !important;
+        top: auto !important;
+    }
+}
+
+@media (max-width: 760px) {
+    body {
+        background-attachment: scroll !important;
+    }
+
+    .nav-container {
+        padding: 10px 12px;
+    }
+
+    .logo {
+        font-size: 21px;
+    }
+
+    .nav-right {
+        order: 2;
+        width: 100%;
+        max-width: none;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto auto;
+        gap: 8px;
+    }
+
+    .nav-right input {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .login-btn,
+    .profile-btn {
+        min-height: 40px;
+        padding-inline: 12px;
+        white-space: nowrap;
+    }
+
+    .profile-menu {
+        min-width: 0;
+    }
+
+    .profile-btn #profile-name {
+        max-width: 92px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .dropdown-content,
+    .profile-dropdown {
+        position: fixed;
+        top: 116px;
+        left: 12px;
+        right: 12px;
+        width: auto;
+        min-width: 0;
+    }
+
+    .hero-zara,
+    .zara-header,
+    .bershka-header,
+    .pull-header,
+    .hombre-header,
+    .mujer-header {
+        min-height: clamp(320px, 58vh, 460px) !important;
+        padding: 28px !important;
+    }
+
+    .hero-content h1,
+    .zara-header h1,
+    .bershka-header h1,
+    .pull-header h1,
+    .hombre-header h1,
+    .mujer-header h1,
+    .nueva-hero h1,
+    .ofertas-hero h1,
+    .perfil-hero-left h1 {
+        letter-spacing: 0.02em !important;
+        line-height: 0.98 !important;
+        overflow-wrap: anywhere;
+    }
+
+    .zara-header p,
+    .bershka-header p,
+    .pull-header p,
+    .hombre-header p,
+    .mujer-header p {
+        position: static !important;
+        margin-top: 14px;
+    }
+
+    .zara-subtext,
+    .bershka-subtext,
+    .pull-subtext,
+    .hombre-subtext,
+    .mujer-subtext {
+        max-width: 100%;
+    }
+
+    .zara-container,
+    .bershka-container,
+    .pull-container,
+    .hombre-container,
+    .mujer-container,
+    .nueva-layout,
+    .ofertas-layout,
+    .resultados-page,
+    .perfil-shell,
+    .cabecera,
+    .contenedor-carrito,
+    .checkout-page,
+    .incidencias-page,
+    .ficha-container,
+    .page {
+        width: min(100% - 24px, 1440px) !important;
+    }
+
+    .sidebar-filtros,
+    .filtros-nueva,
+    .filtros-ofertas {
+        grid-template-columns: 1fr;
+        padding: 14px !important;
+    }
+
+    .filtro-label-texto {
+        white-space: normal !important;
+    }
+
+    .grid-zara,
+    .grid-bershka,
+    .grid-pull,
+    .grid-hombre,
+    .grid-mujer,
+    .grid-resultados,
+    .grid-productos-home,
+    .grid-nueva,
+    .grid-ofertas {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 16px !important;
+    }
+
+    .catalogo-cabecera,
+    .catalogo-cabecera-zara,
+    .catalogo-cabecera-bershka,
+    .catalogo-cabecera-pull,
+    .resultados-toolbar,
+    .perfil-section-header,
+    .panel-head,
+    .detail-head,
+    .order-top {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+
+    .orden-catalogo,
+    .select-orden,
+    .toolbar-filter select,
+    .resultados-toolbar select,
+    .catalogo-controles select,
+    .catalogo-controles-zara select,
+    .catalogo-controles-bershka select,
+    .catalogo-controles-pull select {
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+
+    .form-grid,
+    .perfil-grid-2,
+    .perfil-cards-grid,
+    .perfil-cards-grid-tarjetas,
+    .checkout-form-grid,
+    .order-grid,
+    .resume-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .modal,
+    .auth-overlay {
+        padding: 10px;
+    }
+
+    .modal-panel,
+    .modal-box,
+    .feedback-modal {
+        width: min(100%, 440px) !important;
+        border-radius: 18px !important;
+    }
+
+    .modal-actions,
+    .producto-acciones,
+    .order-actions,
+    .perfil-actions,
+    .hero-actions {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+
+    .modal-btn,
+    .btn,
+    .btn-hero,
+    .btn-principal,
+    .btn-secundario,
+    .btn-comprar,
+    .btn-finalizar,
+    .btn-agregar-carrito,
+    .btn-favorito {
+        width: 100%;
+    }
+
+    .carrito-lateral {
+        width: 100% !important;
+    }
+
+    .auth-frame-container {
+        width: min(100%, 560px) !important;
+        height: min(680px, 92dvh) !important;
+        border-radius: 18px !important;
+    }
+}
+
+@media (max-width: 520px) {
+    .nav-right {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .profile-menu {
+        grid-column: 2;
+    }
+
+    .btn-carrito-icono {
+        grid-column: 2;
+    }
+
+    .login-btn {
+        grid-column: 2;
+    }
+
+    .nav-right input {
+        grid-column: 1 / -1;
+    }
+
+    .nav-menu {
+        gap: 8px;
+    }
+
+    .nav-link {
+        font-size: 13px;
+    }
+
+    .hero-zara,
+    .zara-header,
+    .bershka-header,
+    .pull-header,
+    .hombre-header,
+    .mujer-header {
+        min-height: 300px !important;
+        padding: 22px !important;
+    }
+
+    .nueva-hero,
+    .ofertas-hero,
+    .resultados-hero {
+        padding-inline: 18px !important;
+    }
+
+    .grid-zara,
+    .grid-bershka,
+    .grid-pull,
+    .grid-hombre,
+    .grid-mujer,
+    .grid-resultados,
+    .grid-productos-home,
+    .grid-nueva,
+    .grid-ofertas {
+        grid-template-columns: 1fr !important;
+    }
+
+    .tarjeta-zara .img-wrapper,
+    .tarjeta-bershka .img-wrapper,
+    .tarjeta-pull .img-wrapper,
+    .tarjeta-hombre .img-wrapper,
+    .tarjeta-mujer .img-wrapper {
+        height: auto !important;
+        aspect-ratio: 3 / 4;
+    }
+
+    .ficha-imagen img,
+    #producto-imagen {
+        height: auto !important;
+        aspect-ratio: 3 / 4;
+    }
+
+    .miniaturas-imagenes {
+        gap: 8px;
+    }
+
+    .item-carrito,
+    .item-resumen-checkout,
+    .item {
+        grid-template-columns: 1fr !important;
+    }
+
+    .item-imagen,
+    .item-resumen-checkout img,
+    .item img {
+        width: 100% !important;
+        height: auto !important;
+        aspect-ratio: 4 / 5;
+    }
+
+    .carrito-item {
+        grid-template-columns: 72px minmax(0, 1fr);
+    }
+
+    .carrito-item-img {
+        width: 72px;
+        height: 96px;
+    }
+
+    .toast-carrito,
+    .mensaje-admin {
+        left: 12px !important;
+        right: 12px !important;
+        width: auto !important;
+        max-width: none !important;
+    }
+
+    .modal-panel,
+    .modal-box,
+    .feedback-modal,
+    .recovery-card,
+    .reset-card {
+        max-width: calc(100vw - 20px);
+        padding-inline: 18px !important;
+    }
+
+    .login-wrapper {
+        max-width: calc(100vw - 20px);
+    }
+}
+
+@media (max-width: 380px) {
+    .grid-zara,
+    .grid-bershka,
+    .grid-pull,
+    .grid-hombre,
+    .grid-mujer,
+    .grid-resultados,
+    .grid-productos-home,
+    .grid-nueva,
+    .grid-ofertas {
+        gap: 12px !important;
+    }
+
+    .nav-container {
+        padding-inline: 10px;
+    }
+
+    .btn-cantidad {
+        width: 30px;
+        height: 30px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+    }
+}
