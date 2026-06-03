@@ -478,12 +478,28 @@ public class ProductoService {
         );
     }
 
-    public List<String> obtenerCategoriasPorTienda(String tienda) {
-        if (tienda == null || tienda.isBlank()) {
-            return List.of();
+    public List<String> obtenerCategoriasCatalogo(String tienda, List<Seccion> secciones) {
+        String tiendaLimpia = tienda == null ? "" : tienda.trim();
+
+        List<Seccion> seccionesValidas = secciones == null
+                ? List.of()
+                : secciones.stream()
+                .filter(Objects::nonNull)
+                .toList();
+
+        if (!tiendaLimpia.isBlank() && !seccionesValidas.isEmpty()) {
+            return productoRepository.findCategoriasDistintasPorTiendaYSecciones(tiendaLimpia, seccionesValidas);
         }
 
-        return productoRepository.findCategoriasDistintasPorTienda(tienda.trim());
+        if (!tiendaLimpia.isBlank()) {
+            return productoRepository.findCategoriasDistintasPorTienda(tiendaLimpia);
+        }
+
+        if (!seccionesValidas.isEmpty()) {
+            return productoRepository.findCategoriasDistintasPorSecciones(seccionesValidas);
+        }
+
+        return productoRepository.findCategoriasDistintas();
     }
 
     private Sort obtenerOrdenProductos(String orden) {

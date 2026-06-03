@@ -78,9 +78,10 @@ public class ProductoController {
 
     @GetMapping("/catalogo/categorias")
     public List<String> obtenerCategoriasCatalogo(
-            @RequestParam String tienda
+            @RequestParam(required = false) String tienda,
+            @RequestParam(name = "seccion", required = false) List<Seccion> secciones
     ) {
-        return productoService.obtenerCategoriasPorTienda(tienda);
+        return productoService.obtenerCategoriasCatalogo(tienda, secciones);
     }
 
 
