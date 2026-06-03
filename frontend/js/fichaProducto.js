@@ -467,12 +467,15 @@ function renderizarTallas(tallas) {
 
     tallasLista.innerHTML = "";
     tallaSeleccionada = null;
+    const tallasFiltradas = window.TallasProducto
+        ? window.TallasProducto.filtrarTallaStocks(productoActual, tallas)
+        : tallas;
 
     if (mensajeStock) {
         mensajeStock.textContent = "Selecciona una talla";
     }
 
-    if (!Array.isArray(tallas) || tallas.length === 0) {
+    if (!Array.isArray(tallasFiltradas) || tallasFiltradas.length === 0) {
         if (mensajeStock) {
             mensajeStock.textContent = "Sin tallas disponibles";
         }
@@ -480,10 +483,12 @@ function renderizarTallas(tallas) {
         return;
     }
 
-    tallas.forEach(item => {
+    tallasFiltradas.forEach(item => {
         const boton = document.createElement("button");
         boton.type = "button";
-        boton.textContent = item.talla;
+        boton.textContent = window.TallasProducto
+            ? window.TallasProducto.formatearTalla(item.talla)
+            : item.talla;
         boton.classList.add("talla-btn");
         boton.dataset.talla = item.talla;
         boton.dataset.stock = item.stock;

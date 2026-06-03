@@ -205,6 +205,7 @@ function obtenerReferencias() {
         formStockProductos: document.getElementById("form-stock-productos"),
         stockResumenProductos: document.getElementById("stock-resumen-productos"),
         stockActualProducto: document.getElementById("stock-actual-producto"),
+        tallasStockProductos: document.getElementById("tallas-stock-productos"),
         stockCantidadProductos: document.getElementById("stock-cantidad-productos"),
         guardarStockProductos: document.getElementById("guardar-stock-productos"),
 
@@ -270,6 +271,7 @@ function crearEstadoInicial() {
         productoIdPendienteEliminar: null,
         usuarioIdPendienteEliminar: null,
         productosStockObjetivo: [],
+        tipoStockObjetivo: null,
 
         pedidoCambioEstado: null,
 
@@ -568,9 +570,14 @@ function configurarModales(refs, state) {
 
     configurarCerrarModal(refs.modalStockProductos, refs.cerrarModalStockProductos, refs.cancelarModalStockProductos, () => {
         state.productosStockObjetivo = [];
+        state.tipoStockObjetivo = null;
         refs.formStockProductos?.reset();
         limpiarContenedor(refs.stockResumenProductos);
         limpiarContenedor(refs.stockActualProducto);
+        limpiarContenedor(refs.tallasStockProductos);
+        if (refs.guardarStockProductos) {
+            refs.guardarStockProductos.disabled = false;
+        }
         refs.stockActualProducto?.appendChild(crearTextoVacio("texto-box-vacio", "Selecciona un producto para ver el stock actual por talla."));
     });
 
@@ -1640,8 +1647,56 @@ async function eliminarProducto(refs, state) {
     }
 }
 
+function obtenerHelperTallasProducto() {
+    return window.TallasProducto;
+}
+
+function obtenerTipoStockComun(productos) {
+    const helperTallas = obtenerHelperTallasProducto();
+
+    if (!helperTallas || !Array.isArray(productos) || productos.length === 0) {
+        return null;
+    }
+
+    const tipos = new Set(productos.map((producto) => helperTallas.obtenerTipo(producto)));
+    return tipos.size === 1 ? Array.from(tipos)[0] : null;
+}
+
+function renderizarOpcionesStock(refs, productos, tipoStock) {
+    const helperTallas = obtenerHelperTallasProducto();
+
+    limpiarContenedor(refs.tallasStockProductos);
+
+    if (!helperTallas || !tipoStock) {
+        refs.tallasStockProductos?.appendChild(
+            crearTextoVacio("texto-box-vacio stock-tallas-aviso", "Selecciona productos del mismo tipo para editar el stock.")
+        );
+        return;
+    }
+
+    helperTallas.obtenerTallasPermitidas(productos[0]).forEach((talla) => {
+        const input = el("input", {
+            className: "check-stock-talla",
+            type: "checkbox",
+            value: talla
+        });
+
+        const label = el("label", { className: "check-talla" });
+        label.append(input, el("span", { text: helperTallas.formatearTalla(talla) }));
+        refs.tallasStockProductos.appendChild(label);
+    });
+}
+
 async function abrirModalStock(refs, state, productos) {
+    const helperTallas = obtenerHelperTallasProducto();
+    const tipoStock = obtenerTipoStockComun(productos);
+
     state.productosStockObjetivo = productos;
+    state.tipoStockObjetivo = tipoStock;
+
+    if (refs.guardarStockProductos) {
+        refs.guardarStockProductos.disabled = !tipoStock;
+    }
 
     limpiarContenedor(refs.stockResumenProductos);
 
@@ -1653,14 +1708,15 @@ async function abrirModalStock(refs, state, productos) {
     });
 
     refs.stockCantidadProductos.value = "";
-
-    document.querySelectorAll(".check-stock-talla").forEach((check) => {
-        check.checked = false;
-    });
+    renderizarOpcionesStock(refs, productos, tipoStock);
 
     limpiarContenedor(refs.stockActualProducto);
 
-    if (productos.length === 1) {
+    if (!tipoStock) {
+        refs.stockActualProducto.appendChild(
+            crearTextoVacio("texto-box-vacio", "No mezcles ropa, calzado y accesorios en la misma edicion de stock.")
+        );
+    } else if (productos.length === 1) {
         try {
             const response = await fetch(`${BASE_URL}/productos/${productos[0].id}/talla-stock`, {
                 method: "GET",
@@ -1670,12 +1726,15 @@ async function abrirModalStock(refs, state, productos) {
             if (!response.ok) throw new Error("No se pudo cargar stock");
 
             const tallas = await response.json();
+            const tallasFiltradas = helperTallas
+                ? helperTallas.filtrarTallaStocks(productos[0], tallas)
+                : tallas;
 
-            if (Array.isArray(tallas) && tallas.length > 0) {
-                tallas.forEach((item) => {
+            if (Array.isArray(tallasFiltradas) && tallasFiltradas.length > 0) {
+                tallasFiltradas.forEach((item) => {
                     refs.stockActualProducto.appendChild(el("span", {
                         className: "stock-talla-badge",
-                        text: `${item.talla}: ${item.stock}`
+                        text: `${helperTallas.formatearTalla(item.talla)}: ${item.stock}`
                     }));
                 });
             } else {
@@ -1695,8 +1754,9 @@ async function abrirModalStock(refs, state, productos) {
 }
 
 async function guardarStockProductos(refs, state) {
+    const helperTallas = obtenerHelperTallasProducto();
     const cantidad = Number(refs.stockCantidadProductos.value);
-    const tallasSeleccionadas = Array.from(document.querySelectorAll(".check-stock-talla:checked"))
+    const tallasSeleccionadas = Array.from(refs.tallasStockProductos?.querySelectorAll(".check-stock-talla:checked") || [])
         .map((check) => check.value);
 
     if (!state.productosStockObjetivo.length) {
@@ -1704,8 +1764,20 @@ async function guardarStockProductos(refs, state) {
         return;
     }
 
+    if (!state.tipoStockObjetivo) {
+        mostrarMensaje(refs, "Selecciona productos del mismo tipo para editar el stock.", "error");
+        return;
+    }
+
     if (!tallasSeleccionadas.length) {
         mostrarMensaje(refs, "Selecciona al menos una talla.", "error");
+        return;
+    }
+
+    const tallasPermitidas = new Set(helperTallas.obtenerTallasPermitidas(state.productosStockObjetivo[0]));
+
+    if (tallasSeleccionadas.some((talla) => !tallasPermitidas.has(talla))) {
+        mostrarMensaje(refs, "Hay tallas que no corresponden con estos productos.", "error");
         return;
     }
 
@@ -1739,6 +1811,7 @@ async function guardarStockProductos(refs, state) {
         cerrarModal(refs.modalStockProductos, () => {
             refs.formStockProductos.reset();
             state.productosStockObjetivo = [];
+            state.tipoStockObjetivo = null;
         });
 
         mostrarMensaje(refs, "Stock guardado correctamente.", "ok");
@@ -2678,7 +2751,7 @@ async function abrirDetallePedido(refs, state, pedidoId) {
                     const subtotal = (Number(item.precioUnitario) || 0) * (Number(item.cantidad) || 0);
                     const bloque = crearDetalleItem(item.producto?.nombre || "Producto sin nombre");
                     bloque.append(
-                        crearParrafoDetalle(`Talla: ${item.talla || "-"}`),
+                        crearParrafoDetalle(`Talla: ${item.talla ? window.TallasProducto.formatearTalla(item.talla) : "-"}`),
                         crearParrafoDetalle(`Cantidad: ${item.cantidad ?? 0}`),
                         crearParrafoDetalle(`Precio unitario: ${formatearPrecio(item.precioUnitario)}`),
                         crearParrafoDetalle(`Subtotal: ${formatearPrecio(subtotal)}`)

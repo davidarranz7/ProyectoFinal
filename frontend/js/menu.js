@@ -208,7 +208,7 @@ function inicializarMenu() {
                     <img class="carrito-item-img" src="${producto.urlImagen}" alt="${producto.nombre}">
                     <div class="carrito-item-info">
                         <h3 class="carrito-item-nombre">${producto.nombre}</h3>
-                        <p class="carrito-item-detalle">Talla: ${item.talla}</p>
+                        <p class="carrito-item-detalle">Talla: ${window.TallasProducto ? window.TallasProducto.formatearTalla(item.talla) : item.talla}</p>
 
                         <div class="carrito-cantidad-fila">
                             <button class="btn-cantidad btn-restar" type="button">-</button>

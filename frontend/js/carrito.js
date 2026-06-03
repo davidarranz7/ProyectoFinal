@@ -86,7 +86,7 @@ async function cargarCarrito() {
                     <p class="item-talla">
                         <strong>Talla:</strong>
                         <select class="select-talla">
-                            ${generarOpcionesTalla(producto.tallaStocks, talla)}
+                            ${generarOpcionesTalla(producto, producto.tallaStocks, talla)}
                         </select>
                     </p>
 
@@ -208,15 +208,38 @@ async function cambiarTalla(usuarioId, productoId, tallaActual, nuevaTalla) {
     }
 }
 
-function generarOpcionesTalla(tallaStocks, tallaSeleccionada) {
-    if (!tallaStocks || tallaStocks.length === 0) {
-        return `<option selected>${tallaSeleccionada}</option>`;
+function generarOpcionesTalla(producto, tallaStocks, tallaSeleccionada) {
+    const helperTallas = window.TallasProducto;
+    const tallas = helperTallas
+        ? helperTallas.filtrarTallaStocks(producto, tallaStocks)
+        : (Array.isArray(tallaStocks) ? tallaStocks : []);
+    const tallaSeleccionadaNormalizada = helperTallas
+        ? helperTallas.normalizarTalla(tallaSeleccionada)
+        : tallaSeleccionada;
+
+    if (!tallas || tallas.length === 0) {
+        const textoTalla = helperTallas ? helperTallas.formatearTalla(tallaSeleccionada) : tallaSeleccionada;
+        return `<option selected>${textoTalla}</option>`;
     }
 
-    return tallaStocks.map(ts => {
-        const selected = ts.talla === tallaSeleccionada ? "selected" : "";
+    const contieneSeleccionada = tallas.some((ts) => {
+        const tallaNormalizada = helperTallas ? helperTallas.normalizarTalla(ts.talla) : ts.talla;
+        return tallaNormalizada === tallaSeleccionadaNormalizada;
+    });
+
+    if (!contieneSeleccionada && tallaSeleccionada) {
+        tallas.push({
+            talla: tallaSeleccionada,
+            stock: 1
+        });
+    }
+
+    return tallas.map(ts => {
+        const tallaNormalizada = helperTallas ? helperTallas.normalizarTalla(ts.talla) : ts.talla;
+        const selected = tallaNormalizada === tallaSeleccionadaNormalizada ? "selected" : "";
         const disabled = ts.stock <= 0 ? "disabled" : "";
-        const texto = ts.stock <= 0 ? `${ts.talla} (sin stock)` : ts.talla;
+        const etiquetaTalla = helperTallas ? helperTallas.formatearTalla(ts.talla) : ts.talla;
+        const texto = ts.stock <= 0 ? `${etiquetaTalla} (sin stock)` : etiquetaTalla;
 
         return `<option value="${ts.talla}" ${selected} ${disabled}>${texto}</option>`;
     }).join("");

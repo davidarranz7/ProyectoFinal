@@ -82,6 +82,9 @@ async function cargarResumenCheckout(usuarioId) {
             const producto = item.producto;
             const cantidad = item.cantidad;
             const talla = item.talla;
+            const tallaTexto = window.TallasProducto
+                ? window.TallasProducto.formatearTalla(talla)
+                : talla;
             const precio = Number(producto.precio);
             const subtotalItem = precio * cantidad;
 
@@ -94,7 +97,7 @@ async function cargarResumenCheckout(usuarioId) {
                 <img src="${producto.urlImagen}" alt="${producto.nombre}">
                 <div class="item-resumen-info">
                     <h3>${producto.nombre}</h3>
-                    <p>Talla: ${talla}</p>
+                    <p>Talla: ${tallaTexto}</p>
                     <p>Cantidad: ${cantidad}</p>
                     <p>${precio.toFixed(2)} € x ${cantidad}</p>
                     <p><strong>${subtotalItem.toFixed(2)} €</strong></p>

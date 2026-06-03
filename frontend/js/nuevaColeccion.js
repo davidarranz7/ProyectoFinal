@@ -779,7 +779,9 @@ function obtenerUrlDesdeImagenProducto(imagen) {
 }
 
 function configurarTallasProducto(producto, listaTallas, mensajeStock, onSeleccionarTalla) {
-    const tallas = Array.isArray(producto.tallaStocks) ? producto.tallaStocks : [];
+    const tallas = window.TallasProducto
+        ? window.TallasProducto.filtrarTallaStocks(producto, producto.tallaStocks)
+        : (Array.isArray(producto.tallaStocks) ? producto.tallaStocks : []);
 
     if (tallas.length === 0) {
         mensajeStock.textContent = "No hay tallas disponibles";
@@ -790,7 +792,9 @@ function configurarTallasProducto(producto, listaTallas, mensajeStock, onSelecci
         const botonTalla = document.createElement("button");
         botonTalla.type = "button";
         botonTalla.className = "btn-talla";
-        botonTalla.textContent = tallaStock.talla;
+        botonTalla.textContent = window.TallasProducto
+            ? window.TallasProducto.formatearTalla(tallaStock.talla)
+            : tallaStock.talla;
         botonTalla.dataset.talla = tallaStock.talla;
         botonTalla.dataset.stock = tallaStock.stock;
 

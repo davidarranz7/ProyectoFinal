@@ -300,7 +300,10 @@ function renderizarDetallePedido(pedido) {
             const cantidad = item.cantidad || 0;
             const precioUnitario = Number(item.precioUnitario || 0);
             const subtotalLinea = precioUnitario * cantidad;
-            const talla = item.talla ? `Talla ${item.talla}` : "Talla no indicada";
+            const tallaTexto = window.TallasProducto
+                ? window.TallasProducto.formatearTalla(item.talla)
+                : item.talla;
+            const talla = item.talla ? `Talla ${tallaTexto}` : "Talla no indicada";
             const tienda = producto.tienda?.nombre || "Tienda";
             const descripcion = producto.descripcion || "Producto comprado en tu pedido.";
 
