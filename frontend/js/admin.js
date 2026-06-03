@@ -271,6 +271,7 @@ function crearEstadoInicial() {
         productoIdPendienteEliminar: null,
         usuarioIdPendienteEliminar: null,
         productosStockObjetivo: [],
+        gruposStockObjetivo: [],
         tipoStockObjetivo: null,
 
         pedidoCambioEstado: null,
@@ -570,6 +571,7 @@ function configurarModales(refs, state) {
 
     configurarCerrarModal(refs.modalStockProductos, refs.cerrarModalStockProductos, refs.cancelarModalStockProductos, () => {
         state.productosStockObjetivo = [];
+        state.gruposStockObjetivo = [];
         state.tipoStockObjetivo = null;
         refs.formStockProductos?.reset();
         limpiarContenedor(refs.stockResumenProductos);
@@ -1651,51 +1653,93 @@ function obtenerHelperTallasProducto() {
     return window.TallasProducto;
 }
 
-function obtenerTipoStockComun(productos) {
+const ORDEN_TIPOS_STOCK = ["ropa", "calzado", "accesorio"];
+const LABELS_TIPOS_STOCK = {
+    ropa: "Ropa",
+    calzado: "Calzado",
+    accesorio: "Accesorios"
+};
+
+function agruparProductosStockPorTipo(productos) {
     const helperTallas = obtenerHelperTallasProducto();
 
     if (!helperTallas || !Array.isArray(productos) || productos.length === 0) {
-        return null;
+        return [];
     }
 
-    const tipos = new Set(productos.map((producto) => helperTallas.obtenerTipo(producto)));
-    return tipos.size === 1 ? Array.from(tipos)[0] : null;
+    const grupos = new Map();
+
+    productos.forEach((producto) => {
+        const tipo = helperTallas.obtenerTipo(producto);
+
+        if (!grupos.has(tipo)) {
+            grupos.set(tipo, []);
+        }
+
+        grupos.get(tipo).push(producto);
+    });
+
+    return ORDEN_TIPOS_STOCK
+        .filter((tipo) => grupos.has(tipo))
+        .map((tipo) => ({
+            tipo,
+            label: LABELS_TIPOS_STOCK[tipo] || tipo,
+            productos: grupos.get(tipo)
+        }));
 }
 
-function renderizarOpcionesStock(refs, productos, tipoStock) {
+function renderizarOpcionesStock(refs, gruposStock) {
     const helperTallas = obtenerHelperTallasProducto();
 
     limpiarContenedor(refs.tallasStockProductos);
 
-    if (!helperTallas || !tipoStock) {
+    if (!helperTallas || !Array.isArray(gruposStock) || gruposStock.length === 0) {
         refs.tallasStockProductos?.appendChild(
-            crearTextoVacio("texto-box-vacio stock-tallas-aviso", "Selecciona productos del mismo tipo para editar el stock.")
+            crearTextoVacio("texto-box-vacio stock-tallas-aviso", "No hay productos seleccionados para editar stock.")
         );
         return;
     }
 
-    helperTallas.obtenerTallasPermitidas(productos[0]).forEach((talla) => {
-        const input = el("input", {
-            className: "check-stock-talla",
-            type: "checkbox",
-            value: talla
+    gruposStock.forEach((grupo) => {
+        const grupoBox = el("div", { className: "stock-tallas-grupo" });
+        const cabecera = el("div", { className: "stock-tallas-grupo-header" });
+        const contador = grupo.productos.length === 1 ? "1 producto" : `${grupo.productos.length} productos`;
+
+        cabecera.append(
+            el("strong", { text: grupo.label }),
+            el("span", { text: contador })
+        );
+
+        const opciones = el("div", { className: "stock-tallas-opciones" });
+
+        helperTallas.obtenerTallasPermitidas(grupo.productos[0]).forEach((talla) => {
+            const input = el("input", {
+                className: "check-stock-talla",
+                type: "checkbox",
+                value: talla
+            });
+            input.dataset.tipo = grupo.tipo;
+
+            const label = el("label", { className: "check-talla" });
+            label.append(input, el("span", { text: helperTallas.formatearTalla(talla) }));
+            opciones.appendChild(label);
         });
 
-        const label = el("label", { className: "check-talla" });
-        label.append(input, el("span", { text: helperTallas.formatearTalla(talla) }));
-        refs.tallasStockProductos.appendChild(label);
+        grupoBox.append(cabecera, opciones);
+        refs.tallasStockProductos.appendChild(grupoBox);
     });
 }
 
 async function abrirModalStock(refs, state, productos) {
     const helperTallas = obtenerHelperTallasProducto();
-    const tipoStock = obtenerTipoStockComun(productos);
+    const gruposStock = agruparProductosStockPorTipo(productos);
 
     state.productosStockObjetivo = productos;
-    state.tipoStockObjetivo = tipoStock;
+    state.gruposStockObjetivo = gruposStock;
+    state.tipoStockObjetivo = gruposStock.length === 1 ? gruposStock[0].tipo : "mixto";
 
     if (refs.guardarStockProductos) {
-        refs.guardarStockProductos.disabled = !tipoStock;
+        refs.guardarStockProductos.disabled = gruposStock.length === 0;
     }
 
     limpiarContenedor(refs.stockResumenProductos);
@@ -1708,15 +1752,11 @@ async function abrirModalStock(refs, state, productos) {
     });
 
     refs.stockCantidadProductos.value = "";
-    renderizarOpcionesStock(refs, productos, tipoStock);
+    renderizarOpcionesStock(refs, gruposStock);
 
     limpiarContenedor(refs.stockActualProducto);
 
-    if (!tipoStock) {
-        refs.stockActualProducto.appendChild(
-            crearTextoVacio("texto-box-vacio", "No mezcles ropa, calzado y accesorios en la misma edicion de stock.")
-        );
-    } else if (productos.length === 1) {
+    if (productos.length === 1) {
         try {
             const response = await fetch(`${BASE_URL}/productos/${productos[0].id}/talla-stock`, {
                 method: "GET",
@@ -1746,39 +1786,63 @@ async function abrirModalStock(refs, state, productos) {
         }
     } else {
         refs.stockActualProducto.appendChild(
-            crearTextoVacio("texto-box-vacio", "Se aplicará el mismo stock a todos los productos y tallas seleccionadas.")
+            crearTextoVacio("texto-box-vacio", "Se aplicara el stock a cada grupo de productos con sus tallas correspondientes.")
         );
     }
 
     abrirModal(refs.modalStockProductos);
 }
 
+function obtenerTallasSeleccionadasPorTipo(refs) {
+    const tallasPorTipo = new Map();
+
+    Array.from(refs.tallasStockProductos?.querySelectorAll(".check-stock-talla:checked") || []).forEach((check) => {
+        const tipo = check.dataset.tipo;
+
+        if (!tipo) {
+            return;
+        }
+
+        if (!tallasPorTipo.has(tipo)) {
+            tallasPorTipo.set(tipo, []);
+        }
+
+        tallasPorTipo.get(tipo).push(check.value);
+    });
+
+    return tallasPorTipo;
+}
+
 async function guardarStockProductos(refs, state) {
     const helperTallas = obtenerHelperTallasProducto();
     const cantidad = Number(refs.stockCantidadProductos.value);
-    const tallasSeleccionadas = Array.from(refs.tallasStockProductos?.querySelectorAll(".check-stock-talla:checked") || [])
-        .map((check) => check.value);
+    const tallasSeleccionadasPorTipo = obtenerTallasSeleccionadasPorTipo(refs);
+    const totalTallasSeleccionadas = Array.from(tallasSeleccionadasPorTipo.values())
+        .reduce((total, tallas) => total + tallas.length, 0);
 
     if (!state.productosStockObjetivo.length) {
         mostrarMensaje(refs, "No hay productos seleccionados.", "error");
         return;
     }
 
-    if (!state.tipoStockObjetivo) {
-        mostrarMensaje(refs, "Selecciona productos del mismo tipo para editar el stock.", "error");
+    if (!state.gruposStockObjetivo.length) {
+        mostrarMensaje(refs, "No hay grupos de stock disponibles.", "error");
         return;
     }
 
-    if (!tallasSeleccionadas.length) {
+    if (!totalTallasSeleccionadas) {
         mostrarMensaje(refs, "Selecciona al menos una talla.", "error");
         return;
     }
 
-    const tallasPermitidas = new Set(helperTallas.obtenerTallasPermitidas(state.productosStockObjetivo[0]));
+    for (const grupo of state.gruposStockObjetivo) {
+        const tallasSeleccionadas = tallasSeleccionadasPorTipo.get(grupo.tipo) || [];
+        const tallasPermitidas = new Set(helperTallas.obtenerTallasPermitidas(grupo.productos[0]));
 
-    if (tallasSeleccionadas.some((talla) => !tallasPermitidas.has(talla))) {
-        mostrarMensaje(refs, "Hay tallas que no corresponden con estos productos.", "error");
-        return;
+        if (tallasSeleccionadas.some((talla) => !tallasPermitidas.has(talla))) {
+            mostrarMensaje(refs, "Hay tallas que no corresponden con estos productos.", "error");
+            return;
+        }
     }
 
     if (Number.isNaN(cantidad) || cantidad < 0) {
@@ -1789,21 +1853,29 @@ async function guardarStockProductos(refs, state) {
     try {
         bloquearBoton(refs.guardarStockProductos, "Guardando...");
 
-        for (const producto of state.productosStockObjetivo) {
-            for (const talla of tallasSeleccionadas) {
-                const response = await fetch(`${BASE_URL}/productos/talla-stock`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    credentials: "include",
-                    body: JSON.stringify({
-                        productoId: producto.id,
-                        talla,
-                        stock: cantidad
-                    })
-                });
+        for (const grupo of state.gruposStockObjetivo) {
+            const tallasSeleccionadas = tallasSeleccionadasPorTipo.get(grupo.tipo) || [];
 
-                if (!response.ok) {
-                    throw new Error(`No se pudo guardar el stock para ${producto.nombre}`);
+            if (!tallasSeleccionadas.length) {
+                continue;
+            }
+
+            for (const producto of grupo.productos) {
+                for (const talla of tallasSeleccionadas) {
+                    const response = await fetch(`${BASE_URL}/productos/talla-stock`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        credentials: "include",
+                        body: JSON.stringify({
+                            productoId: producto.id,
+                            talla,
+                            stock: cantidad
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`No se pudo guardar el stock para ${producto.nombre}`);
+                    }
                 }
             }
         }
@@ -1811,6 +1883,7 @@ async function guardarStockProductos(refs, state) {
         cerrarModal(refs.modalStockProductos, () => {
             refs.formStockProductos.reset();
             state.productosStockObjetivo = [];
+            state.gruposStockObjetivo = [];
             state.tipoStockObjetivo = null;
         });
 

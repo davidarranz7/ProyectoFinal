@@ -1024,6 +1024,36 @@ body {
 }
 
 .tallas-check-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.stock-tallas-grupo {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: #ffffff;
+}
+
+.stock-tallas-grupo-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.stock-tallas-grupo-header span {
+  color: var(--text-soft);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.stock-tallas-opciones {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
