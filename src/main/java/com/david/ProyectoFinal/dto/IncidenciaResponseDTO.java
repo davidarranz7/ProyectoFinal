@@ -5,7 +5,6 @@ import com.david.ProyectoFinal.model.TipoIncidencia;
 
 import java.time.LocalDateTime;
 
-/// Devuelve al frontend la incidencia creada con su código de seguimiento y estado inicial.
 public class IncidenciaResponseDTO {
 
     private Long id;
@@ -16,13 +15,20 @@ public class IncidenciaResponseDTO {
     private EstadoIncidencia estadoIncidencia;
     private String asunto;
     private LocalDateTime fechaCreacion;
+    private boolean correoPendiente;
+    private String mensajeCorreo;
 
     public IncidenciaResponseDTO() {
     }
 
-    public IncidenciaResponseDTO(Long id, String codigoSeguimiento, String nombreContacto, String emailContacto,
-                                 TipoIncidencia tipoIncidencia, EstadoIncidencia estadoIncidencia,
-                                 String asunto, LocalDateTime fechaCreacion) {
+    public IncidenciaResponseDTO(Long id,
+                                 String codigoSeguimiento,
+                                 String nombreContacto,
+                                 String emailContacto,
+                                 TipoIncidencia tipoIncidencia,
+                                 EstadoIncidencia estadoIncidencia,
+                                 String asunto,
+                                 LocalDateTime fechaCreacion) {
         this.id = id;
         this.codigoSeguimiento = codigoSeguimiento;
         this.nombreContacto = nombreContacto;
@@ -37,63 +43,79 @@ public class IncidenciaResponseDTO {
         return id;
     }
 
-    public String getCodigoSeguimiento() {
-        return codigoSeguimiento;
-    }
-
-    public String getNombreContacto() {
-        return nombreContacto;
-    }
-
-    public String getEmailContacto() {
-        return emailContacto;
-    }
-
-    public TipoIncidencia getTipoIncidencia() {
-        return tipoIncidencia;
-    }
-
-    public EstadoIncidencia getEstadoIncidencia() {
-        return estadoIncidencia;
-    }
-
-    public String getAsunto() {
-        return asunto;
-    }
-
-    public LocalDateTime getFechaCreacion() {
-        return fechaCreacion;
-    }
-
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public String getCodigoSeguimiento() {
+        return codigoSeguimiento;
     }
 
     public void setCodigoSeguimiento(String codigoSeguimiento) {
         this.codigoSeguimiento = codigoSeguimiento;
     }
 
+    public String getNombreContacto() {
+        return nombreContacto;
+    }
+
     public void setNombreContacto(String nombreContacto) {
         this.nombreContacto = nombreContacto;
+    }
+
+    public String getEmailContacto() {
+        return emailContacto;
     }
 
     public void setEmailContacto(String emailContacto) {
         this.emailContacto = emailContacto;
     }
 
+    public TipoIncidencia getTipoIncidencia() {
+        return tipoIncidencia;
+    }
+
     public void setTipoIncidencia(TipoIncidencia tipoIncidencia) {
         this.tipoIncidencia = tipoIncidencia;
+    }
+
+    public EstadoIncidencia getEstadoIncidencia() {
+        return estadoIncidencia;
     }
 
     public void setEstadoIncidencia(EstadoIncidencia estadoIncidencia) {
         this.estadoIncidencia = estadoIncidencia;
     }
 
+    public String getAsunto() {
+        return asunto;
+    }
+
     public void setAsunto(String asunto) {
         this.asunto = asunto;
     }
 
+    public LocalDateTime getFechaCreacion() {
+        return fechaCreacion;
+    }
+
     public void setFechaCreacion(LocalDateTime fechaCreacion) {
         this.fechaCreacion = fechaCreacion;
+    }
+
+    public boolean isCorreoPendiente() {
+        return correoPendiente;
+    }
+
+    public void setCorreoPendiente(boolean correoPendiente) {
+        this.correoPendiente = correoPendiente;
+    }
+
+    public String getMensajeCorreo() {
+        return mensajeCorreo;
+    }
+
+    public void setMensajeCorreo(String mensajeCorreo) {
+        this.mensajeCorreo = mensajeCorreo;
     }
 }

@@ -119,19 +119,35 @@ button:disabled {
 }
 
 .mensaje-recuperacion {
-    min-height: 20px;
+    display: none;
     margin: 14px 0 0;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid transparent;
     font-size: 13px;
     line-height: 1.5;
-    text-align: center;
+    text-align: left;
 }
 
 .mensaje-recuperacion.ok {
+    display: block;
+    background: #eef7f1;
+    border-color: rgba(22, 122, 58, 0.18);
     color: #167a3a;
 }
 
 .mensaje-recuperacion.error {
+    display: block;
+    background: #fff1f3;
+    border-color: rgba(176, 0, 32, 0.14);
     color: #b00020;
+}
+
+.mensaje-recuperacion.pendiente {
+    display: block;
+    background: #f7efe7;
+    border-color: rgba(110, 75, 58, 0.18);
+    color: #6e4b3a;
 }
 
 .volver-login {

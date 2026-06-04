@@ -64,9 +64,8 @@ public class IncidenciaServiceImpl implements IncidenciaService {
 
         mensajeIncidenciaRepository.save(mensajeInicial);
 
-        enviarCorreoConfirmacionIncidencia(incidenciaGuardada);
-
-        return convertirAResponseDTO(incidenciaGuardada);
+        EmailDispatchResult resultadoCorreo = enviarCorreoConfirmacionIncidencia(incidenciaGuardada);
+        return convertirAResponseDTO(incidenciaGuardada, resultadoCorreo);
     }
 
     @Override
@@ -126,7 +125,6 @@ public class IncidenciaServiceImpl implements IncidenciaService {
         }
 
         Incidencia incidenciaActualizada = incidenciaRepository.save(incidencia);
-
         return convertirAResponseDTO(incidenciaActualizada);
     }
 
@@ -172,7 +170,7 @@ public class IncidenciaServiceImpl implements IncidenciaService {
                                                                             String emailRemitente,
                                                                             String contenido) {
         if (codigoSeguimiento == null || codigoSeguimiento.trim().isBlank()) {
-            throw new RuntimeException("El código de seguimiento es obligatorio");
+            throw new RuntimeException("El codigo de seguimiento es obligatorio");
         }
 
         if (emailRemitente == null || emailRemitente.trim().isBlank()) {
@@ -184,7 +182,7 @@ public class IncidenciaServiceImpl implements IncidenciaService {
         }
 
         Incidencia incidencia = incidenciaRepository.findByCodigoSeguimiento(codigoSeguimiento.trim().toUpperCase())
-                .orElseThrow(() -> new RuntimeException("No existe una incidencia con ese código de seguimiento"));
+                .orElseThrow(() -> new RuntimeException("No existe una incidencia con ese codigo de seguimiento"));
 
         if (incidencia.getEstadoIncidencia() == EstadoIncidencia.CERRADA) {
             throw new RuntimeException("No se puede responder una incidencia cerrada");
@@ -225,7 +223,7 @@ public class IncidenciaServiceImpl implements IncidenciaService {
             String asunto = "[" + incidencia.getCodigoSeguimiento() + "] Respuesta a tu incidencia";
             String contenidoHtml = construirRespuestaAdminHtml(incidencia, mensajeAdmin);
 
-            emailService.enviarCorreoHtml(
+            emailService.enviarCorreoHtmlConResultado(
                     incidencia.getEmailContacto(),
                     asunto,
                     contenidoHtml
@@ -249,7 +247,6 @@ public class IncidenciaServiceImpl implements IncidenciaService {
                 .replace("'", "&#39;");
     }
 
-
     private void validarCrearIncidencia(CrearIncidenciaRequestDTO request) {
         if (request.getNombreContacto() == null || request.getNombreContacto().trim().isBlank()) {
             throw new RuntimeException("El nombre de contacto es obligatorio");
@@ -260,7 +257,7 @@ public class IncidenciaServiceImpl implements IncidenciaService {
         }
 
         if (!request.getEmailContacto().trim().matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")) {
-            throw new RuntimeException("El formato del email no es válido");
+            throw new RuntimeException("El formato del email no es valido");
         }
 
         if (request.getTipoIncidencia() == null) {
@@ -280,19 +277,22 @@ public class IncidenciaServiceImpl implements IncidenciaService {
         }
     }
 
-    private void enviarCorreoConfirmacionIncidencia(Incidencia incidencia) {
+    private EmailDispatchResult enviarCorreoConfirmacionIncidencia(Incidencia incidencia) {
         try {
             String asunto = "[" + incidencia.getCodigoSeguimiento() + "] Incidencia recibida";
             String contenidoHtml = construirIncidenciaCreadaHtml(incidencia);
 
-            emailService.enviarCorreoHtml(
+            return emailService.enviarCorreoHtmlConResultado(
                     incidencia.getEmailContacto(),
                     asunto,
                     contenidoHtml
             );
         } catch (Exception e) {
-            System.out.println("ERROR AL ENVIAR CORREO DE CONFIRMACIÓN DE INCIDENCIA: " + e.getMessage());
+            System.out.println("ERROR AL ENVIAR CORREO DE CONFIRMACION DE INCIDENCIA: " + e.getMessage());
             e.printStackTrace();
+            return EmailDispatchResult.pendiente(
+                    "La confirmacion por correo queda pendiente y se enviara cuando el servicio vuelva a estar disponible."
+            );
         }
     }
 
@@ -324,8 +324,8 @@ public class IncidenciaServiceImpl implements IncidenciaService {
         return texto.trim();
     }
 
-    private IncidenciaResponseDTO convertirAResponseDTO(Incidencia incidencia) {
-        return new IncidenciaResponseDTO(
+    private IncidenciaResponseDTO convertirAResponseDTO(Incidencia incidencia, EmailDispatchResult resultadoCorreo) {
+        IncidenciaResponseDTO dto = new IncidenciaResponseDTO(
                 incidencia.getId(),
                 incidencia.getCodigoSeguimiento(),
                 incidencia.getNombreContacto(),
@@ -335,6 +335,17 @@ public class IncidenciaServiceImpl implements IncidenciaService {
                 incidencia.getAsunto(),
                 incidencia.getFechaCreacion()
         );
+
+        if (resultadoCorreo != null) {
+            dto.setCorreoPendiente(resultadoCorreo.isPendiente());
+            dto.setMensajeCorreo(resultadoCorreo.getMensaje());
+        }
+
+        return dto;
+    }
+
+    private IncidenciaResponseDTO convertirAResponseDTO(Incidencia incidencia) {
+        return convertirAResponseDTO(incidencia, null);
     }
 
     private MensajeIncidenciaResponseDTO convertirMensajeAResponseDTO(MensajeIncidencia mensaje) {
@@ -364,7 +375,7 @@ public class IncidenciaServiceImpl implements IncidenciaService {
             case SIN_ACCESO_EMAIL -> "Sin acceso al email";
             case PROBLEMA_PEDIDO -> "Problema con un pedido";
             case PROBLEMA_PAGO -> "Problema con el pago";
-            case PRODUCTO_DEFECTUOSO -> "Producto dañado o incorrecto";
+            case PRODUCTO_DEFECTUOSO -> "Producto danado o incorrecto";
             case ERROR_WEB -> "Error en la web";
             case OTRO -> "Otro";
         };
@@ -373,7 +384,7 @@ public class IncidenciaServiceImpl implements IncidenciaService {
     private String formatearEstadoIncidencia(EstadoIncidencia estadoIncidencia) {
         return switch (estadoIncidencia) {
             case PENDIENTE -> "Pendiente";
-            case EN_REVISION -> "En revisión";
+            case EN_REVISION -> "En revision";
             case ESPERANDO_RESPUESTA_USUARIO -> "Esperando respuesta del usuario";
             case RESPONDIDA_POR_USUARIO -> "Respondida por el usuario";
             case RESUELTA -> "Resuelta";

@@ -282,20 +282,36 @@ body {
 }
 
 .mensaje-incidencia {
-    min-height: 22px;
+    display: none;
     margin: 16px 0 0;
+    padding: 14px 16px;
+    border-radius: 8px;
+    border: 1px solid transparent;
     font-size: 14px;
     line-height: 1.5;
-    text-align: center;
+    text-align: left;
     font-weight: 700;
 }
 
 .mensaje-incidencia.ok {
+    display: block;
+    background: #edf7f0;
+    border-color: rgba(47, 111, 78, 0.20);
     color: var(--success);
 }
 
 .mensaje-incidencia.error {
+    display: block;
+    background: #fff1ef;
+    border-color: rgba(159, 47, 36, 0.20);
     color: var(--danger);
+}
+
+.mensaje-incidencia.pendiente {
+    display: block;
+    background: #f4ebe5;
+    border-color: rgba(139, 96, 72, 0.20);
+    color: var(--accent-dark);
 }
 
 .volver-inicio {

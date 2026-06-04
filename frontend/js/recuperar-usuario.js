@@ -8,7 +8,6 @@ document.addEventListener("DOMContentLoaded", () => {
         event.preventDefault();
 
         const email = emailInput.value.trim();
-
         limpiarMensaje();
 
         if (!email) {
@@ -17,7 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         if (!validarEmail(email)) {
-            mostrarMensaje("El formato del email no es válido.", "error");
+            mostrarMensaje("El formato del email no es valido.", "error");
             return;
         }
 
@@ -30,25 +29,25 @@ document.addEventListener("DOMContentLoaded", () => {
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({
-                    email: email
-                })
+                body: JSON.stringify({ email })
             });
 
-            const texto = await response.text();
+            const data = await leerRespuesta(response);
 
             if (!response.ok) {
-                mostrarMensaje(texto || "No se pudo procesar la solicitud.", "error");
+                mostrarMensaje(data?.mensaje || data || "No se pudo procesar la solicitud.", "error");
                 return;
             }
 
-            mostrarMensaje(texto || "Te hemos enviado un correo con tu nombre de usuario.", "ok");
+            const correoPendiente = Boolean(data?.correoPendiente);
+            const mensaje = data?.mensaje || "Te hemos enviado un correo con tu nombre de usuario.";
+
+            mostrarMensaje(mensaje, correoPendiente ? "pendiente" : "ok");
             formRecuperarUsuario.reset();
 
             setTimeout(() => {
                 cerrarPantallaRecuperacionUsuario();
-            }, 5000);
-
+            }, correoPendiente ? 4500 : 5000);
         } catch (error) {
             mostrarMensaje("No se pudo conectar con el servidor.", "error");
         } finally {
@@ -59,13 +58,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function mostrarMensaje(texto, tipo) {
         mensajeRecuperacionUsuario.textContent = texto;
-        mensajeRecuperacionUsuario.classList.remove("ok", "error");
+        mensajeRecuperacionUsuario.classList.remove("ok", "error", "pendiente");
         mensajeRecuperacionUsuario.classList.add(tipo);
     }
 
     function limpiarMensaje() {
         mensajeRecuperacionUsuario.textContent = "";
-        mensajeRecuperacionUsuario.classList.remove("ok", "error");
+        mensajeRecuperacionUsuario.classList.remove("ok", "error", "pendiente");
+    }
+
+    async function leerRespuesta(response) {
+        const texto = await response.text();
+
+        try {
+            return JSON.parse(texto);
+        } catch (error) {
+            return texto;
+        }
     }
 
     function validarEmail(email) {

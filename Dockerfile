@@ -12,7 +12,7 @@ FROM mcr.microsoft.com/playwright/java:v1.52.0-jammy
 
 WORKDIR /app
 
-COPY --from=build /app/target/*.jar app.jar
+COPY --from=build /app/target/ProyectoFinal-0.0.1-SNAPSHOT.jar app.jar
 
 EXPOSE 8080
 

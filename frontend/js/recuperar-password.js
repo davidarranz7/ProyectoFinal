@@ -8,7 +8,6 @@ document.addEventListener("DOMContentLoaded", () => {
         event.preventDefault();
 
         const identificador = identificadorInput.value.trim();
-
         limpiarMensaje();
 
         if (!identificador) {
@@ -26,41 +25,53 @@ document.addEventListener("DOMContentLoaded", () => {
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
-                    identificador: identificador
+                    identificador
                 })
             });
 
-            const texto = await response.text();
+            const data = await leerRespuesta(response);
 
             if (!response.ok) {
-                mostrarMensaje(texto || "No se pudo procesar la solicitud.", "error");
+                mostrarMensaje(data?.mensaje || data || "No se pudo procesar la solicitud.", "error");
                 return;
             }
 
-            mostrarMensaje(texto || "Si existe una cuenta con esos datos, recibirás un correo con instrucciones.", "ok");
+            const correoPendiente = Boolean(data?.correoPendiente);
+            const mensaje = data?.mensaje || "Si existe una cuenta con esos datos, recibiras un correo con instrucciones.";
+
+            mostrarMensaje(mensaje, correoPendiente ? "pendiente" : "ok");
             formRecuperarPassword.reset();
 
             setTimeout(() => {
                 cerrarPantallaRecuperacion();
-            }, 3000);
-
+            }, correoPendiente ? 4500 : 3000);
         } catch (error) {
             mostrarMensaje("No se pudo conectar con el servidor.", "error");
         } finally {
             btnRecuperarPassword.disabled = false;
-            btnRecuperarPassword.textContent = "Enviar enlace de recuperación";
+            btnRecuperarPassword.textContent = "Enviar enlace de recuperacion";
         }
     });
 
     function mostrarMensaje(texto, tipo) {
         mensajeRecuperacion.textContent = texto;
-        mensajeRecuperacion.classList.remove("ok", "error");
+        mensajeRecuperacion.classList.remove("ok", "error", "pendiente");
         mensajeRecuperacion.classList.add(tipo);
     }
 
     function limpiarMensaje() {
         mensajeRecuperacion.textContent = "";
-        mensajeRecuperacion.classList.remove("ok", "error");
+        mensajeRecuperacion.classList.remove("ok", "error", "pendiente");
+    }
+
+    async function leerRespuesta(response) {
+        const texto = await response.text();
+
+        try {
+            return JSON.parse(texto);
+        } catch (error) {
+            return texto;
+        }
     }
 
     function cerrarPantallaRecuperacion() {

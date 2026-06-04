@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Resultados de búsqueda</title>
+    <title>Resultados de busqueda</title>
 
     <link rel="stylesheet" href="css/menu.css" />
     <link rel="stylesheet" href="css/resultadosBusqueda.css" />
@@ -16,16 +16,35 @@
 <main class="resultados-page">
 
     <section class="resultados-hero">
-        <p class="resultados-eyebrow">Búsqueda global</p>
+        <div class="resultados-hero-copy">
+            <p class="resultados-eyebrow">Resultados</p>
 
-        <h1>
-            Resultados para:
-            <span id="texto-busqueda">...</span>
-        </h1>
+            <h1>
+                Resultados para
+                <span id="texto-busqueda">...</span>
+            </h1>
 
-        <p class="resultados-subtitle">
-            Encuentra productos de Zara, Bershka, Pull&amp;Bear, ofertas y nueva colección desde una única búsqueda.
-        </p>
+            <p class="resultados-subtitle">
+                Consulta prendas y accesorios de todas las tiendas desde una sola pagina.
+            </p>
+        </div>
+
+        <div class="resultados-hero-stats">
+            <article class="resultados-stat-card">
+                <span class="resultados-stat-label">Consulta</span>
+                <strong id="resumen-busqueda">...</strong>
+            </article>
+
+            <article class="resultados-stat-card">
+                <span class="resultados-stat-label">Resultados</span>
+                <strong id="resumen-total-resultados">Buscando</strong>
+            </article>
+
+            <article class="resultados-stat-card resultados-stat-card-wide">
+                <span class="resultados-stat-label">Filtros</span>
+                <strong id="resumen-filtros-resultados">Sin filtros</strong>
+            </article>
+        </div>
     </section>
 
     <section class="resultados-panel">
@@ -35,29 +54,46 @@
                 <p id="contador-resultados" class="contador-resultados">
                     Buscando productos...
                 </p>
+
+                <p id="resultados-hint" class="resultados-hint">
+                    Usa los filtros si quieres ordenar mejor los resultados.
+                </p>
             </div>
 
             <div class="resultados-toolbar-right">
-                <select id="filtro-tienda-resultados">
-                    <option value="">Todas las tiendas</option>
-                    <option value="Zara">Zara</option>
-                    <option value="Bershka">Bershka</option>
-                    <option value="PullAndBear">Pull&amp;Bear</option>
-                </select>
+                <label class="resultados-control">
+                    <span>Tienda</span>
+                    <select id="filtro-tienda-resultados">
+                        <option value="">Todas las tiendas</option>
+                        <option value="Zara">Zara</option>
+                        <option value="Bershka">Bershka</option>
+                        <option value="PullAndBear">Pull&amp;Bear</option>
+                    </select>
+                </label>
 
-                <select id="filtro-seccion-resultados">
-                    <option value="">Todas las secciones</option>
-                    <option value="MUJER">Mujer</option>
-                    <option value="HOMBRE">Hombre</option>
-                    <option value="UNISEX">Unisex</option>
-                </select>
+                <label class="resultados-control">
+                    <span>Seccion</span>
+                    <select id="filtro-seccion-resultados">
+                        <option value="">Todas las secciones</option>
+                        <option value="MUJER">Mujer</option>
+                        <option value="HOMBRE">Hombre</option>
+                        <option value="UNISEX">Unisex</option>
+                    </select>
+                </label>
 
-                <select id="orden-resultados">
-                    <option value="recientes">Más recientes</option>
-                    <option value="precio-asc">Precio: menor a mayor</option>
-                    <option value="precio-desc">Precio: mayor a menor</option>
-                    <option value="nombre-asc">Nombre A-Z</option>
-                </select>
+                <label class="resultados-control">
+                    <span>Orden</span>
+                    <select id="orden-resultados">
+                        <option value="recientes">Mas recientes</option>
+                        <option value="precio-asc">Precio: menor a mayor</option>
+                        <option value="precio-desc">Precio: mayor a menor</option>
+                        <option value="nombre-asc">Nombre A-Z</option>
+                    </select>
+                </label>
+
+                <button type="button" id="limpiar-resultados" class="resultados-reset-btn">
+                    Limpiar
+                </button>
             </div>
         </div>
 
@@ -66,7 +102,7 @@
         </div>
 
         <div id="grid-resultados" class="grid-resultados">
-            <!-- Aquí se pintarán los productos desde resultadosBusqueda.js -->
+            <!-- Aqui se pintaran los productos desde resultadosBusqueda.js -->
         </div>
 
         <div id="sentinel-resultados" class="sentinel-resultados"></div>

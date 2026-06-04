@@ -2,7 +2,6 @@ package com.david.ProyectoFinal.dto;
 
 import com.david.ProyectoFinal.model.EstadoPago;
 
-/// Esto es lo que devolverá el backend después de procesar el pago.
 public class PagoResponseDTO {
 
     private Long pagoId;
@@ -10,6 +9,8 @@ public class PagoResponseDTO {
     private String referencia;
     private String mensaje;
     private Long pedidoId;
+    private boolean correoPendiente;
+    private String mensajeCorreo;
 
     public PagoResponseDTO() {
     }
@@ -53,5 +54,20 @@ public class PagoResponseDTO {
     public void setPedidoId(Long pedidoId) {
         this.pedidoId = pedidoId;
     }
-}
 
+    public boolean isCorreoPendiente() {
+        return correoPendiente;
+    }
+
+    public void setCorreoPendiente(boolean correoPendiente) {
+        this.correoPendiente = correoPendiente;
+    }
+
+    public String getMensajeCorreo() {
+        return mensajeCorreo;
+    }
+
+    public void setMensajeCorreo(String mensajeCorreo) {
+        this.mensajeCorreo = mensajeCorreo;
+    }
+}

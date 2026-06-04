@@ -271,12 +271,17 @@ public class PagoServiceImpl implements PagoService {
         String asunto = "Confirmación de pedido #" + pedidoGuardado.getId();
         String contenidoHtml = construirComprobanteHtml(usuario, pedidoGuardado, itemsPedido);
 
+        EmailDispatchResult resultadoCorreo;
+
         try {
-            emailService.enviarCorreoHtml(usuario.getEmail(), asunto, contenidoHtml);
+            resultadoCorreo = emailService.enviarCorreoHtmlConResultado(usuario.getEmail(), asunto, contenidoHtml);
             System.out.println("CORREO HTML DE PEDIDO ENVIADO A: " + usuario.getEmail());
         } catch (Exception e) {
             System.out.println("ERROR AL ENVIAR CORREO HTML DE PEDIDO: " + e.getMessage());
             e.printStackTrace();
+            resultadoCorreo = EmailDispatchResult.pendiente(
+                    "El correo de confirmacion queda pendiente y se enviara en cuanto vuelva a estar disponible el servicio."
+            );
         }
 
         response.setPagoId(pagoGuardado.getId());
@@ -284,6 +289,8 @@ public class PagoServiceImpl implements PagoService {
         response.setReferencia(pagoGuardado.getReferencia());
         response.setMensaje(pagoGuardado.getMensaje());
         response.setPedidoId(pedidoGuardado.getId());
+        response.setCorreoPendiente(resultadoCorreo.isPendiente());
+        response.setMensajeCorreo(resultadoCorreo.getMensaje());
 
         return response;
     }

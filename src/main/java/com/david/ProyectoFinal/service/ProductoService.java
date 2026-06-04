@@ -440,10 +440,10 @@ public class ProductoService {
         }
 
         return switch (orden) {
-            case "precioAsc" -> Sort.by(Sort.Direction.ASC, "precio");
-            case "precioDesc" -> Sort.by(Sort.Direction.DESC, "precio");
-            case "nombreAsc" -> Sort.by(Sort.Direction.ASC, "nombre");
-            case "nombreDesc" -> Sort.by(Sort.Direction.DESC, "nombre");
+            case "precio-asc", "precioAsc" -> Sort.by(Sort.Direction.ASC, "precio");
+            case "precio-desc", "precioDesc" -> Sort.by(Sort.Direction.DESC, "precio");
+            case "nombre-asc", "nombreAsc" -> Sort.by(Sort.Direction.ASC, "nombre");
+            case "nombre-desc", "nombreDesc" -> Sort.by(Sort.Direction.DESC, "nombre");
             case "recientes" -> Sort.by(Sort.Direction.DESC, "id");
             default -> Sort.by(Sort.Direction.DESC, "id");
         };

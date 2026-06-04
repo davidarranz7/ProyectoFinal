@@ -1,6 +1,7 @@
 package com.david.ProyectoFinal.service;
 
 import com.david.ProyectoFinal.dto.CambiarPasswordRequestDTO;
+import com.david.ProyectoFinal.dto.CorreoOperacionResponseDTO;
 import com.david.ProyectoFinal.dto.RecuperarPasswordRequestDTO;
 import com.david.ProyectoFinal.dto.RecuperarUsuarioRequestDTO;
 import com.david.ProyectoFinal.model.PasswordResetToken;
@@ -37,23 +38,17 @@ public class RecuperacionCuentaServiceImpl implements RecuperacionCuentaService 
         this.emailService = emailService;
     }
 
-    /// Recibe el email o usuario, busca la cuenta, borra tokens anteriores, crea un token nuevo de 5 minutos y envía el correo con el enlace.
     @Override
     @Transactional
-    public void solicitarRecuperacionPassword(RecuperarPasswordRequestDTO request) {
+    public CorreoOperacionResponseDTO solicitarRecuperacionPassword(RecuperarPasswordRequestDTO request) {
         if (request.getIdentificador() == null || request.getIdentificador().trim().isBlank()) {
             throw new RuntimeException("Debes introducir tu email o nombre de usuario");
         }
 
         String identificador = request.getIdentificador().trim();
-
-        Optional<Usuario> usuarioOptional;
-
-        if (identificador.contains("@")) {
-            usuarioOptional = usuarioRepository.findByEmailIgnoreCase(identificador);
-        } else {
-            usuarioOptional = usuarioRepository.findByNombreIgnoreCase(identificador);
-        }
+        Optional<Usuario> usuarioOptional = identificador.contains("@")
+                ? usuarioRepository.findByEmailIgnoreCase(identificador)
+                : usuarioRepository.findByNombreIgnoreCase(identificador);
 
         if (usuarioOptional.isEmpty()) {
             throw new RuntimeException("No existe ninguna cuenta con ese email o nombre de usuario");
@@ -74,17 +69,35 @@ public class RecuperacionCuentaServiceImpl implements RecuperacionCuentaService 
         passwordResetTokenRepository.save(passwordResetToken);
 
         String enlace = frontendUrl + "/cambiar-password.html?token=" + token;
-
         String contenidoHtml = construirRecuperacionPasswordHtml(usuario, enlace);
 
-        emailService.enviarCorreoHtml(
-                usuario.getEmail(),
-                "Recuperación de contraseña",
-                contenidoHtml
+        EmailDispatchResult resultadoCorreo;
+
+        try {
+            resultadoCorreo = emailService.enviarCorreoHtmlConResultado(
+                    usuario.getEmail(),
+                    "Recuperacion de contrasena",
+                    contenidoHtml
+            );
+        } catch (RuntimeException e) {
+            resultadoCorreo = EmailDispatchResult.pendiente(
+                    "Tu solicitud ha quedado registrada. El correo se enviara en cuanto vuelva a estar disponible el servicio."
+            );
+        }
+
+        if (resultadoCorreo.isPendiente()) {
+            return new CorreoOperacionResponseDTO(
+                    "Tu solicitud ha quedado registrada. El correo se enviara en cuanto vuelva a estar disponible el servicio.",
+                    true
+            );
+        }
+
+        return new CorreoOperacionResponseDTO(
+                "Si existe una cuenta con esos datos, recibiras un correo con instrucciones.",
+                false
         );
     }
 
-    /// Valida el token recibido por correo y cambia la contraseña del usuario si el enlace es válido.
     @Override
     @Transactional
     public void cambiarPassword(CambiarPasswordRequestDTO request) {
@@ -101,30 +114,29 @@ public class RecuperacionCuentaServiceImpl implements RecuperacionCuentaService 
         String repetirPassword = request.getRepetirPassword().trim();
 
         if (nuevaPassword.isBlank() || repetirPassword.isBlank()) {
-            throw new RuntimeException("La contraseña no puede estar vacía");
+            throw new RuntimeException("La contrasena no puede estar vacia");
         }
 
         if (!nuevaPassword.equals(repetirPassword)) {
-            throw new RuntimeException("Las contraseñas no coinciden");
+            throw new RuntimeException("Las contrasenas no coinciden");
         }
 
         if (nuevaPassword.length() < 4) {
-            throw new RuntimeException("La nueva contraseña debe tener al menos 4 caracteres");
+            throw new RuntimeException("La nueva contrasena debe tener al menos 4 caracteres");
         }
 
         PasswordResetToken passwordResetToken = passwordResetTokenRepository.findByToken(token)
-                .orElseThrow(() -> new RuntimeException("El enlace de recuperación no es válido"));
+                .orElseThrow(() -> new RuntimeException("El enlace de recuperacion no es valido"));
 
         if (passwordResetToken.isUsado()) {
             throw new RuntimeException("Este enlace ya ha sido utilizado");
         }
 
         if (passwordResetToken.getFechaExpiracion().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("El enlace de recuperación ha caducado");
+            throw new RuntimeException("El enlace de recuperacion ha caducado");
         }
 
         Usuario usuario = passwordResetToken.getUsuario();
-
         usuario.setPassword(nuevaPassword);
         usuarioRepository.save(usuario);
 
@@ -132,9 +144,8 @@ public class RecuperacionCuentaServiceImpl implements RecuperacionCuentaService 
         passwordResetTokenRepository.save(passwordResetToken);
     }
 
-    /// Recibe el email, busca la cuenta asociada y envía un correo con el nombre de usuario.
     @Override
-    public void solicitarRecuperacionUsuario(RecuperarUsuarioRequestDTO request) {
+    public CorreoOperacionResponseDTO solicitarRecuperacionUsuario(RecuperarUsuarioRequestDTO request) {
         if (request.getEmail() == null || request.getEmail().trim().isBlank()) {
             throw new RuntimeException("Debes introducir tu email");
         }
@@ -142,7 +153,7 @@ public class RecuperacionCuentaServiceImpl implements RecuperacionCuentaService 
         String email = request.getEmail().trim();
 
         if (!email.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")) {
-            throw new RuntimeException("El formato del email no es válido");
+            throw new RuntimeException("El formato del email no es valido");
         }
 
         Usuario usuario = usuarioRepository.findByEmailIgnoreCase(email)
@@ -150,10 +161,30 @@ public class RecuperacionCuentaServiceImpl implements RecuperacionCuentaService 
 
         String contenidoHtml = construirRecuperacionUsuarioHtml(usuario);
 
-        emailService.enviarCorreoHtml(
-                usuario.getEmail(),
-                "Recuperación de usuario",
-                contenidoHtml
+        EmailDispatchResult resultadoCorreo;
+
+        try {
+            resultadoCorreo = emailService.enviarCorreoHtmlConResultado(
+                    usuario.getEmail(),
+                    "Recuperacion de usuario",
+                    contenidoHtml
+            );
+        } catch (RuntimeException e) {
+            resultadoCorreo = EmailDispatchResult.pendiente(
+                    "Tu solicitud ha quedado registrada. El correo se enviara en cuanto vuelva a estar disponible el servicio."
+            );
+        }
+
+        if (resultadoCorreo.isPendiente()) {
+            return new CorreoOperacionResponseDTO(
+                    "Tu solicitud ha quedado registrada. El correo se enviara en cuanto vuelva a estar disponible el servicio.",
+                    true
+            );
+        }
+
+        return new CorreoOperacionResponseDTO(
+                "Te hemos enviado un correo con tu nombre de usuario.",
+                false
         );
     }
 

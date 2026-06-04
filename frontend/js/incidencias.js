@@ -43,7 +43,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         if (!validarEmail(emailContacto)) {
-            mostrarMensaje("El formato del email no es válido.", "error");
+            mostrarMensaje("El formato del email no es valido.", "error");
             return;
         }
 
@@ -77,27 +77,37 @@ document.addEventListener("DOMContentLoaded", () => {
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
-                    nombreContacto: nombreContacto,
-                    emailContacto: emailContacto,
+                    nombreContacto,
+                    emailContacto,
                     usuarioRelacionado: obtenerUsuarioRelacionadoParaEnviar(tipoIncidencia, usuarioRelacionado),
                     numeroPedido: obtenerNumeroPedidoParaEnviar(tipoIncidencia, numeroPedido),
-                    tipoIncidencia: tipoIncidencia,
-                    asunto: asunto,
-                    mensaje: mensaje
+                    tipoIncidencia,
+                    asunto,
+                    mensaje
                 })
             });
 
             const data = await leerRespuesta(response);
 
             if (!response.ok) {
-                mostrarMensaje(data || "No se pudo crear la incidencia.", "error");
+                mostrarMensaje(data?.mensaje || data || "No se pudo crear la incidencia.", "error");
                 return;
             }
 
-            mostrarMensaje(
-                `Incidencia creada correctamente. Código de seguimiento: ${data.codigoSeguimiento}. Te hemos enviado un correo de confirmación.`,
-                "ok"
-            );
+            const correoPendiente = Boolean(data?.correoPendiente);
+            const codigoSeguimiento = data?.codigoSeguimiento || "sin codigo";
+
+            if (correoPendiente) {
+                mostrarMensaje(
+                    `Incidencia creada correctamente. Codigo de seguimiento: ${codigoSeguimiento}. El correo de confirmacion queda pendiente y se enviara en cuanto el servicio vuelva a estar disponible.`,
+                    "pendiente"
+                );
+            } else {
+                mostrarMensaje(
+                    `Incidencia creada correctamente. Codigo de seguimiento: ${codigoSeguimiento}. Te hemos enviado un correo de confirmacion.`,
+                    "ok"
+                );
+            }
 
             formIncidencia.reset();
             actualizarCamposSegunTipo();
@@ -106,7 +116,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 top: 0,
                 behavior: "smooth"
             });
-
         } catch (error) {
             mostrarMensaje("No se pudo conectar con el servidor.", "error");
         } finally {
@@ -176,13 +185,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function mostrarMensaje(texto, tipo) {
         mensajeIncidencia.textContent = texto;
-        mensajeIncidencia.classList.remove("ok", "error");
+        mensajeIncidencia.classList.remove("ok", "error", "pendiente");
         mensajeIncidencia.classList.add(tipo);
     }
 
     function limpiarMensaje() {
         mensajeIncidencia.textContent = "";
-        mensajeIncidencia.classList.remove("ok", "error");
+        mensajeIncidencia.classList.remove("ok", "error", "pendiente");
     }
 
     function validarEmail(email) {

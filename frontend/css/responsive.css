@@ -20,6 +20,24 @@ input,
 select,
 textarea {
     font: inherit;
+    min-width: 0;
+}
+
+main,
+section,
+article,
+aside {
+    min-width: 0;
+}
+
+h1,
+h2,
+h3,
+p,
+.stat-pill,
+.contador-resultados,
+.producto-badge {
+    overflow-wrap: anywhere;
 }
 
 .modal-panel,
@@ -186,6 +204,22 @@ textarea {
     .incidencias-info {
         position: static !important;
         top: auto !important;
+    }
+
+    .cabecera-favoritos,
+    .contenedor-favoritos {
+        padding-left: 24px !important;
+        padding-right: 24px !important;
+    }
+
+    .lista-favoritos {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 18px !important;
+    }
+
+    .favorito-card img {
+        height: auto !important;
+        aspect-ratio: 4 / 5;
     }
 }
 
@@ -367,6 +401,35 @@ textarea {
         padding: 10px;
     }
 
+    .cabecera-favoritos,
+    .contenedor-favoritos {
+        padding-left: 18px !important;
+        padding-right: 18px !important;
+    }
+
+    .cabecera-favoritos {
+        padding-top: 22px !important;
+        padding-bottom: 22px !important;
+    }
+
+    .cabecera-favoritos h1 {
+        font-size: clamp(2rem, 9vw, 2.4rem) !important;
+    }
+
+    .cabecera-favoritos p {
+        max-width: 100%;
+        line-height: 1.6;
+    }
+
+    .lista-favoritos {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+    }
+
+    .favorito-info h3 {
+        min-height: auto !important;
+    }
+
     .modal-panel,
     .modal-box,
     .feedback-modal {
@@ -520,6 +583,12 @@ textarea {
     .reset-card {
         max-width: calc(100vw - 20px);
         padding-inline: 18px !important;
+    }
+
+    .cabecera-favoritos,
+    .contenedor-favoritos {
+        padding-left: 14px !important;
+        padding-right: 14px !important;
     }
 
     .login-wrapper {

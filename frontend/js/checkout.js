@@ -999,7 +999,14 @@ async function confirmarPedido() {
             return;
         }
 
-        mostrarMensaje(`Pedido confirmado. Referencia: ${data.referencia}`, "ok");
+        if (data.correoPendiente) {
+            mostrarMensaje(
+                `Pedido confirmado. Referencia: ${data.referencia}. El correo de confirmacion queda pendiente y se enviara cuando vuelva a estar disponible el servicio.`,
+                "pendiente"
+            );
+        } else {
+            mostrarMensaje(`Pedido confirmado. Referencia: ${data.referencia}`, "ok");
+        }
 
         setTimeout(() => {
             window.location.href = "index.html";
@@ -1103,10 +1110,12 @@ function mostrarMensaje(texto, tipo = "error") {
     if (!div) return;
 
     div.textContent = texto;
-    div.classList.remove("oculto", "mensaje-error", "mensaje-ok");
+    div.classList.remove("oculto", "mensaje-error", "mensaje-ok", "mensaje-pendiente");
 
     if (tipo === "ok") {
         div.classList.add("mensaje-ok");
+    } else if (tipo === "pendiente") {
+        div.classList.add("mensaje-pendiente");
     } else {
         div.classList.add("mensaje-error");
     }

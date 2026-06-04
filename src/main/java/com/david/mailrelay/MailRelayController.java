@@ -1,0 +1,57 @@
+package com.david.mailrelay;
+
+import com.david.ProyectoFinal.dto.MailRelayRequestDTO;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/internal/mail-relay")
+public class MailRelayController {
+
+    private final MailRelaySmtpService mailRelaySmtpService;
+
+    @Value("${app.mail.relay.allowed-server-ip:}")
+    private String allowedServerIp;
+
+    @Value("${app.mail.relay.token:}")
+    private String relayToken;
+
+    public MailRelayController(MailRelaySmtpService mailRelaySmtpService) {
+        this.mailRelaySmtpService = mailRelaySmtpService;
+    }
+
+    @PostMapping("/send")
+    public ResponseEntity<String> recibirCorreo(@RequestBody MailRelayRequestDTO request,
+                                                @RequestHeader(name = "X-Relay-Token", required = false) String token,
+                                                HttpServletRequest httpServletRequest) {
+        if (relayToken == null || relayToken.isBlank() || !relayToken.equals(token)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Token de relay no valido");
+        }
+
+        String ipRemota = obtenerIpRemota(httpServletRequest);
+
+        if (allowedServerIp != null && !allowedServerIp.isBlank() && !allowedServerIp.equals(ipRemota)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("IP no autorizada");
+        }
+
+        mailRelaySmtpService.enviar(request);
+        return ResponseEntity.ok("Correo aceptado por el relay local");
+    }
+
+    private String obtenerIpRemota(HttpServletRequest request) {
+        String forwardedFor = request.getHeader("X-Forwarded-For");
+
+        if (forwardedFor != null && !forwardedFor.isBlank()) {
+            return forwardedFor.split(",")[0].trim();
+        }
+
+        return request.getRemoteAddr();
+    }
+}
