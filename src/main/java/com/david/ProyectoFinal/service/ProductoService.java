@@ -6,12 +6,15 @@ import com.david.ProyectoFinal.repository.*;
 import com.david.ProyectoFinal.scraper.gestor.GestorScraping;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -340,106 +343,15 @@ public class ProductoService {
         int tamano = Math.min(Math.max(size, 1), 48);
 
         Pageable pageable = PageRequest.of(pagina, tamano, obtenerOrdenProductos(orden));
-
-        Specification<Producto> specification = (root, query, criteriaBuilder) -> {
-            query.distinct(true);
-
-            Join<Producto, Tienda> tiendaJoin = root.join("tienda", JoinType.LEFT);
-            Join<Producto, Categoria> categoriaJoin = root.join("categoria", JoinType.LEFT);
-
-            List<jakarta.persistence.criteria.Predicate> predicates = new ArrayList<>();
-
-            if (tienda != null && !tienda.isBlank()) {
-                predicates.add(
-                        criteriaBuilder.equal(
-                                criteriaBuilder.lower(tiendaJoin.get("nombre")),
-                                tienda.trim().toLowerCase()
-                        )
-                );
-            }
-
-            if (enOferta != null) {
-                predicates.add(
-                        criteriaBuilder.equal(
-                                root.get("enOferta"),
-                                enOferta
-                        )
-                );
-            }
-            if (nuevaColeccion != null) {
-                predicates.add(
-                        criteriaBuilder.equal(
-                                root.get("nuevaColeccion"),
-                                nuevaColeccion
-                        )
-                );
-            }
-
-            if (secciones != null && !secciones.isEmpty()) {
-                List<Seccion> seccionesValidas = secciones.stream()
-                        .filter(Objects::nonNull)
-                        .toList();
-
-                if (!seccionesValidas.isEmpty()) {
-                    predicates.add(root.get("seccion").in(seccionesValidas));
-                }
-            }
-
-            if (categorias != null && !categorias.isEmpty()) {
-                List<String> categoriasLimpias = categorias.stream()
-                        .filter(categoriaActual -> categoriaActual != null && !categoriaActual.isBlank())
-                        .map(categoriaActual -> categoriaActual.trim().toLowerCase())
-                        .toList();
-
-                if (!categoriasLimpias.isEmpty()) {
-                    List<jakarta.persistence.criteria.Predicate> predicatesCategoria = new ArrayList<>();
-
-                    for (String categoriaActual : categoriasLimpias) {
-                        predicatesCategoria.add(
-                                criteriaBuilder.like(
-                                        criteriaBuilder.lower(categoriaJoin.get("nombre")),
-                                        "%" + categoriaActual + "%"
-                                )
-                        );
-                    }
-
-                    predicates.add(
-                            criteriaBuilder.or(
-                                    predicatesCategoria.toArray(new jakarta.persistence.criteria.Predicate[0])
-                            )
-                    );
-                }
-            }
-
-            if (busqueda != null && !busqueda.isBlank()) {
-                String termino = "%" + busqueda.trim().toLowerCase() + "%";
-
-                predicates.add(
-                        criteriaBuilder.or(
-                                criteriaBuilder.like(
-                                        criteriaBuilder.lower(
-                                                criteriaBuilder.coalesce(root.get("nombre"), "")
-                                        ),
-                                        termino
-                                ),
-                                criteriaBuilder.like(
-                                        criteriaBuilder.lower(
-                                                criteriaBuilder.coalesce(categoriaJoin.get("nombre"), "")
-                                        ),
-                                        termino
-                                ),
-                                criteriaBuilder.like(
-                                        criteriaBuilder.lower(
-                                                criteriaBuilder.coalesce(tiendaJoin.get("nombre"), "")
-                                        ),
-                                        termino
-                                )
-                        )
-                );
-            }
-
-            return criteriaBuilder.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
-        };
+        Specification<Producto> specification = crearEspecificacionProductos(
+                tienda,
+                secciones,
+                categorias,
+                busqueda,
+                enOferta,
+                nuevaColeccion,
+                false
+        );
 
         Page<Producto> productosPage = productoRepository.findAll(specification, pageable);
 
@@ -476,6 +388,26 @@ public class ProductoService {
                 productosPage.getTotalElements(),
                 productosPage.isLast()
         );
+    }
+
+    public List<ProductoSeleccionStockDTO> buscarProductosSinStockParaSeleccion(String tienda,
+                                                                                 List<Seccion> secciones,
+                                                                                 List<String> categorias,
+                                                                                 String busqueda) {
+        Specification<Producto> specification = crearEspecificacionProductos(
+                tienda,
+                secciones,
+                categorias,
+                busqueda,
+                null,
+                null,
+                true
+        );
+
+        return productoRepository.findAll(specification, Sort.by(Sort.Direction.DESC, "id"))
+                .stream()
+                .map(this::convertirAProductoSeleccionStockDTO)
+                .toList();
     }
 
     public List<String> obtenerCategoriasCatalogo(String tienda, List<Seccion> secciones) {
@@ -517,6 +449,110 @@ public class ProductoService {
         };
     }
 
+    private Specification<Producto> crearEspecificacionProductos(String tienda,
+                                                                 List<Seccion> secciones,
+                                                                 List<String> categorias,
+                                                                 String busqueda,
+                                                                 Boolean enOferta,
+                                                                 Boolean nuevaColeccion,
+                                                                 boolean soloSinStock) {
+        return (root, query, criteriaBuilder) -> {
+            query.distinct(true);
+
+            Join<Producto, Tienda> tiendaJoin = root.join("tienda", JoinType.LEFT);
+            Join<Producto, Categoria> categoriaJoin = root.join("categoria", JoinType.LEFT);
+
+            List<jakarta.persistence.criteria.Predicate> predicates = new ArrayList<>();
+
+            if (tienda != null && !tienda.isBlank()) {
+                predicates.add(
+                        criteriaBuilder.equal(
+                                criteriaBuilder.lower(tiendaJoin.get("nombre")),
+                                tienda.trim().toLowerCase()
+                        )
+                );
+            }
+
+            if (enOferta != null) {
+                predicates.add(criteriaBuilder.equal(root.get("enOferta"), enOferta));
+            }
+
+            if (nuevaColeccion != null) {
+                predicates.add(criteriaBuilder.equal(root.get("nuevaColeccion"), nuevaColeccion));
+            }
+
+            if (secciones != null && !secciones.isEmpty()) {
+                List<Seccion> seccionesValidas = secciones.stream()
+                        .filter(Objects::nonNull)
+                        .toList();
+
+                if (!seccionesValidas.isEmpty()) {
+                    predicates.add(root.get("seccion").in(seccionesValidas));
+                }
+            }
+
+            if (categorias != null && !categorias.isEmpty()) {
+                List<String> categoriasLimpias = categorias.stream()
+                        .filter(categoriaActual -> categoriaActual != null && !categoriaActual.isBlank())
+                        .map(categoriaActual -> categoriaActual.trim().toLowerCase())
+                        .toList();
+
+                if (!categoriasLimpias.isEmpty()) {
+                    List<jakarta.persistence.criteria.Predicate> predicatesCategoria = new ArrayList<>();
+
+                    for (String categoriaActual : categoriasLimpias) {
+                        predicatesCategoria.add(
+                                criteriaBuilder.like(
+                                        criteriaBuilder.lower(categoriaJoin.get("nombre")),
+                                        "%" + categoriaActual + "%"
+                                )
+                        );
+                    }
+
+                    predicates.add(
+                            criteriaBuilder.or(predicatesCategoria.toArray(new jakarta.persistence.criteria.Predicate[0]))
+                    );
+                }
+            }
+
+            if (busqueda != null && !busqueda.isBlank()) {
+                String termino = "%" + busqueda.trim().toLowerCase() + "%";
+
+                predicates.add(
+                        criteriaBuilder.or(
+                                criteriaBuilder.like(
+                                        criteriaBuilder.lower(criteriaBuilder.coalesce(root.get("nombre"), "")),
+                                        termino
+                                ),
+                                criteriaBuilder.like(
+                                        criteriaBuilder.lower(criteriaBuilder.coalesce(categoriaJoin.get("nombre"), "")),
+                                        termino
+                                ),
+                                criteriaBuilder.like(
+                                        criteriaBuilder.lower(criteriaBuilder.coalesce(tiendaJoin.get("nombre"), "")),
+                                        termino
+                                )
+                        )
+                );
+            }
+
+            if (soloSinStock) {
+                Subquery<Long> subquery = query.subquery(Long.class);
+                Root<ProductoTallaStock> stockRoot = subquery.from(ProductoTallaStock.class);
+
+                subquery.select(stockRoot.get("producto").get("id"));
+                subquery.where(
+                        criteriaBuilder.equal(stockRoot.get("producto").get("id"), root.get("id")),
+                        criteriaBuilder.greaterThan(stockRoot.get("stock"), 0)
+                );
+
+                predicates.add(criteriaBuilder.not(criteriaBuilder.exists(subquery)));
+            }
+
+            return criteriaBuilder.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
+        };
+    }
+
     private ProductoListadoDTO convertirAProductoListadoDTO(Producto producto,
                                                             List<ProductoTallaStock> tallaStocks,
                                                             List<ProductoImagen> imagenes) {
@@ -554,6 +590,35 @@ public class ProductoService {
                 tiendaDTO,
                 construirTallasCompletas(tallaStocks),
                 construirImagenesProducto(imagenes)
+        );
+    }
+
+    private ProductoSeleccionStockDTO convertirAProductoSeleccionStockDTO(Producto producto) {
+        CategoriaSimpleDTO categoriaDTO = null;
+
+        if (producto.getCategoria() != null) {
+            categoriaDTO = new CategoriaSimpleDTO(
+                    producto.getCategoria().getId(),
+                    producto.getCategoria().getNombre()
+            );
+        }
+
+        TiendaSimpleDTO tiendaDTO = null;
+
+        if (producto.getTienda() != null) {
+            tiendaDTO = new TiendaSimpleDTO(
+                    producto.getTienda().getId(),
+                    producto.getTienda().getNombre(),
+                    producto.getTienda().getUrl()
+            );
+        }
+
+        return new ProductoSeleccionStockDTO(
+                producto.getId(),
+                producto.getNombre(),
+                producto.getSeccion(),
+                categoriaDTO,
+                tiendaDTO
         );
     }
 
@@ -601,6 +666,7 @@ public class ProductoService {
                 .toList();
     }
 
+    @Transactional
     public void asignarTallaStock(ProductoTallaStockDTO dto){
         Producto producto = productoRepository.findById(dto.getProductoId())
                 .orElseThrow(() -> new RuntimeException("producto no encontrado"));
@@ -620,6 +686,64 @@ public class ProductoService {
 
             productoTallaStockRepository.save(productoTallaStock);
         }
+    }
+
+    @Transactional
+    public void asignarTallaStockMasivo(ProductoTallaStockMasivoDTO dto) {
+        if (dto == null || dto.getStock() == null || dto.getStock() < 0) {
+            throw new IllegalArgumentException("Stock no valido");
+        }
+
+        List<Long> productoIds = dto.getProductoIds() == null
+                ? List.of()
+                : dto.getProductoIds().stream().filter(Objects::nonNull).distinct().toList();
+
+        List<Talla> tallas = dto.getTallas() == null
+                ? List.of()
+                : dto.getTallas().stream().filter(Objects::nonNull).distinct().toList();
+
+        if (productoIds.isEmpty() || tallas.isEmpty()) {
+            throw new IllegalArgumentException("Debes indicar productos y tallas");
+        }
+
+        List<Producto> productos = productoRepository.findAllById(productoIds);
+
+        if (productos.size() != productoIds.size()) {
+            throw new RuntimeException("No se encontraron todos los productos seleccionados");
+        }
+
+        Map<Long, Producto> productosPorId = productos.stream()
+                .collect(Collectors.toMap(Producto::getId, producto -> producto));
+
+        Map<String, ProductoTallaStock> existentesPorClave = productoTallaStockRepository.findByProductoIdIn(productoIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        item -> construirClaveStock(item.getProducto().getId(), item.getTalla()),
+                        item -> item,
+                        (item1, item2) -> item1
+                ));
+
+        List<ProductoTallaStock> stockAGuardar = new ArrayList<>();
+
+        for (Long productoId : productoIds) {
+            Producto producto = productosPorId.get(productoId);
+
+            for (Talla talla : tallas) {
+                String clave = construirClaveStock(productoId, talla);
+                ProductoTallaStock productoTallaStock = existentesPorClave.get(clave);
+
+                if (productoTallaStock == null) {
+                    productoTallaStock = new ProductoTallaStock();
+                    productoTallaStock.setProducto(producto);
+                    productoTallaStock.setTalla(talla);
+                }
+
+                productoTallaStock.setStock(dto.getStock());
+                stockAGuardar.add(productoTallaStock);
+            }
+        }
+
+        productoTallaStockRepository.saveAll(stockAGuardar);
     }
 
     public List<ProductoTallaStockResponseDTO> obtenerTallasStockPorProducto(Long productoId) {
@@ -644,5 +768,9 @@ public class ProductoService {
                     return dto;
                 })
                 .toList();
+    }
+
+    private String construirClaveStock(Long productoId, Talla talla) {
+        return productoId + "::" + (talla == null ? "" : talla.name());
     }
 }

@@ -94,6 +94,7 @@ function obtenerReferencias() {
         btnLimpiarFiltrosProductos: document.getElementById("btn-limpiar-filtros-productos"),
         btnModoSeleccionProductos: document.getElementById("btn-modo-seleccion-productos"),
         btnSeleccionarTodosProductos: document.getElementById("btn-seleccionar-todos-productos"),
+        btnSeleccionarSinStockProductos: document.getElementById("btn-seleccionar-sin-stock-productos"),
         btnStockSeleccionados: document.getElementById("btn-stock-seleccionados"),
         contenedorProductos: document.getElementById("contenedor-productos-admin"),
         estadoProductos: document.getElementById("productos-admin-estado"),
@@ -268,6 +269,8 @@ function crearEstadoInicial() {
 
         modoSeleccionProductos: false,
         productosSeleccionados: new Set(),
+        productosSeleccionadosInfo: new Map(),
+        seleccionMasivaSinStockActiva: false,
         productoIdPendienteEliminar: null,
         usuarioIdPendienteEliminar: null,
         productosStockObjetivo: [],
@@ -394,9 +397,10 @@ function configurarProductos(refs, state) {
         refs.btnModoSeleccionProductos.textContent = state.modoSeleccionProductos ? "Salir selección" : "Modo selección";
 
         if (!state.modoSeleccionProductos) {
-            state.productosSeleccionados.clear();
+            limpiarSeleccionProductos(state);
         }
 
+        state.seleccionMasivaSinStockActiva = false;
         actualizarBotonStockSeleccionados(refs, state);
         renderizarProductos(refs, state);
     });
@@ -417,17 +421,61 @@ function configurarProductos(refs, state) {
         const todosSeleccionados = visibles.every((p) => state.productosSeleccionados.has(p.id));
 
         if (todosSeleccionados) {
-            visibles.forEach((p) => state.productosSeleccionados.delete(p.id));
+            desregistrarProductosSeleccionados(state, visibles);
         } else {
-            visibles.forEach((p) => state.productosSeleccionados.add(p.id));
+            registrarProductosSeleccionados(state, visibles);
         }
 
+        state.seleccionMasivaSinStockActiva = false;
         actualizarBotonStockSeleccionados(refs, state);
         renderizarProductos(refs, state);
     });
 
+    refs.btnSeleccionarSinStockProductos?.addEventListener("click", async () => {
+        if (!state.modoSeleccionProductos) {
+            mostrarMensaje(refs, "Activa primero el modo selecciÃ³n.", "info");
+            return;
+        }
+
+        try {
+            bloquearBoton(refs.btnSeleccionarSinStockProductos, "Buscando...");
+
+            const response = await fetch(construirUrlSeleccionSinStockProductosAdmin(refs), {
+                method: "GET",
+                credentials: "include"
+            });
+
+            if (!response.ok) {
+                throw new Error("No se pudieron cargar los productos sin stock");
+            }
+
+            const productosSinStock = await response.json();
+
+            limpiarSeleccionProductos(state);
+
+            if (!Array.isArray(productosSinStock) || productosSinStock.length === 0) {
+                actualizarBotonStockSeleccionados(refs, state);
+                renderizarProductos(refs, state);
+                mostrarMensaje(refs, "No hay productos sin stock con los filtros actuales.", "info");
+                return;
+            }
+
+            registrarProductosSeleccionados(state, productosSinStock);
+            state.seleccionMasivaSinStockActiva = true;
+
+            actualizarBotonStockSeleccionados(refs, state);
+            renderizarProductos(refs, state);
+            mostrarMensaje(refs, `${formatearNumero(productosSinStock.length)} productos sin stock seleccionados.`, "ok");
+        } catch (error) {
+            console.error(error);
+            mostrarMensaje(refs, "No se pudo completar la selecciÃ³n sin stock.", "error");
+        } finally {
+            restaurarBoton(refs.btnSeleccionarSinStockProductos, "Seleccionar sin stock");
+        }
+    });
+
     refs.btnStockSeleccionados?.addEventListener("click", () => {
-        const seleccionados = state.productos.filter((p) => state.productosSeleccionados.has(p.id));
+        const seleccionados = obtenerProductosSeleccionados(state);
 
         if (!seleccionados.length) {
             mostrarMensaje(refs, "Selecciona al menos un producto.", "error");
@@ -834,7 +882,7 @@ async function cargarProductos(refs, state, reiniciar = true) {
         state.totalProductosCatalogo = 0;
         state.productos = [];
         state.productosFiltrados = [];
-        state.productosSeleccionados.clear();
+        limpiarSeleccionProductos(state);
 
         mostrarEstado(refs.estadoProductos, "Cargando productos...", "info");
         renderizarEstadoVacio(refs.contenedorProductos, "Cargando productos", "El catálogo aparecerá aquí automáticamente.");
@@ -866,6 +914,7 @@ async function cargarProductos(refs, state, reiniciar = true) {
             state.productos = unirProductosSinDuplicados(state.productos, pagina.productos);
         }
 
+        sincronizarInformacionProductosSeleccionados(state, pagina.productos);
         state.productosFiltrados = [...state.productos];
 
         ocultarEstado(refs.estadoProductos);
@@ -1361,11 +1410,20 @@ function numeroSeguro(valor) {
 ========================= */
 
 function construirUrlProductosAdmin(refs, state) {
-    const params = new URLSearchParams();
-
+    const params = construirParamsFiltroProductosAdmin(refs);
     params.append("page", state.paginaProductos);
     params.append("size", state.sizeProductosAdmin);
 
+    return `${BASE_URL}/productos/catalogo?${params.toString()}`;
+}
+
+function construirUrlSeleccionSinStockProductosAdmin(refs) {
+    const params = construirParamsFiltroProductosAdmin(refs);
+    return `${BASE_URL}/productos/catalogo/seleccion-sin-stock?${params.toString()}`;
+}
+
+function construirParamsFiltroProductosAdmin(refs) {
+    const params = new URLSearchParams();
     const busqueda = (refs.buscadorProductos?.value || "").trim();
     const tienda = refs.filtroTiendaProductos?.value || "";
     const seccion = refs.filtroSeccionProductos?.value || "";
@@ -1378,7 +1436,61 @@ function construirUrlProductosAdmin(refs, state) {
     if (busqueda) params.append("busqueda", busqueda);
     if (orden) params.append("orden", orden);
 
-    return `${BASE_URL}/productos/catalogo?${params.toString()}`;
+    return params;
+}
+
+function limpiarSeleccionProductos(state) {
+    state.productosSeleccionados.clear();
+    state.productosSeleccionadosInfo.clear();
+    state.seleccionMasivaSinStockActiva = false;
+}
+
+function registrarProductosSeleccionados(state, productos) {
+    if (!Array.isArray(productos)) {
+        return;
+    }
+
+    productos.forEach((producto) => {
+        if (!producto?.id) {
+            return;
+        }
+
+        state.productosSeleccionados.add(producto.id);
+        state.productosSeleccionadosInfo.set(producto.id, producto);
+    });
+}
+
+function desregistrarProductosSeleccionados(state, productos) {
+    if (!Array.isArray(productos)) {
+        return;
+    }
+
+    productos.forEach((producto) => {
+        if (!producto?.id) {
+            return;
+        }
+
+        state.productosSeleccionados.delete(producto.id);
+        state.productosSeleccionadosInfo.delete(producto.id);
+    });
+}
+
+function sincronizarInformacionProductosSeleccionados(state, productos) {
+    if (!Array.isArray(productos)) {
+        return;
+    }
+
+    productos.forEach((producto) => {
+        if (producto?.id && state.productosSeleccionados.has(producto.id)) {
+            state.productosSeleccionadosInfo.set(producto.id, producto);
+        }
+    });
+}
+
+function obtenerProductosSeleccionados(state) {
+    return Array.from(state.productosSeleccionados)
+        .map((productoId) => state.productosSeleccionadosInfo.get(productoId))
+        .filter(Boolean);
 }
 
 async function aplicarFiltroProductos(refs, state) {
@@ -1466,9 +1578,13 @@ function crearCardProducto(producto, refs, state) {
         check.checked = state.productosSeleccionados.has(producto.id);
 
         check.addEventListener("change", () => {
-            if (check.checked) state.productosSeleccionados.add(producto.id);
-            else state.productosSeleccionados.delete(producto.id);
+            if (check.checked) {
+                registrarProductosSeleccionados(state, [producto]);
+            } else {
+                desregistrarProductosSeleccionados(state, [producto]);
+            }
 
+            state.seleccionMasivaSinStockActiva = false;
             actualizarBotonStockSeleccionados(refs, state);
         });
 
@@ -1730,6 +1846,54 @@ function renderizarOpcionesStock(refs, gruposStock) {
     });
 }
 
+function renderizarResumenStockSeleccion(refs, gruposStock, productos) {
+    limpiarContenedor(refs.stockResumenProductos);
+
+    if (!Array.isArray(productos) || productos.length === 0) {
+        return;
+    }
+
+    if (productos.length <= 24) {
+        productos.forEach((producto) => {
+            refs.stockResumenProductos.appendChild(el("span", {
+                className: "resumen-stock-badge",
+                text: producto.nombre || `Producto ${producto.id}`
+            }));
+        });
+        return;
+    }
+
+    refs.stockResumenProductos.appendChild(el("span", {
+        className: "resumen-stock-badge resumen-stock-badge-total",
+        text: `${formatearNumero(productos.length)} productos seleccionados`
+    }));
+
+    gruposStock.forEach((grupo) => {
+        refs.stockResumenProductos.appendChild(el("span", {
+            className: "resumen-stock-badge",
+            text: `${grupo.label}: ${formatearNumero(grupo.productos.length)}`
+        }));
+    });
+
+    const nombresMuestra = productos
+        .slice(0, 6)
+        .map((producto) => producto.nombre || `Producto ${producto.id}`)
+        .join(" · ");
+
+    refs.stockResumenProductos.appendChild(el("p", {
+        className: "stock-resumen-texto",
+        text: nombresMuestra
+    }));
+
+    const restantes = productos.length - 6;
+    if (restantes > 0) {
+        refs.stockResumenProductos.appendChild(el("p", {
+            className: "stock-resumen-texto stock-resumen-texto-soft",
+            text: `y ${formatearNumero(restantes)} más`
+        }));
+    }
+}
+
 async function abrirModalStock(refs, state, productos) {
     const helperTallas = obtenerHelperTallasProducto();
     const gruposStock = agruparProductosStockPorTipo(productos);
@@ -1742,16 +1906,8 @@ async function abrirModalStock(refs, state, productos) {
         refs.guardarStockProductos.disabled = gruposStock.length === 0;
     }
 
-    limpiarContenedor(refs.stockResumenProductos);
-
-    productos.forEach((producto) => {
-        refs.stockResumenProductos.appendChild(el("span", {
-            className: "resumen-stock-badge",
-            text: producto.nombre || `Producto ${producto.id}`
-        }));
-    });
-
     refs.stockCantidadProductos.value = "";
+    renderizarResumenStockSeleccion(refs, gruposStock, productos);
     renderizarOpcionesStock(refs, gruposStock);
 
     limpiarContenedor(refs.stockActualProducto);
@@ -1813,6 +1969,18 @@ function obtenerTallasSeleccionadasPorTipo(refs) {
     return tallasPorTipo;
 }
 
+function dividirEnBloques(items, tamano) {
+    const lista = Array.isArray(items) ? items : [];
+    const size = Math.max(1, Number(tamano) || 1);
+    const bloques = [];
+
+    for (let indice = 0; indice < lista.length; indice += size) {
+        bloques.push(lista.slice(indice, indice + size));
+    }
+
+    return bloques;
+}
+
 async function guardarStockProductos(refs, state) {
     const helperTallas = obtenerHelperTallasProducto();
     const cantidad = Number(refs.stockCantidadProductos.value);
@@ -1855,27 +2023,28 @@ async function guardarStockProductos(refs, state) {
 
         for (const grupo of state.gruposStockObjetivo) {
             const tallasSeleccionadas = tallasSeleccionadasPorTipo.get(grupo.tipo) || [];
+            const productoIds = grupo.productos
+                .map((producto) => producto?.id)
+                .filter(Boolean);
 
-            if (!tallasSeleccionadas.length) {
+            if (!tallasSeleccionadas.length || !productoIds.length) {
                 continue;
             }
 
-            for (const producto of grupo.productos) {
-                for (const talla of tallasSeleccionadas) {
-                    const response = await fetch(`${BASE_URL}/productos/talla-stock`, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        credentials: "include",
-                        body: JSON.stringify({
-                            productoId: producto.id,
-                            talla,
-                            stock: cantidad
-                        })
-                    });
+            for (const bloqueProductoIds of dividirEnBloques(productoIds, 500)) {
+                const response = await fetch(`${BASE_URL}/productos/talla-stock/masivo`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: "include",
+                    body: JSON.stringify({
+                        productoIds: bloqueProductoIds,
+                        tallas: tallasSeleccionadas,
+                        stock: cantidad
+                    })
+                });
 
-                    if (!response.ok) {
-                        throw new Error(`No se pudo guardar el stock para ${producto.nombre}`);
-                    }
+                if (!response.ok) {
+                    throw new Error(`No se pudo guardar el stock para el grupo ${grupo.label}`);
                 }
             }
         }
@@ -1899,6 +2068,9 @@ async function guardarStockProductos(refs, state) {
 function actualizarBotonStockSeleccionados(refs, state) {
     if (!refs.btnStockSeleccionados) return;
     refs.btnStockSeleccionados.disabled = state.productosSeleccionados.size === 0;
+    refs.btnStockSeleccionados.textContent = state.productosSeleccionados.size > 0
+        ? `Editar stock (${formatearNumero(state.productosSeleccionados.size)})`
+        : "Editar stock";
 }
 
 /* =========================

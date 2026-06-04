@@ -1039,6 +1039,24 @@ body {
   max-width: 100%;
 }
 
+.resumen-stock-badge-total {
+  background: var(--purple);
+  color: #fff;
+}
+
+.stock-resumen-texto {
+  flex: 1 1 100%;
+  margin: 0;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.stock-resumen-texto-soft {
+  color: var(--text-soft);
+  font-weight: 600;
+}
+
 .texto-box-vacio {
   color: var(--text-soft);
   font-size: 14px;

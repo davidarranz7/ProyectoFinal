@@ -2,7 +2,9 @@ package com.david.ProyectoFinal.controller;
 
 
 import com.david.ProyectoFinal.dto.ProductoPageResponseDTO;
+import com.david.ProyectoFinal.dto.ProductoSeleccionStockDTO;
 import com.david.ProyectoFinal.dto.ProductoTallaStockDTO;
+import com.david.ProyectoFinal.dto.ProductoTallaStockMasivoDTO;
 import com.david.ProyectoFinal.dto.ProductoTallaStockResponseDTO;
 import com.david.ProyectoFinal.dto.ResultadoScrapingDTO;
 import com.david.ProyectoFinal.model.Producto;
@@ -84,6 +86,19 @@ public class ProductoController {
         return productoService.obtenerCategoriasCatalogo(tienda, secciones);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/catalogo/seleccion-sin-stock")
+    public ResponseEntity<List<ProductoSeleccionStockDTO>> obtenerProductosSinStockParaSeleccion(
+            @RequestParam(required = false) String tienda,
+            @RequestParam(name = "seccion", required = false) List<Seccion> secciones,
+            @RequestParam(name = "categoria", required = false) List<String> categorias,
+            @RequestParam(required = false) String busqueda
+    ) {
+        return ResponseEntity.ok(
+                productoService.buscarProductosSinStockParaSeleccion(tienda, secciones, categorias, busqueda)
+        );
+    }
+
 
     @GetMapping("/{id}")
     public Producto obtenerPorId(@PathVariable Long id) {
@@ -134,6 +149,13 @@ public class ProductoController {
     public ResponseEntity<String> asignarTallaStock(@RequestBody ProductoTallaStockDTO dto){
         productoService.asignarTallaStock(dto);
         return ResponseEntity.ok("Talla y stock asignados correctamente");
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/talla-stock/masivo")
+    public ResponseEntity<String> asignarTallaStockMasivo(@RequestBody ProductoTallaStockMasivoDTO dto) {
+        productoService.asignarTallaStockMasivo(dto);
+        return ResponseEntity.ok("Stock masivo asignado correctamente");
     }
 
     @GetMapping("/{productoId}/talla-stock")
