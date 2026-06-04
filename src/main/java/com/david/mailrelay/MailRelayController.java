@@ -1,6 +1,8 @@
 package com.david.mailrelay;
 
 import com.david.ProyectoFinal.dto.MailRelayRequestDTO;
+import com.david.ProyectoFinal.dto.ScrapingRelayRequestDTO;
+import com.david.ProyectoFinal.dto.ScrapingRelayResponseDTO;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -10,12 +12,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/internal/mail-relay")
 public class MailRelayController {
 
     private final MailRelaySmtpService mailRelaySmtpService;
+    private final MailRelayScrapingService mailRelayScrapingService;
 
     @Value("${app.mail.relay.allowed-server-ip:}")
     private String allowedServerIp;
@@ -23,26 +27,41 @@ public class MailRelayController {
     @Value("${app.mail.relay.token:}")
     private String relayToken;
 
-    public MailRelayController(MailRelaySmtpService mailRelaySmtpService) {
+    public MailRelayController(MailRelaySmtpService mailRelaySmtpService,
+                               MailRelayScrapingService mailRelayScrapingService) {
         this.mailRelaySmtpService = mailRelaySmtpService;
+        this.mailRelayScrapingService = mailRelayScrapingService;
     }
 
     @PostMapping("/send")
     public ResponseEntity<String> recibirCorreo(@RequestBody MailRelayRequestDTO request,
                                                 @RequestHeader(name = "X-Relay-Token", required = false) String token,
                                                 HttpServletRequest httpServletRequest) {
+        validarPeticionRelay(token, httpServletRequest);
+        mailRelaySmtpService.enviar(request);
+        return ResponseEntity.ok("Correo aceptado por el relay local");
+    }
+
+    @PostMapping("/scraping")
+    public ResponseEntity<ScrapingRelayResponseDTO> ejecutarScraping(
+            @RequestBody ScrapingRelayRequestDTO request,
+            @RequestHeader(name = "X-Relay-Token", required = false) String token,
+            HttpServletRequest httpServletRequest
+    ) {
+        validarPeticionRelay(token, httpServletRequest);
+        return ResponseEntity.ok(mailRelayScrapingService.ejecutar(request));
+    }
+
+    private void validarPeticionRelay(String token, HttpServletRequest httpServletRequest) {
         if (relayToken == null || relayToken.isBlank() || !relayToken.equals(token)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Token de relay no valido");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Token de relay no valido");
         }
 
         String ipRemota = obtenerIpRemota(httpServletRequest);
 
         if (allowedServerIp != null && !allowedServerIp.isBlank() && !allowedServerIp.equals(ipRemota)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("IP no autorizada");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "IP no autorizada");
         }
-
-        mailRelaySmtpService.enviar(request);
-        return ResponseEntity.ok("Correo aceptado por el relay local");
     }
 
     private String obtenerIpRemota(HttpServletRequest request) {

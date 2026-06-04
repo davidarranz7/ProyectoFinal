@@ -4,21 +4,33 @@ import com.david.ProyectoFinal.dto.*;
 import com.david.ProyectoFinal.model.*;
 import com.david.ProyectoFinal.repository.*;
 import com.david.ProyectoFinal.scraper.gestor.GestorScraping;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.math.RoundingMode;
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 @Service
@@ -31,8 +43,25 @@ public class ProductoService {
     private final ProductoTallaStockRepository productoTallaStockRepository;
     private final FavoritoRepository favoritoRepository;
     private final ProductoImagenRepository productoImagenRepository;
+    private final ScrapingPendienteRepository scrapingPendienteRepository;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public ProductoService(ProductoRepository productoRepository, GestorScraping gestorScraping, TiendaRepository tiendaRepository, CategoriaRepository categoriaRepository, ProductoTallaStockRepository productoTallaStockRepository, FavoritoRepository favoritoRepository, ProductoImagenRepository productoImagenRepository) {
+    @Value("${app.scraping.relay.enabled:false}")
+    private boolean scrapingRelayEnabled;
+
+    @Value("${app.scraping.relay.receiver-url:http://127.0.0.1:8095/internal/mail-relay/scraping}")
+    private String scrapingRelayReceiverUrl;
+
+    @Value("${app.scraping.relay.token:}")
+    private String scrapingRelayToken;
+
+    @Value("${app.scraping.relay.connect-timeout-ms:2500}")
+    private long scrapingRelayConnectTimeoutMs;
+
+    @Value("${app.scraping.relay.read-timeout-ms:300000}")
+    private long scrapingRelayReadTimeoutMs;
+
+    public ProductoService(ProductoRepository productoRepository, GestorScraping gestorScraping, TiendaRepository tiendaRepository, CategoriaRepository categoriaRepository, ProductoTallaStockRepository productoTallaStockRepository, FavoritoRepository favoritoRepository, ProductoImagenRepository productoImagenRepository, ScrapingPendienteRepository scrapingPendienteRepository) {
         this.productoRepository = productoRepository;
         this.gestorScraping = gestorScraping;
         this.tiendaRepository = tiendaRepository;
@@ -40,6 +69,7 @@ public class ProductoService {
         this.productoTallaStockRepository = productoTallaStockRepository;
         this.favoritoRepository = favoritoRepository;
         this.productoImagenRepository = productoImagenRepository;
+        this.scrapingPendienteRepository = scrapingPendienteRepository;
     }
 
     public List<Producto> obtenerProductosMasFavoritos(int limite) {
@@ -120,63 +150,103 @@ public class ProductoService {
     }
 
     public ResultadoScrapingDTO scrapearYGuardarConResultado() {
-        long inicio = System.currentTimeMillis();
-
-        List<Producto> productosScrapeados = gestorScraping.scrapearTodo();
-
-        ResultadoScrapingDTO resultado = guardarProductosScrapeadosConResultado(
-                "Scraping completo",
-                productosScrapeados
+        return ejecutarScraping(
+                TipoScrapingPendiente.TOTAL,
+                gestorScraping::scrapearTodo
         );
-
-        resultado.setDuracionMs(System.currentTimeMillis() - inicio);
-
-        return resultado;
     }
 
     public ResultadoScrapingDTO scrapearZaraYGuardarConResultado() {
-        long inicio = System.currentTimeMillis();
-
-        List<Producto> productosScrapeados = gestorScraping.scrapearZara();
-
-        ResultadoScrapingDTO resultado = guardarProductosScrapeadosConResultado(
-                "Zara",
-                productosScrapeados
+        return ejecutarScraping(
+                TipoScrapingPendiente.ZARA,
+                gestorScraping::scrapearZara
         );
-
-        resultado.setDuracionMs(System.currentTimeMillis() - inicio);
-
-        return resultado;
     }
 
     public ResultadoScrapingDTO scrapearBershkaYGuardarConResultado() {
-        long inicio = System.currentTimeMillis();
-
-        List<Producto> productosScrapeados = gestorScraping.scrapearBershka();
-
-        ResultadoScrapingDTO resultado = guardarProductosScrapeadosConResultado(
-                "Bershka",
-                productosScrapeados
+        return ejecutarScraping(
+                TipoScrapingPendiente.BERSHKA,
+                gestorScraping::scrapearBershka
         );
-
-        resultado.setDuracionMs(System.currentTimeMillis() - inicio);
-
-        return resultado;
     }
 
     public ResultadoScrapingDTO scrapearPullAndBearYGuardarConResultado() {
-        long inicio = System.currentTimeMillis();
+        return ejecutarScraping(
+                TipoScrapingPendiente.PULL_AND_BEAR,
+                gestorScraping::scrapearPullAndBear
+        );
+    }
 
-        List<Producto> productosScrapeados = gestorScraping.scrapearPullAndBear();
+    @Scheduled(fixedDelayString = "${app.scraping.relay.retry-interval-ms:60000}")
+    public void reintentarScrapingsPendientes() {
+        if (!scrapingRelayEnabled) {
+            return;
+        }
 
-        ResultadoScrapingDTO resultado = guardarProductosScrapeadosConResultado(
-                "Pull&Bear",
-                productosScrapeados
+        List<ScrapingPendiente> pendientes = scrapingPendienteRepository.findTop3ByEstadoOrderByFechaCreacionAsc(
+                EstadoScrapingPendiente.PENDIENTE
         );
 
-        resultado.setDuracionMs(System.currentTimeMillis() - inicio);
+        for (ScrapingPendiente scrapingPendiente : pendientes) {
+            try {
+                procesarScrapingRelay(scrapingPendiente.getTipo());
+                marcarScrapingComoProcesado(scrapingPendiente);
+                marcarPendientesDuplicadosComoProcesados(scrapingPendiente.getTipo());
+            } catch (Exception e) {
+                registrarIntentoFallido(scrapingPendiente, e);
+            }
+        }
+    }
 
-        return resultado;
+    private ResultadoScrapingDTO ejecutarScraping(TipoScrapingPendiente tipoScraping,
+                                                  Supplier<List<Producto>> scrapingLocal) {
+        long inicio = System.currentTimeMillis();
+
+        try {
+            ResultadoScrapingDTO resultado = scrapingRelayEnabled
+                    ? procesarScrapingRelay(tipoScraping)
+                    : procesarScrapingLocal(tipoScraping, scrapingLocal);
+
+            resultado.setPendiente(false);
+            resultado.setDuracionMs(System.currentTimeMillis() - inicio);
+
+            if (scrapingRelayEnabled) {
+                marcarPendientesDuplicadosComoProcesados(tipoScraping);
+            }
+
+            return resultado;
+        } catch (Exception e) {
+            if (!scrapingRelayEnabled) {
+                throw new RuntimeException("No se pudo completar el scraping de " + tipoScraping.getNombreProceso(), e);
+            }
+
+            ScrapingPendiente scrapingPendiente = guardarScrapingPendiente(tipoScraping, e);
+            ResultadoScrapingDTO resultadoPendiente = new ResultadoScrapingDTO(tipoScraping.getNombreProceso());
+            resultadoPendiente.setPendiente(true);
+            resultadoPendiente.setMensajeEstado(
+                    construirMensajePendienteScraping(tipoScraping, scrapingPendiente)
+            );
+            resultadoPendiente.setDuracionMs(System.currentTimeMillis() - inicio);
+            return resultadoPendiente;
+        }
+    }
+
+    private ResultadoScrapingDTO procesarScrapingLocal(TipoScrapingPendiente tipoScraping,
+                                                       Supplier<List<Producto>> scrapingLocal) {
+        List<Producto> productosScrapeados = scrapingLocal.get();
+        return guardarProductosScrapeadosConResultado(
+                tipoScraping.getNombreProceso(),
+                productosScrapeados
+        );
+    }
+
+    private ResultadoScrapingDTO procesarScrapingRelay(TipoScrapingPendiente tipoScraping)
+            throws IOException, InterruptedException {
+        List<Producto> productosScrapeados = solicitarProductosRelay(tipoScraping);
+        return guardarProductosScrapeadosConResultado(
+                tipoScraping.getNombreProceso(),
+                productosScrapeados
+        );
     }
 
     private ResultadoScrapingDTO guardarProductosScrapeadosConResultado(String nombreProceso, List<Producto> productosScrapeados) {
@@ -296,6 +366,134 @@ public class ProductoService {
 
     private boolean productoSinPrecio(Producto producto) {
         return producto.getPrecio() == null || producto.getPrecio().compareTo(BigDecimal.ZERO) <= 0;
+    }
+
+    private List<Producto> solicitarProductosRelay(TipoScrapingPendiente tipoScraping)
+            throws IOException, InterruptedException {
+        validarConfiguracionScrapingRelay();
+
+        ScrapingRelayRequestDTO solicitud = new ScrapingRelayRequestDTO(tipoScraping.name());
+        String payload = objectMapper.writeValueAsString(solicitud);
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(scrapingRelayReceiverUrl))
+                .timeout(Duration.ofMillis(scrapingRelayReadTimeoutMs))
+                .header("Content-Type", "application/json; charset=UTF-8")
+                .header("X-Relay-Token", scrapingRelayToken)
+                .POST(HttpRequest.BodyPublishers.ofString(payload, StandardCharsets.UTF_8))
+                .build();
+
+        HttpResponse<String> response = crearHttpClientScraping().send(
+                request,
+                HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8)
+        );
+
+        if (response.statusCode() < 200 || response.statusCode() >= 300) {
+            throw new IOException("Relay local de scraping no disponible. Codigo HTTP: " + response.statusCode());
+        }
+
+        ScrapingRelayResponseDTO respuesta = objectMapper.readValue(
+                response.body(),
+                ScrapingRelayResponseDTO.class
+        );
+
+        return respuesta.getProductos() == null ? List.of() : respuesta.getProductos();
+    }
+
+    private void validarConfiguracionScrapingRelay() {
+        if (scrapingRelayReceiverUrl == null || scrapingRelayReceiverUrl.isBlank()) {
+            throw new RuntimeException("Falta configurar app.scraping.relay.receiver-url");
+        }
+
+        if (scrapingRelayToken == null || scrapingRelayToken.isBlank()) {
+            throw new RuntimeException("Falta configurar app.scraping.relay.token");
+        }
+    }
+
+    private ScrapingPendiente guardarScrapingPendiente(TipoScrapingPendiente tipoScraping, Exception e) {
+        Optional<ScrapingPendiente> existente = scrapingPendienteRepository.findFirstByTipoAndEstadoOrderByFechaCreacionAsc(
+                tipoScraping,
+                EstadoScrapingPendiente.PENDIENTE
+        );
+
+        ScrapingPendiente scrapingPendiente = existente.orElseGet(ScrapingPendiente::new);
+
+        scrapingPendiente.setTipo(tipoScraping);
+        scrapingPendiente.setEstado(EstadoScrapingPendiente.PENDIENTE);
+        scrapingPendiente.setIntentos((scrapingPendiente.getIntentos() == null ? 0 : scrapingPendiente.getIntentos()) + 1);
+        scrapingPendiente.setUltimoError(limpiarMensajeErrorScraping(e));
+        scrapingPendiente.setFechaUltimoIntento(LocalDateTime.now());
+
+        if (scrapingPendiente.getFechaCreacion() == null) {
+            scrapingPendiente.setFechaCreacion(LocalDateTime.now());
+        }
+
+        return scrapingPendienteRepository.save(scrapingPendiente);
+    }
+
+    private void marcarScrapingComoProcesado(ScrapingPendiente scrapingPendiente) {
+        scrapingPendiente.setEstado(EstadoScrapingPendiente.PROCESADO);
+        scrapingPendiente.setFechaProcesado(LocalDateTime.now());
+        scrapingPendiente.setFechaUltimoIntento(LocalDateTime.now());
+        scrapingPendiente.setUltimoError(null);
+        scrapingPendienteRepository.save(scrapingPendiente);
+    }
+
+    private void registrarIntentoFallido(ScrapingPendiente scrapingPendiente, Exception e) {
+        scrapingPendiente.setIntentos((scrapingPendiente.getIntentos() == null ? 0 : scrapingPendiente.getIntentos()) + 1);
+        scrapingPendiente.setFechaUltimoIntento(LocalDateTime.now());
+        scrapingPendiente.setUltimoError(limpiarMensajeErrorScraping(e));
+        scrapingPendienteRepository.save(scrapingPendiente);
+    }
+
+    private void marcarPendientesDuplicadosComoProcesados(TipoScrapingPendiente tipoScraping) {
+        List<ScrapingPendiente> pendientesDuplicados = scrapingPendienteRepository.findByTipoAndEstado(
+                tipoScraping,
+                EstadoScrapingPendiente.PENDIENTE
+        );
+
+        if (pendientesDuplicados.isEmpty()) {
+            return;
+        }
+
+        LocalDateTime fechaProcesado = LocalDateTime.now();
+
+        for (ScrapingPendiente pendiente : pendientesDuplicados) {
+            pendiente.setEstado(EstadoScrapingPendiente.PROCESADO);
+            pendiente.setFechaProcesado(fechaProcesado);
+            pendiente.setFechaUltimoIntento(fechaProcesado);
+            pendiente.setUltimoError(null);
+        }
+
+        scrapingPendienteRepository.saveAll(pendientesDuplicados);
+    }
+
+    private String construirMensajePendienteScraping(TipoScrapingPendiente tipoScraping,
+                                                     ScrapingPendiente scrapingPendiente) {
+        boolean yaExistiaPendiente = scrapingPendiente.getIntentos() != null && scrapingPendiente.getIntentos() > 1;
+
+        if (yaExistiaPendiente) {
+            return tipoScraping.getNombreProceso()
+                    + " sigue pendiente. Se lanzara automaticamente en cuanto tu equipo local vuelva a estar disponible.";
+        }
+
+        return tipoScraping.getNombreProceso()
+                + " queda pendiente. Se ejecutara automaticamente en cuanto tu equipo local vuelva a estar disponible.";
+    }
+
+    private String limpiarMensajeErrorScraping(Exception e) {
+        if (e == null || e.getMessage() == null || e.getMessage().isBlank()) {
+            return "No se pudo contactar con el relay local de scraping.";
+        }
+
+        return e.getMessage();
+    }
+
+    private HttpClient crearHttpClientScraping() {
+        return HttpClient.newBuilder()
+                .connectTimeout(Duration.ofMillis(scrapingRelayConnectTimeoutMs))
+                .version(HttpClient.Version.HTTP_1_1)
+                .build();
     }
 
     public List<Producto> obtenerPorTienda(String nombreTienda) {

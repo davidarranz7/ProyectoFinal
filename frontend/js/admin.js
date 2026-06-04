@@ -1173,6 +1173,26 @@ async function ejecutarScraping(refs, state, url, nombre, boton, textoOriginal) 
         const data = await response.json();
         const resultado = normalizarResultadoScraping(data, nombre);
 
+        if (resultado.pendiente) {
+            if (refs.scrapingResultadoPanel) {
+                refs.scrapingResultadoPanel.style.display = "none";
+            }
+
+            actualizarEstadoScraping(
+                refs,
+                "Pendiente",
+                resultado.mensajeEstado || `${resultado.nombreProceso} queda pendiente.`,
+                "info"
+            );
+
+            mostrarMensaje(
+                refs,
+                resultado.mensajeEstado || `${resultado.nombreProceso} queda pendiente.`,
+                "info"
+            );
+            return;
+        }
+
         pintarResultadoScraping(refs, resultado);
 
         actualizarEstadoScraping(
@@ -1231,6 +1251,8 @@ function normalizarResultadoScraping(data, nombreFallback) {
         totalProductosSinImagen: numeroSeguro(data?.totalProductosSinImagen),
         totalProductosSinPrecio: numeroSeguro(data?.totalProductosSinPrecio),
         duracionMs: numeroSeguro(data?.duracionMs),
+        pendiente: Boolean(data?.pendiente),
+        mensajeEstado: data?.mensajeEstado || "",
         resultadosPorTienda
     };
 }
@@ -1279,6 +1301,8 @@ function crearResultadoScrapingDesdeLista(productos, nombreProceso) {
         totalProductosSinImagen: totalSinImagen,
         totalProductosSinPrecio: totalSinPrecio,
         duracionMs: 0,
+        pendiente: false,
+        mensajeEstado: "",
         resultadosPorTienda: Array.from(resultadosPorTienda.values())
     };
 }

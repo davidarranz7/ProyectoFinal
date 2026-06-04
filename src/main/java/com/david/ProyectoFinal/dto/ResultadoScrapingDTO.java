@@ -13,6 +13,8 @@ public class ResultadoScrapingDTO {
     private int totalProductosSinImagen;
     private int totalProductosSinPrecio;
     private long duracionMs;
+    private boolean pendiente;
+    private String mensajeEstado;
     private List<ResultadoScrapingTiendaDTO> resultadosPorTienda = new ArrayList<>();
 
     public ResultadoScrapingDTO() {
@@ -84,6 +86,22 @@ public class ResultadoScrapingDTO {
 
     public void setDuracionMs(long duracionMs) {
         this.duracionMs = duracionMs;
+    }
+
+    public boolean isPendiente() {
+        return pendiente;
+    }
+
+    public void setPendiente(boolean pendiente) {
+        this.pendiente = pendiente;
+    }
+
+    public String getMensajeEstado() {
+        return mensajeEstado;
+    }
+
+    public void setMensajeEstado(String mensajeEstado) {
+        this.mensajeEstado = mensajeEstado;
     }
 
     public List<ResultadoScrapingTiendaDTO> getResultadosPorTienda() {
