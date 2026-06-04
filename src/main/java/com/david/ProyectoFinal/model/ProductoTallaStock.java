@@ -16,7 +16,8 @@ public class ProductoTallaStock {
     @JsonIgnore/// evitamos el bucle
     private Producto producto;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = TallaConverter.class)
+    @Column(columnDefinition = "varchar(20)")
     private Talla talla;
 
     private Integer stock;

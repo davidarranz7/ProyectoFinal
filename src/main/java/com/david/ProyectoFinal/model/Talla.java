@@ -1,5 +1,10 @@
 package com.david.ProyectoFinal.model;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
+
+import java.util.Locale;
+
 public enum Talla {
     XS("XS"),
     S("S"),
@@ -20,6 +25,48 @@ public enum Talla {
 
     Talla(String etiqueta) {
         this.etiqueta = etiqueta;
+    }
+
+    @JsonValue
+    public String getEtiqueta() {
+        return etiqueta;
+    }
+
+    @JsonCreator
+    public static Talla fromJson(String valor) {
+        if (valor == null) {
+            return null;
+        }
+
+        String valorLimpio = valor.trim();
+        if (valorLimpio.isEmpty()) {
+            return null;
+        }
+
+        for (Talla talla : values()) {
+            if (talla.name().equalsIgnoreCase(valorLimpio)
+                    || talla.etiqueta.equalsIgnoreCase(valorLimpio)) {
+                return talla;
+            }
+        }
+
+        String valorMayusculas = valorLimpio.toUpperCase(Locale.ROOT).replace('-', '_').replace(' ', '_');
+
+        if (valorMayusculas.matches("^\\d+$")) {
+            valorMayusculas = "TALLA_" + valorMayusculas;
+        }
+
+        if ("TALLA_UNICA".equals(valorMayusculas)) {
+            valorMayusculas = "UNICA";
+        }
+
+        for (Talla talla : values()) {
+            if (talla.name().equals(valorMayusculas)) {
+                return talla;
+            }
+        }
+
+        throw new IllegalArgumentException("Talla no valida: " + valor);
     }
 
     @Override

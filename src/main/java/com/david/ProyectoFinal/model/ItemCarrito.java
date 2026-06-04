@@ -19,8 +19,8 @@ public class ItemCarrito {
     @JoinColumn(name = "producto_id", nullable = false)/// Clave foránea que referencia al producto, no puede ser nula
     private Producto producto;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Convert(converter = TallaConverter.class)
+    @Column(nullable = false, columnDefinition = "varchar(20)")
     private Talla talla;
 
     @Column(nullable = false)

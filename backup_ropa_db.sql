@@ -324,7 +324,7 @@ DROP TABLE IF EXISTS `items_carrito`;
 CREATE TABLE `items_carrito` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `cantidad` int(11) NOT NULL,
-  `talla` enum('L','M','S','XL','XS') NOT NULL,
+  `talla` varchar(20) NOT NULL,
   `carrito_id` bigint(20) NOT NULL,
   `producto_id` bigint(20) NOT NULL,
   PRIMARY KEY (`id`),
@@ -360,7 +360,7 @@ CREATE TABLE `items_pedido` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `cantidad` int(11) DEFAULT NULL,
   `precio_unitario` decimal(38,2) DEFAULT NULL,
-  `talla` enum('L','M','S','XL','XS') NOT NULL,
+  `talla` varchar(20) NOT NULL,
   `pedido_id` bigint(20) NOT NULL,
   `producto_id` bigint(20) NOT NULL,
   PRIMARY KEY (`id`),
@@ -57326,7 +57326,7 @@ DROP TABLE IF EXISTS `producto_talla_stock`;
 CREATE TABLE `producto_talla_stock` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `stock` int(11) DEFAULT NULL,
-  `talla` enum('L','M','S','XL','XS') DEFAULT NULL,
+  `talla` varchar(20) DEFAULT NULL,
   `producto_id` bigint(20) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `FKtnykewt7at4vf953e72avinfb` (`producto_id`),

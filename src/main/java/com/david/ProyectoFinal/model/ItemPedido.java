@@ -24,8 +24,8 @@ public class ItemPedido {
 
     private BigDecimal precioUnitario;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Convert(converter = TallaConverter.class)
+    @Column(nullable = false, columnDefinition = "varchar(20)")
     private Talla talla;
 
     public ItemPedido() {
