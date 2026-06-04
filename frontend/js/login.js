@@ -12,7 +12,7 @@ const modalMensaje = document.getElementById("modal-mensaje");
 togglePassword.addEventListener("click", () => {
     const isPassword = passwordInput.type === "password";
     passwordInput.type = isPassword ? "text" : "password";
-    togglePassword.textContent = isPassword ? "👁" : "●";
+    togglePassword.textContent = isPassword ? "ver" : "ocultar";
 });
 
 cerrarModal.addEventListener("click", () => {
@@ -84,7 +84,7 @@ form.addEventListener("submit", async (e) => {
     const password = document.getElementById("password").value.trim();
 
     if (!usuario || !password) {
-        mostrarModal("CAMPOS INCOMPLETOS", "Faltan datos", "Debes rellenar usuario y contraseña.");
+        mostrarModal("CAMPOS INCOMPLETOS", "Faltan datos", "Debes rellenar usuario y contrasena.");
         return;
     }
 
@@ -102,12 +102,12 @@ form.addEventListener("submit", async (e) => {
         });
 
         if (response.status === 401) {
-            mostrarModal("ERROR", "Login fallido", "Usuario o contraseña incorrectos.");
+            mostrarModal("ERROR", "Login fallido", "Usuario o contrasena incorrectos.");
             return;
         }
 
         if (!response.ok) {
-            mostrarModal("ERROR", "Servidor", "Ha ocurrido un error inesperado.");
+            mostrarModal("ERROR", "Servidor", "No hemos podido completar el acceso.");
             return;
         }
 
@@ -120,6 +120,6 @@ form.addEventListener("submit", async (e) => {
 
     } catch (error) {
         console.error("Error real:", error);
-        mostrarModal("ERROR", "Servidor", "Ha ocurrido un error en el frontend o en la respuesta.");
+        mostrarModal("ERROR", "Servidor", "No hemos podido iniciar sesion ahora mismo. Intentalo de nuevo en un momento.");
     }
 });

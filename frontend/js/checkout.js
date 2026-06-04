@@ -1001,7 +1001,7 @@ async function confirmarPedido() {
 
         if (data.correoPendiente) {
             mostrarMensaje(
-                `Pedido confirmado. Referencia: ${data.referencia}. El correo de confirmacion queda pendiente y se enviara cuando vuelva a estar disponible el servicio.`,
+                `Pedido confirmado. Referencia: ${data.referencia}. Te enviaremos el comprobante por correo en cuanto vuelva el servicio.`,
                 "pendiente"
             );
         } else {

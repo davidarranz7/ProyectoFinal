@@ -4,63 +4,63 @@
     <meta charset="UTF-8">
     <title>Respuesta a tu incidencia</title>
 </head>
-<body style="margin:0; padding:0; background:#f6f3ff; font-family:Arial, sans-serif; color:#17141f;">
+<body style="margin:0; padding:0; background-color:#f6efe8; font-family:Arial, Helvetica, sans-serif; color:#2a211c;">
 
-<table width="100%" cellpadding="0" cellspacing="0" style="padding:32px 0;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#f6efe8; margin:0; padding:32px 0;">
     <tr>
-        <td align="center">
-
-            <table width="600" cellpadding="0" cellspacing="0"
-                   style="background:#ffffff; border-radius:22px; padding:32px; box-shadow:0 16px 40px rgba(59,24,95,0.10);">
+        <td align="center" style="padding:0 16px;">
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px; background-color:#fffaf5; border:1px solid #eadfce; border-radius:22px; overflow:hidden;">
 
                 <tr>
-                    <td>
+                    <td style="padding:28px 32px; background-color:#2a211c; color:#ffffff;">
+                        <p style="margin:0 0 8px 0; font-size:12px; letter-spacing:2px; text-transform:uppercase; color:#dbc7b0;">MODA</p>
+                        <h1 style="margin:0; font-size:30px; line-height:1.2; font-weight:700;">Respuesta a tu incidencia</h1>
+                        <p style="margin:10px 0 0 0; font-size:14px; line-height:1.6; color:#efe3d5;">
+                            Ya tienes una respuesta de nuestro equipo.
+                        </p>
+                    </td>
+                </tr>
 
-                        <h1 style="margin:0 0 12px; font-size:26px; color:#17141f;">
-                            Respuesta a tu incidencia
-                        </h1>
-
-                        <p style="margin:0 0 22px; color:#6d677b; line-height:1.6;">
-                            Hola {{NOMBRE_CONTACTO}}, hemos respondido a tu incidencia.
+                <tr>
+                    <td style="padding:32px;">
+                        <p style="margin:0 0 18px 0; font-size:15px; line-height:1.7;">
+                            Hola <strong>{{NOMBRE_CONTACTO}}</strong>,
                         </p>
 
-                        <div style="background:#f3ecff; border-radius:16px; padding:18px; margin-bottom:22px;">
-                            <p style="margin:0 0 8px;">
-                                <strong>Código:</strong> {{CODIGO_SEGUIMIENTO}}
-                            </p>
+                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:separate; background-color:#fcf8f3; border:1px solid #eadfce; border-radius:18px; margin-bottom:20px;">
+                            <tr>
+                                <td style="padding:22px;">
+                                    <p style="margin:0 0 8px 0; font-size:14px; color:#5f5144;"><strong>Codigo:</strong> {{CODIGO_SEGUIMIENTO}}</p>
+                                    <p style="margin:0 0 8px 0; font-size:14px; color:#5f5144;"><strong>Asunto:</strong> {{ASUNTO_INCIDENCIA}}</p>
+                                    <p style="margin:0; font-size:14px; color:#5f5144;"><strong>Estado:</strong> {{ESTADO_INCIDENCIA}}</p>
+                                </td>
+                            </tr>
+                        </table>
 
-                            <p style="margin:0 0 8px;">
-                                <strong>Asunto:</strong> {{ASUNTO_INCIDENCIA}}
-                            </p>
+                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:separate; background-color:#ffffff; border:1px solid #eadfce; border-radius:18px; margin-bottom:20px;">
+                            <tr>
+                                <td style="padding:22px;">
+                                    <p style="margin:0 0 12px 0; font-size:17px; font-weight:700; color:#2a211c;">Mensaje del equipo</p>
+                                    <p style="margin:0; font-size:14px; line-height:1.8; color:#5f5144; white-space:pre-line;">{{MENSAJE_ADMIN}}</p>
+                                </td>
+                            </tr>
+                        </table>
 
-                            <p style="margin:0;">
-                                <strong>Estado:</strong> {{ESTADO_INCIDENCIA}}
-                            </p>
-                        </div>
-
-                        <div style="border:1px solid #ece6fb; border-radius:16px; padding:18px; margin-bottom:22px;">
-                            <h2 style="font-size:18px; margin:0 0 12px; color:#17141f;">
-                                Mensaje del equipo de soporte
-                            </h2>
-
-                            <p style="margin:0; color:#17141f; line-height:1.7; white-space:pre-line;">
-                                {{MENSAJE_ADMIN}}
-                            </p>
-                        </div>
-
-                        <p style="margin:0 0 12px; color:#6d677b; line-height:1.6;">
-                            Puedes responder directamente a este correo para continuar la conversación.
+                        <p style="margin:0; font-size:14px; line-height:1.7; color:#5f5144;">
+                            Puedes responder directamente a este correo para seguir con la conversacion.
                         </p>
+                    </td>
+                </tr>
 
-                        <p style="margin:0; color:#6d677b; line-height:1.6;">
-                            Mantén el código de incidencia en el asunto para que podamos identificar tu caso correctamente.
+                <tr>
+                    <td style="padding:18px 32px; border-top:1px solid #eadfce; background-color:#f9f3ec;">
+                        <p style="margin:0; font-size:12px; line-height:1.6; color:#7a6755;">
+                            Equipo MODA
                         </p>
-
                     </td>
                 </tr>
 
             </table>
-
         </td>
     </tr>
 </table>

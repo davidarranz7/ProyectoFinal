@@ -1,10 +1,32 @@
 package com.david.ProyectoFinal.service;
 
 import com.david.ProyectoFinal.dto.GuardarTarjetaDTO;
-import com.david.ProyectoFinal.dto.PagoResponseDTO;
 import com.david.ProyectoFinal.dto.PagoRequestDTO;
-import com.david.ProyectoFinal.model.*;
-import com.david.ProyectoFinal.repository.*;
+import com.david.ProyectoFinal.dto.PagoResponseDTO;
+import com.david.ProyectoFinal.model.Carrito;
+import com.david.ProyectoFinal.model.Direccion;
+import com.david.ProyectoFinal.model.Establecimiento;
+import com.david.ProyectoFinal.model.EstadoPago;
+import com.david.ProyectoFinal.model.EstadoPedido;
+import com.david.ProyectoFinal.model.ItemCarrito;
+import com.david.ProyectoFinal.model.ItemPedido;
+import com.david.ProyectoFinal.model.MetodoEntrega;
+import com.david.ProyectoFinal.model.MetodoPago;
+import com.david.ProyectoFinal.model.Pago;
+import com.david.ProyectoFinal.model.Pedido;
+import com.david.ProyectoFinal.model.PuntoRecogida;
+import com.david.ProyectoFinal.model.Tarjeta;
+import com.david.ProyectoFinal.model.Usuario;
+import com.david.ProyectoFinal.repository.CarritoRepository;
+import com.david.ProyectoFinal.repository.DireccionRepository;
+import com.david.ProyectoFinal.repository.EstablecimientoRepository;
+import com.david.ProyectoFinal.repository.ItemCarritoRepository;
+import com.david.ProyectoFinal.repository.ItemPedidoRepository;
+import com.david.ProyectoFinal.repository.PagoRepository;
+import com.david.ProyectoFinal.repository.PedidoRepository;
+import com.david.ProyectoFinal.repository.PuntoRecogidaRepository;
+import com.david.ProyectoFinal.repository.TarjetaRepository;
+import com.david.ProyectoFinal.repository.UsuarioRepository;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
@@ -67,11 +89,11 @@ public class PagoServiceImpl implements PagoService {
         MetodoEntrega metodoEntrega = dto.getMetodoEntrega();
 
         if (metodoPago == null) {
-            throw new RuntimeException("El método de pago es obligatorio");
+            throw new RuntimeException("El metodo de pago es obligatorio");
         }
 
         if (metodoEntrega == null) {
-            throw new RuntimeException("El método de entrega es obligatorio");
+            throw new RuntimeException("El metodo de entrega es obligatorio");
         }
 
         Usuario usuario = usuarioRepository.findById(usuarioId)
@@ -83,28 +105,27 @@ public class PagoServiceImpl implements PagoService {
         List<ItemCarrito> items = itemCarritoRepository.findByCarritoId(carrito.getId());
 
         if (items.isEmpty()) {
-            throw new RuntimeException("El carrito está vacío");
+            throw new RuntimeException("El carrito esta vacio");
         }
 
         BigDecimal total = items.stream()
                 .map(item -> item.getProducto().getPrecio().multiply(BigDecimal.valueOf(item.getCantidad())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        /// VALIDACIONES SEGÚN MÉTODO DE ENTREGA
         Direccion direccionEnvio = null;
         Establecimiento establecimientoRecogida = null;
         PuntoRecogida puntoRecogida = null;
 
         if (metodoEntrega == MetodoEntrega.DOMICILIO) {
             if (dto.getDireccionId() == null) {
-                throw new RuntimeException("Debes indicar una dirección para el envío a domicilio");
+                throw new RuntimeException("Debes indicar una direccion para el envio a domicilio");
             }
 
             direccionEnvio = direccionRepository.findById(dto.getDireccionId())
-                    .orElseThrow(() -> new RuntimeException("Dirección no encontrada"));
+                    .orElseThrow(() -> new RuntimeException("Direccion no encontrada"));
 
             if (direccionEnvio.getUsuario() == null || !direccionEnvio.getUsuario().getId().equals(usuarioId)) {
-                throw new RuntimeException("La dirección no pertenece al usuario");
+                throw new RuntimeException("La direccion no pertenece al usuario");
             }
         }
 
@@ -117,7 +138,7 @@ public class PagoServiceImpl implements PagoService {
                     .orElseThrow(() -> new RuntimeException("Establecimiento no encontrado"));
 
             if (!Boolean.TRUE.equals(establecimientoRecogida.getDisponible())) {
-                throw new RuntimeException("El establecimiento seleccionado no está disponible");
+                throw new RuntimeException("El establecimiento seleccionado no esta disponible");
             }
         }
 
@@ -130,14 +151,11 @@ public class PagoServiceImpl implements PagoService {
                     .orElseThrow(() -> new RuntimeException("Punto de recogida no encontrado"));
 
             if (!Boolean.TRUE.equals(puntoRecogida.getDisponible())) {
-                throw new RuntimeException("El punto de recogida seleccionado no está disponible");
+                throw new RuntimeException("El punto de recogida seleccionado no esta disponible");
             }
         }
 
-        // VALIDACIONES SEGÚN MÉTODO
         if (metodoPago == MetodoPago.TARJETA) {
-
-            /// caso 1: usa una tarjeta ya guardada
             if (dto.getTarjetaId() != null) {
                 Tarjeta tarjeta = tarjetaRepository.findById(dto.getTarjetaId())
                         .orElseThrow(() -> new RuntimeException("Tarjeta no encontrada"));
@@ -145,17 +163,14 @@ public class PagoServiceImpl implements PagoService {
                 if (!tarjeta.getUsuario().getId().equals(usuarioId)) {
                     throw new RuntimeException("La tarjeta no pertenece al usuario");
                 }
-            }
-
-            /// caso 2: usa una tarjeta nueva
-            else {
+            } else {
                 String numeroTarjeta = dto.getNumeroTarjeta();
                 String nombreTitular = dto.getNombreTitular();
                 String fechaExpiracion = dto.getFechaExpiracion();
                 String cvv = dto.getCvv();
 
                 if (numeroTarjeta == null || numeroTarjeta.isBlank()) {
-                    throw new RuntimeException("El número de tarjeta es obligatorio");
+                    throw new RuntimeException("El numero de tarjeta es obligatorio");
                 }
 
                 if (nombreTitular == null || nombreTitular.isBlank()) {
@@ -163,7 +178,7 @@ public class PagoServiceImpl implements PagoService {
                 }
 
                 if (fechaExpiracion == null || fechaExpiracion.isBlank()) {
-                    throw new RuntimeException("La fecha de expiración es obligatoria");
+                    throw new RuntimeException("La fecha de expiracion es obligatoria");
                 }
 
                 if (cvv == null || cvv.isBlank()) {
@@ -171,18 +186,17 @@ public class PagoServiceImpl implements PagoService {
                 }
 
                 if (numeroTarjeta.length() < 12) {
-                    throw new RuntimeException("Número de tarjeta inválido");
+                    throw new RuntimeException("Numero de tarjeta invalido");
                 }
 
                 boolean aprobado = !numeroTarjeta.endsWith("0");
 
                 if (!aprobado) {
                     response.setEstado(EstadoPago.RECHAZADO);
-                    response.setMensaje("Pago rechazado (tarjeta inválida)");
+                    response.setMensaje("Pago rechazado (tarjeta invalida)");
                     return response;
                 }
 
-                /// si el usuario quiere guardar la tarjeta nueva
                 if (Boolean.TRUE.equals(dto.getGuardarTarjeta())) {
                     if (dto.getTipoTarjeta() == null) {
                         throw new RuntimeException("Debes indicar el tipo de tarjeta para guardarla");
@@ -207,7 +221,7 @@ public class PagoServiceImpl implements PagoService {
             }
 
             if (!emailPaypal.contains("@")) {
-                throw new RuntimeException("El email de PayPal no es válido");
+                throw new RuntimeException("El email de PayPal no es valido");
             }
         }
 
@@ -215,7 +229,7 @@ public class PagoServiceImpl implements PagoService {
             Double importeEntrega = dto.getImporteEntrega();
 
             if (importeEntrega == null) {
-                throw new RuntimeException("Debes indicar con cuánto vas a pagar");
+                throw new RuntimeException("Debes indicar con cuanto vas a pagar");
             }
 
             if (importeEntrega < total.doubleValue()) {
@@ -263,12 +277,12 @@ public class PagoServiceImpl implements PagoService {
             pago.setMensaje("Pago con PayPal realizado correctamente");
         } else if (metodoPago == MetodoPago.CONTRA_REEMBOLSO) {
             double cambio = dto.getImporteEntrega() - total.doubleValue();
-            pago.setMensaje("Pedido confirmado. Cambio a devolver: " + String.format("%.2f", cambio) + " €");
+            pago.setMensaje("Pedido confirmado. Cambio a devolver: " + String.format("%.2f", cambio) + " EUR");
         }
 
         Pago pagoGuardado = pagoRepository.save(pago);
 
-        String asunto = "Confirmación de pedido #" + pedidoGuardado.getId();
+        String asunto = "Confirmacion de pedido #" + pedidoGuardado.getId();
         String contenidoHtml = construirComprobanteHtml(usuario, pedidoGuardado, itemsPedido);
 
         EmailDispatchResult resultadoCorreo;
@@ -280,7 +294,7 @@ public class PagoServiceImpl implements PagoService {
             System.out.println("ERROR AL ENVIAR CORREO HTML DE PEDIDO: " + e.getMessage());
             e.printStackTrace();
             resultadoCorreo = EmailDispatchResult.pendiente(
-                    "El correo de confirmacion queda pendiente y se enviara en cuanto vuelva a estar disponible el servicio."
+                    "El pedido ya esta confirmado. Te enviaremos el comprobante por correo en cuanto vuelva el servicio."
             );
         }
 
@@ -305,7 +319,7 @@ public class PagoServiceImpl implements PagoService {
                 .replace("{{ESTADO_PEDIDO}}", "Confirmado")
                 .replace("{{METODO_PAGO}}", formatearMetodoPago(pedido.getMetodoPago()))
                 .replace("{{PRODUCTOS_HTML}}", construirProductosHtml(itemsPedido))
-                .replace("{{TOTAL_PEDIDO}}", pedido.getTotal().toString());
+                .replace("{{TOTAL_PEDIDO}}", formatearImporteCorreo(pedido.getTotal()));
     }
 
     private String construirProductosHtml(List<ItemPedido> itemsPedido) {
@@ -313,26 +327,32 @@ public class PagoServiceImpl implements PagoService {
 
         for (ItemPedido item : itemsPedido) {
             sb.append("<table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" ")
-                    .append("style=\"border-collapse:collapse; margin-bottom:16px; background-color:#fafafa; border:1px solid #eaeaea; border-radius:10px;\">")
+                    .append("style=\"border-collapse:separate; margin-bottom:14px; background-color:#fcf8f3; border:1px solid #eadfce; border-radius:16px;\">")
                     .append("<tr>")
-                    .append("<td style=\"padding:18px;\">")
-
-                    .append("<p style=\"margin:0 0 10px 0; font-size:16px; font-weight:bold; color:#111111;\">")
+                    .append("<td style=\"padding:18px 20px;\">")
+                    .append("<p style=\"margin:0 0 12px 0; font-size:16px; font-weight:bold; color:#2a211c;\">")
                     .append(item.getProducto().getNombre())
                     .append("</p>")
-
-                    .append("<p style=\"margin:4px 0; font-size:14px; color:#444444;\"><strong>Cantidad:</strong> ")
+                    .append("<table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" style=\"border-collapse:collapse;\">")
+                    .append("<tr>")
+                    .append("<td style=\"padding:0 0 6px 0; font-size:13px; color:#7a6755;\">Cantidad</td>")
+                    .append("<td align=\"right\" style=\"padding:0 0 6px 0; font-size:13px; color:#2a211c; font-weight:bold;\">")
                     .append(item.getCantidad())
-                    .append("</p>")
-
-                    .append("<p style=\"margin:4px 0; font-size:14px; color:#444444;\"><strong>Talla:</strong> ")
+                    .append("</td>")
+                    .append("</tr>")
+                    .append("<tr>")
+                    .append("<td style=\"padding:0 0 6px 0; font-size:13px; color:#7a6755;\">Talla</td>")
+                    .append("<td align=\"right\" style=\"padding:0 0 6px 0; font-size:13px; color:#2a211c; font-weight:bold;\">")
                     .append(item.getTalla() != null ? item.getTalla().toString() : "Sin talla")
-                    .append("</p>")
-
-                    .append("<p style=\"margin:4px 0; font-size:14px; color:#444444;\"><strong>Precio unitario:</strong> ")
-                    .append(item.getPrecioUnitario())
-                    .append(" €</p>")
-
+                    .append("</td>")
+                    .append("</tr>")
+                    .append("<tr>")
+                    .append("<td style=\"padding:0; font-size:13px; color:#7a6755;\">Precio unitario</td>")
+                    .append("<td align=\"right\" style=\"padding:0; font-size:13px; color:#2a211c; font-weight:bold;\">")
+                    .append(formatearImporteCorreo(item.getPrecioUnitario()))
+                    .append(" &euro;</td>")
+                    .append("</tr>")
+                    .append("</table>")
                     .append("</td>")
                     .append("</tr>")
                     .append("</table>");
@@ -360,5 +380,13 @@ public class PagoServiceImpl implements PagoService {
             case PAYPAL -> "PayPal";
             case CONTRA_REEMBOLSO -> "Contra reembolso";
         };
+    }
+
+    private String formatearImporteCorreo(BigDecimal valor) {
+        if (valor == null) {
+            return "0.00";
+        }
+
+        return valor.setScale(2, java.math.RoundingMode.HALF_UP).toString();
     }
 }

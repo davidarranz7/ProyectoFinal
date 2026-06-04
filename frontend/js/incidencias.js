@@ -99,12 +99,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (correoPendiente) {
                 mostrarMensaje(
-                    `Incidencia creada correctamente. Codigo de seguimiento: ${codigoSeguimiento}. El correo de confirmacion queda pendiente y se enviara en cuanto el servicio vuelva a estar disponible.`,
+                    `Incidencia enviada. Codigo de seguimiento: ${codigoSeguimiento}. Te mandaremos la confirmacion por correo en cuanto vuelva el servicio.`,
                     "pendiente"
                 );
             } else {
                 mostrarMensaje(
-                    `Incidencia creada correctamente. Codigo de seguimiento: ${codigoSeguimiento}. Te hemos enviado un correo de confirmacion.`,
+                    `Incidencia enviada. Codigo de seguimiento: ${codigoSeguimiento}. Te hemos enviado un correo de confirmacion.`,
                     "ok"
                 );
             }

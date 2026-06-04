@@ -161,7 +161,7 @@ public class EmailServiceImpl implements EmailService {
         } catch (Exception e) {
             guardarCorreoPendiente(solicitud, e);
             return EmailDispatchResult.pendiente(
-                    "El correo queda pendiente y se enviara en cuanto tu equipo local vuelva a estar disponible."
+                    "El correo queda pendiente. Se enviara automaticamente en cuanto tu equipo local vuelva a estar disponible."
             );
         }
     }

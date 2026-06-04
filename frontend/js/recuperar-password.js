@@ -37,7 +37,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             const correoPendiente = Boolean(data?.correoPendiente);
-            const mensaje = data?.mensaje || "Si existe una cuenta con esos datos, recibiras un correo con instrucciones.";
+            const mensaje = data?.mensaje || "Si los datos coinciden, te enviaremos un enlace para cambiar la contrasena.";
 
             mostrarMensaje(mensaje, correoPendiente ? "pendiente" : "ok");
             formRecuperarPassword.reset();

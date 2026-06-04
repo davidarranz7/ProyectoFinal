@@ -291,7 +291,7 @@ public class IncidenciaServiceImpl implements IncidenciaService {
             System.out.println("ERROR AL ENVIAR CORREO DE CONFIRMACION DE INCIDENCIA: " + e.getMessage());
             e.printStackTrace();
             return EmailDispatchResult.pendiente(
-                    "La confirmacion por correo queda pendiente y se enviara cuando el servicio vuelva a estar disponible."
+                    "La incidencia ha quedado registrada. Enviaremos la confirmacion por correo en cuanto vuelva el servicio."
             );
         }
     }

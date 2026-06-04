@@ -40,7 +40,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             const correoPendiente = Boolean(data?.correoPendiente);
-            const mensaje = data?.mensaje || "Te hemos enviado un correo con tu nombre de usuario.";
+            const mensaje = data?.mensaje || "Te hemos enviado un correo con tu usuario.";
 
             mostrarMensaje(mensaje, correoPendiente ? "pendiente" : "ok");
             formRecuperarUsuario.reset();

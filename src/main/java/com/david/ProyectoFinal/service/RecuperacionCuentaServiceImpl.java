@@ -81,19 +81,19 @@ public class RecuperacionCuentaServiceImpl implements RecuperacionCuentaService 
             );
         } catch (RuntimeException e) {
             resultadoCorreo = EmailDispatchResult.pendiente(
-                    "Tu solicitud ha quedado registrada. El correo se enviara en cuanto vuelva a estar disponible el servicio."
+                    "Hemos recibido tu solicitud. Te enviaremos el correo en cuanto vuelva a estar disponible el servicio."
             );
         }
 
         if (resultadoCorreo.isPendiente()) {
             return new CorreoOperacionResponseDTO(
-                    "Tu solicitud ha quedado registrada. El correo se enviara en cuanto vuelva a estar disponible el servicio.",
+                    "Hemos recibido tu solicitud. Te enviaremos el correo en cuanto vuelva a estar disponible el servicio.",
                     true
             );
         }
 
         return new CorreoOperacionResponseDTO(
-                "Si existe una cuenta con esos datos, recibiras un correo con instrucciones.",
+                "Si los datos coinciden, te enviaremos un enlace para cambiar la contrasena.",
                 false
         );
     }
@@ -171,19 +171,19 @@ public class RecuperacionCuentaServiceImpl implements RecuperacionCuentaService 
             );
         } catch (RuntimeException e) {
             resultadoCorreo = EmailDispatchResult.pendiente(
-                    "Tu solicitud ha quedado registrada. El correo se enviara en cuanto vuelva a estar disponible el servicio."
+                    "Hemos recibido tu solicitud. Te enviaremos el correo en cuanto vuelva a estar disponible el servicio."
             );
         }
 
         if (resultadoCorreo.isPendiente()) {
             return new CorreoOperacionResponseDTO(
-                    "Tu solicitud ha quedado registrada. El correo se enviara en cuanto vuelva a estar disponible el servicio.",
+                    "Hemos recibido tu solicitud. Te enviaremos el correo en cuanto vuelva a estar disponible el servicio.",
                     true
             );
         }
 
         return new CorreoOperacionResponseDTO(
-                "Te hemos enviado un correo con tu nombre de usuario.",
+                "Te hemos enviado un correo con tu usuario.",
                 false
         );
     }

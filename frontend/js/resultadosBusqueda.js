@@ -48,7 +48,7 @@ function obtenerBusquedaDesdeUrl() {
 }
 
 function pintarBusquedaInicial(refs) {
-    const busquedaVisible = estadoResultados.busqueda || "sin busqueda";
+    const busquedaVisible = estadoResultados.busqueda || "tu busqueda";
 
     if (refs.textoBusqueda) {
         refs.textoBusqueda.textContent = busquedaVisible;
@@ -96,7 +96,7 @@ async function cargarResultadosBusqueda(refs, reiniciar = true) {
         estadoResultados.productos = [];
 
         limpiarContenedor(refs.gridResultados);
-        mostrarEstadoResultados(refs, "Haz una busqueda desde el menu para ver resultados.", "vacio");
+        mostrarEstadoResultados(refs, "Haz una busqueda desde el menu.", "vacio");
         actualizarContadorResultados(refs, 0);
         actualizarResumenResultados(refs);
         limpiarSentinel(refs);
@@ -126,7 +126,7 @@ async function cargarResultadosBusqueda(refs, reiniciar = true) {
         });
 
         if (!response.ok) {
-            throw new Error("No se pudieron cargar los resultados.");
+            throw new Error("No hemos podido cargar los resultados.");
         }
 
         const data = await response.json();
@@ -151,7 +151,7 @@ async function cargarResultadosBusqueda(refs, reiniciar = true) {
         console.error("Error cargando resultados:", error);
 
         if (!estadoResultados.productos.length) {
-            mostrarEstadoResultados(refs, "No se pudieron cargar los resultados.", "error");
+            mostrarEstadoResultados(refs, "No hemos podido cargar los resultados.", "error");
         }
 
         actualizarResumenResultados(refs);
@@ -230,7 +230,7 @@ function renderizarResultados(refs) {
     if (!estadoResultados.productos.length) {
         mostrarEstadoResultados(
             refs,
-            `No se encontraron productos para "${estadoResultados.busqueda}".`,
+            `No hemos encontrado productos para "${estadoResultados.busqueda}".`,
             "vacio"
         );
         actualizarContadorResultados(refs, 0);
@@ -415,10 +415,10 @@ function actualizarSentinel(refs) {
 
     if (estadoResultados.ultimaPagina) {
         mensaje.className = "resultados-fin";
-        mensaje.textContent = "Ya has visto todos los resultados disponibles.";
+        mensaje.textContent = "No hay mas resultados.";
     } else {
         mensaje.className = "resultados-loader";
-        mensaje.textContent = "Baja un poco mas para cargar nuevos productos.";
+        mensaje.textContent = "Desplazate para ver mas productos.";
     }
 
     refs.sentinelResultados.appendChild(mensaje);
@@ -473,12 +473,12 @@ function actualizarContadorResultados(refs, totalElementos) {
 
 function actualizarResumenResultados(refs) {
     if (refs.resumenBusqueda) {
-        refs.resumenBusqueda.textContent = estadoResultados.busqueda || "sin busqueda";
+        refs.resumenBusqueda.textContent = estadoResultados.busqueda || "tu busqueda";
     }
 
     if (refs.resumenTotalResultados) {
         if (estadoResultados.cargando && !estadoResultados.productos.length) {
-            refs.resumenTotalResultados.textContent = "Buscando";
+            refs.resumenTotalResultados.textContent = "Buscando...";
         } else if (estadoResultados.totalElementos === 1) {
             refs.resumenTotalResultados.textContent = "1 producto";
         } else {
@@ -490,7 +490,7 @@ function actualizarResumenResultados(refs) {
 
     if (refs.resumenFiltrosResultados) {
         refs.resumenFiltrosResultados.textContent = filtrosActivos.length
-            ? filtrosActivos.join(" · ")
+            ? filtrosActivos.join(" | ")
             : "Sin filtros";
     }
 
@@ -524,22 +524,22 @@ function construirHintResultados(filtrosActivos) {
     }
 
     if (estadoResultados.cargando && !estadoResultados.productos.length) {
-        return "Estamos cargando los resultados.";
+        return "Estamos buscando productos.";
     }
 
     if (!estadoResultados.productos.length) {
-        return "Prueba con otra tienda, otra seccion o un termino mas general.";
+        return "Prueba con otra busqueda o ajusta los filtros.";
     }
 
     if (estadoResultados.ultimaPagina) {
-        return "Ya has visto todos los resultados disponibles.";
+        return "No hay mas resultados por ahora.";
     }
 
     if (filtrosActivos.length) {
-        return "Puedes cambiar los filtros en cualquier momento.";
+        return "Puedes ajustar los filtros cuando quieras.";
     }
 
-    return "Desplazate para seguir viendo mas productos.";
+    return "Desplazate para seguir viendo productos.";
 }
 
 function mostrarEstadoResultados(refs, texto, tipo = "info") {
@@ -594,7 +594,7 @@ function construirSubtituloProducto(producto) {
         piezas.push(formatearSeccion(producto.seccion));
     }
 
-    return piezas.length ? piezas.join(" · ") : "Producto";
+    return piezas.length ? piezas.join(" | ") : "Producto";
 }
 
 function mostrarPrecioOriginal(producto) {

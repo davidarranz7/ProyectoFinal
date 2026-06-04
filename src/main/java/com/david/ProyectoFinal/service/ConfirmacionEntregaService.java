@@ -23,7 +23,6 @@ import java.util.UUID;
 @Service
 public class ConfirmacionEntregaService {
 
-    /// dependencias
     private final ConfirmacionEntregaRepository confirmacionEntregaRepository;
     private final PedidoRepository pedidoRepository;
     private final QrService qrService;
@@ -39,18 +38,15 @@ public class ConfirmacionEntregaService {
         this.emailService = emailService;
     }
 
-    /// crea una confirmación nueva para un pedido
     public ConfirmacionEntrega crearConfirmacionParaPedido(Long pedidoId) {
 
         Pedido pedido = pedidoRepository.findById(pedidoId)
                 .orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
 
-        /// solo tiene sentido generar QR cuando el pedido está pendiente de confirmación de entrega
         if (pedido.getEstado() != EstadoPedido.PENDIENTE_CONFIRMACION_ENTREGA) {
-            throw new RuntimeException("Solo se puede generar confirmación para pedidos pendientes de confirmación de entrega");
+            throw new RuntimeException("Solo se puede generar confirmacion para pedidos pendientes de confirmacion de entrega");
         }
 
-        /// si ya existe una confirmación previa, la invalidamos antes de crear una nueva
         Optional<ConfirmacionEntrega> existente = confirmacionEntregaRepository.findByPedidoId(pedidoId);
 
         if (existente.isPresent()) {
@@ -69,43 +65,39 @@ public class ConfirmacionEntregaService {
         confirmacionEntrega.setActivo(true);
 
         ConfirmacionEntrega confirmacionGuardada = confirmacionEntregaRepository.save(confirmacionEntrega);
-
-        /// tras crear la confirmación, se envía el correo con el QR
         enviarCorreoConQr(confirmacionGuardada);
 
         return confirmacionGuardada;
     }
 
-    /// valida un token sin cerrar todavía el pedido
     public ConfirmacionEntrega validarToken(String token) {
         ConfirmacionEntrega confirmacionEntrega = confirmacionEntregaRepository.findByToken(token)
-                .orElseThrow(() -> new RuntimeException("Token de confirmación no encontrado"));
+                .orElseThrow(() -> new RuntimeException("Token de confirmacion no encontrado"));
 
         if (!Boolean.TRUE.equals(confirmacionEntrega.getActivo())) {
-            throw new RuntimeException("El código QR ya no está activo");
+            throw new RuntimeException("El codigo QR ya no esta activo");
         }
 
         if (Boolean.TRUE.equals(confirmacionEntrega.getUsado())) {
-            throw new RuntimeException("El código QR ya fue utilizado");
+            throw new RuntimeException("El codigo QR ya fue utilizado");
         }
 
-        if (confirmacionEntrega.getFechaExpiracion() != null &&
-                LocalDateTime.now().isAfter(confirmacionEntrega.getFechaExpiracion())) {
-            throw new RuntimeException("El código QR ha expirado");
+        if (confirmacionEntrega.getFechaExpiracion() != null
+                && LocalDateTime.now().isAfter(confirmacionEntrega.getFechaExpiracion())) {
+            throw new RuntimeException("El codigo QR ha expirado");
         }
 
         if (confirmacionEntrega.getPedido() == null) {
-            throw new RuntimeException("La confirmación no está asociada a ningún pedido");
+            throw new RuntimeException("La confirmacion no esta asociada a ningun pedido");
         }
 
         if (confirmacionEntrega.getPedido().getEstado() != EstadoPedido.PENDIENTE_CONFIRMACION_ENTREGA) {
-            throw new RuntimeException("El pedido no está en un estado válido para confirmar la entrega");
+            throw new RuntimeException("El pedido no esta en un estado valido para confirmar la entrega");
         }
 
         return confirmacionEntrega;
     }
 
-    /// valida el token y cierra el pedido como entregado
     public Pedido confirmarEntregaConToken(String token) {
         ConfirmacionEntrega confirmacionEntrega = validarToken(token);
 
@@ -121,13 +113,11 @@ public class ConfirmacionEntregaService {
         return pedido;
     }
 
-    /// devuelve la confirmación de un pedido
     public ConfirmacionEntrega obtenerPorPedido(Long pedidoId) {
         return confirmacionEntregaRepository.findByPedidoId(pedidoId)
-                .orElseThrow(() -> new RuntimeException("No existe confirmación para ese pedido"));
+                .orElseThrow(() -> new RuntimeException("No existe confirmacion para ese pedido"));
     }
 
-    /// genera un token aleatorio y comprueba que no exista ya en base de datos
     private String generarTokenUnico() {
         String token;
 
@@ -138,19 +128,17 @@ public class ConfirmacionEntregaService {
         return token;
     }
 
-    /// construye y envía el correo con el QR embebido
     private void enviarCorreoConQr(ConfirmacionEntrega confirmacionEntrega) {
         Pedido pedido = confirmacionEntrega.getPedido();
 
         if (pedido == null || pedido.getUsuario() == null || pedido.getUsuario().getEmail() == null) {
-            throw new RuntimeException("No se puede enviar el correo de confirmación de entrega");
+            throw new RuntimeException("No se puede enviar el correo de confirmacion de entrega");
         }
 
-        /// el QR contiene solo el token, no una URL protegida del backend
         String contenidoQr = construirContenidoQr(confirmacionEntrega.getToken());
         byte[] qrPng = qrService.generarQrComoPng(contenidoQr, 320, 320);
 
-        String asunto = "Código QR para la entrega del pedido #" + pedido.getId();
+        String asunto = "Codigo QR para la entrega del pedido #" + pedido.getId();
         String contenidoHtml = construirCorreoHtmlConfirmacion(confirmacionEntrega);
 
         emailService.enviarCorreoHtmlConImagenInline(
@@ -163,15 +151,12 @@ public class ConfirmacionEntregaService {
         );
     }
 
-    /// el contenido del QR será el token único de confirmación
     private String construirContenidoQr(String token) {
         return token;
     }
 
-    /// construye el contenido html del correo a partir de la plantilla
     private String construirCorreoHtmlConfirmacion(ConfirmacionEntrega confirmacionEntrega) {
         Pedido pedido = confirmacionEntrega.getPedido();
-
         String plantilla = leerPlantillaHtml("templates/confirmacionEntrega.html");
 
         String nombreUsuario = pedido.getUsuario() != null && pedido.getUsuario().getNombre() != null
@@ -189,7 +174,7 @@ public class ConfirmacionEntregaService {
         return plantilla
                 .replace("{{NOMBRE_USUARIO}}", nombreUsuario)
                 .replace("{{NUMERO_PEDIDO}}", String.valueOf(pedido.getId()))
-                .replace("{{ESTADO_PEDIDO}}", pedido.getEstado().name())
+                .replace("{{ESTADO_PEDIDO}}", formatearEstadoPedidoCorreo(pedido.getEstado()))
                 .replace("{{METODO_ENTREGA}}", textoMetodoEntrega)
                 .replace("{{TOTAL_PEDIDO}}", formatearBigDecimal(pedido.getTotal()))
                 .replace("{{INFO_ENTREGA}}", textoDisponibilidad)
@@ -224,9 +209,26 @@ public class ConfirmacionEntregaService {
         }
 
         return switch (metodoEntrega) {
-            case DOMICILIO -> "Envío a domicilio";
+            case DOMICILIO -> "Envio a domicilio";
             case RECOGIDA_TIENDA -> "Recogida en tienda";
             case PUNTO_RECOGIDA -> "Punto de recogida";
+        };
+    }
+
+    private String formatearEstadoPedidoCorreo(EstadoPedido estadoPedido) {
+        if (estadoPedido == null) {
+            return "Sin estado";
+        }
+
+        return switch (estadoPedido) {
+            case PENDIENTE -> "Pendiente";
+            case CONFIRMADO -> "Confirmado";
+            case PREPARANDO -> "Preparando";
+            case ENVIADO -> "Enviado";
+            case LISTO_PARA_RECOGER -> "Listo para recoger";
+            case PENDIENTE_CONFIRMACION_ENTREGA -> "Pendiente de confirmacion de entrega";
+            case ENTREGADO -> "Entregado";
+            case CANCELADO -> "Cancelado";
         };
     }
 
