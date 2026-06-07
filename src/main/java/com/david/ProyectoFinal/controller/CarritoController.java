@@ -38,11 +38,11 @@ public class CarritoController {
     @PostMapping("/agregar")/// ruta para agregar un producto al carrito
     public ItemCarrito agregarproducto(@RequestParam Long usuarioId,
                                        @RequestParam Long productoId,
-                                       @RequestParam Talla talla,
+                                       @RequestParam String talla,
                                        @RequestParam Integer cantidad,
                                        HttpSession session) {
         comprobarAccesoUsuario(usuarioId, session);
-        return carritoService.agregarProducto(usuarioId, productoId, talla, cantidad);
+        return carritoService.agregarProducto(usuarioId, productoId, convertirTalla(talla), cantidad);
     }
 
     @GetMapping("/usuario/{usuarioId}")/// ruta para obtener el carrito de un usuario
@@ -55,20 +55,20 @@ public class CarritoController {
     @DeleteMapping("/eliminar")/// ruta para eliminar un producto del carrito
     public void eliminarProducto(@RequestParam Long usuarioId,
                                  @RequestParam Long productoId,
-                                 @RequestParam Talla talla,
+                                 @RequestParam String talla,
                                  HttpSession session) {
         comprobarAccesoUsuario(usuarioId, session);
-        carritoService.eliminarProducto(usuarioId, productoId, talla);
+        carritoService.eliminarProducto(usuarioId, productoId, convertirTalla(talla));
     }
 
     @PutMapping("/actualizar-cantidad")/// ruta para actualizar la cantidad de un producto en el carrito
     public ItemCarrito actulizarCantidad(@RequestParam Long usuarioId,
                                          @RequestParam Long productoId,
-                                         @RequestParam Talla talla,
+                                         @RequestParam String talla,
                                          @RequestParam Integer nuevaCantidad,
                                          HttpSession session) {
         comprobarAccesoUsuario(usuarioId, session);
-        return carritoService.actualizarCantidad(usuarioId, productoId, talla, nuevaCantidad);
+        return carritoService.actualizarCantidad(usuarioId, productoId, convertirTalla(talla), nuevaCantidad);
     }
 
     @GetMapping("/total/{usuarioId}")/// ruta para obtener el total del carrito de un usuario
@@ -88,11 +88,24 @@ public class CarritoController {
     @PutMapping("/cambiar-talla")
     public ItemCarrito cambiarTalla(@RequestParam Long usuarioId,
                                     @RequestParam Long productoId,
-                                    @RequestParam Talla tallaActual,
-                                    @RequestParam Talla nuevaTalla,
+                                    @RequestParam String tallaActual,
+                                    @RequestParam String nuevaTalla,
                                     HttpSession session) {
         comprobarAccesoUsuario(usuarioId, session);
-        return carritoService.cambiarTalla(usuarioId, productoId, tallaActual, nuevaTalla);
+        return carritoService.cambiarTalla(
+                usuarioId,
+                productoId,
+                convertirTalla(tallaActual),
+                convertirTalla(nuevaTalla)
+        );
+    }
+
+    private Talla convertirTalla(String talla) {
+        try {
+            return Talla.fromJson(talla);
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Talla no valida");
+        }
     }
 
 }

@@ -69,6 +69,7 @@ async function cargarCarrito() {
             const producto = item.producto;
             const cantidad = item.cantidad;
             const talla = item.talla;
+            const tallaApi = normalizarTallaParaApi(talla);
             const precio = Number(producto.precio);
             const subtotalProducto = precio * cantidad;
 
@@ -110,26 +111,26 @@ async function cargarCarrito() {
 
             btnRestar.addEventListener("click", async () => {
                 if (cantidad > 1) {
-                    await actualizarCantidad(sesion.id, producto.id, talla, cantidad - 1);
+                    await actualizarCantidad(sesion.id, producto.id, tallaApi, cantidad - 1);
                 }
             });
 
             btnSumar.addEventListener("click", async () => {
-                await actualizarCantidad(sesion.id, producto.id, talla, cantidad + 1);
+                await actualizarCantidad(sesion.id, producto.id, tallaApi, cantidad + 1);
             });
 
             btnEliminar.addEventListener("click", async () => {
-                await eliminarProducto(sesion.id, producto.id, talla);
+                await eliminarProducto(sesion.id, producto.id, tallaApi);
             });
 
             selectTalla.addEventListener("change", async (e) => {
-                const nuevaTalla = e.target.value;
+                const nuevaTalla = normalizarTallaParaApi(e.target.value);
 
-                if (nuevaTalla === talla) {
+                if (nuevaTalla === tallaApi) {
                     return;
                 }
 
-                await cambiarTalla(sesion.id, producto.id, talla, nuevaTalla);
+                await cambiarTalla(sesion.id, producto.id, tallaApi, nuevaTalla);
             });
 
             listaCarrito.appendChild(article);
@@ -146,7 +147,8 @@ async function cargarCarrito() {
 
 async function actualizarCantidad(usuarioId, productoId, talla, nuevaCantidad) {
     try {
-        const url = `${BASE_URL}/carrito/actualizar-cantidad?usuarioId=${usuarioId}&productoId=${productoId}&talla=${encodeURIComponent(talla)}&nuevaCantidad=${nuevaCantidad}`;
+        const tallaNormalizada = normalizarTallaParaApi(talla);
+        const url = `${BASE_URL}/carrito/actualizar-cantidad?usuarioId=${usuarioId}&productoId=${productoId}&talla=${encodeURIComponent(tallaNormalizada)}&nuevaCantidad=${nuevaCantidad}`;
 
         const response = await fetch(url, {
             method: "PUT",
@@ -167,7 +169,8 @@ async function actualizarCantidad(usuarioId, productoId, talla, nuevaCantidad) {
 
 async function eliminarProducto(usuarioId, productoId, talla) {
     try {
-        const url = `${BASE_URL}/carrito/eliminar?usuarioId=${usuarioId}&productoId=${productoId}&talla=${encodeURIComponent(talla)}`;
+        const tallaNormalizada = normalizarTallaParaApi(talla);
+        const url = `${BASE_URL}/carrito/eliminar?usuarioId=${usuarioId}&productoId=${productoId}&talla=${encodeURIComponent(tallaNormalizada)}`;
 
         const response = await fetch(url, {
             method: "DELETE",
@@ -188,7 +191,9 @@ async function eliminarProducto(usuarioId, productoId, talla) {
 
 async function cambiarTalla(usuarioId, productoId, tallaActual, nuevaTalla) {
     try {
-        const url = `${BASE_URL}/carrito/cambiar-talla?usuarioId=${usuarioId}&productoId=${productoId}&tallaActual=${encodeURIComponent(tallaActual)}&nuevaTalla=${encodeURIComponent(nuevaTalla)}`;
+        const tallaActualNormalizada = normalizarTallaParaApi(tallaActual);
+        const nuevaTallaNormalizada = normalizarTallaParaApi(nuevaTalla);
+        const url = `${BASE_URL}/carrito/cambiar-talla?usuarioId=${usuarioId}&productoId=${productoId}&tallaActual=${encodeURIComponent(tallaActualNormalizada)}&nuevaTalla=${encodeURIComponent(nuevaTallaNormalizada)}`;
 
         const response = await fetch(url, {
             method: "PUT",
@@ -243,6 +248,16 @@ function generarOpcionesTalla(producto, tallaStocks, tallaSeleccionada) {
 
         return `<option value="${ts.talla}" ${selected} ${disabled}>${texto}</option>`;
     }).join("");
+}
+
+function normalizarTallaParaApi(talla) {
+    const helperTallas = window.TallasProducto;
+
+    if (helperTallas && typeof helperTallas.normalizarTalla === "function") {
+        return helperTallas.normalizarTalla(talla);
+    }
+
+    return talla;
 }
 
 function mostrarCarritoVacio() {
