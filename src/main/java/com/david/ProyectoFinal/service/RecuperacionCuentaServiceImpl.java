@@ -192,8 +192,8 @@ public class RecuperacionCuentaServiceImpl implements RecuperacionCuentaService 
         String plantilla = leerPlantillaHtml("templates/recuperacionPassword.html");
 
         return plantilla
-                .replace("{{NOMBRE_USUARIO}}", usuario.getNombre())
-                .replace("{{ENLACE_RECUPERACION}}", enlace)
+                .replace("{{NOMBRE_USUARIO}}", escaparHtml(textoSeguro(usuario.getNombre())))
+                .replace("{{ENLACE_RECUPERACION}}", escaparHtml(enlace))
                 .replace("{{MINUTOS_EXPIRACION}}", "5");
     }
 
@@ -201,7 +201,7 @@ public class RecuperacionCuentaServiceImpl implements RecuperacionCuentaService 
         String plantilla = leerPlantillaHtml("templates/recuperacionUsuario.html");
 
         return plantilla
-                .replace("{{NOMBRE_USUARIO}}", usuario.getNombre());
+                .replace("{{NOMBRE_USUARIO}}", escaparHtml(textoSeguro(usuario.getNombre())));
     }
 
     private String leerPlantillaHtml(String ruta) {
@@ -210,5 +210,26 @@ public class RecuperacionCuentaServiceImpl implements RecuperacionCuentaService 
         } catch (IOException e) {
             throw new RuntimeException("No se pudo leer la plantilla HTML: " + ruta, e);
         }
+    }
+
+    private String textoSeguro(String texto) {
+        if (texto == null || texto.isBlank()) {
+            return "cliente";
+        }
+
+        return texto.trim();
+    }
+
+    private String escaparHtml(String texto) {
+        if (texto == null) {
+            return "";
+        }
+
+        return texto
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&#39;");
     }
 }

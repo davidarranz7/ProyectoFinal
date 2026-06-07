@@ -172,12 +172,12 @@ public class ConfirmacionEntregaService {
         String textoDisponibilidad = construirTextoDisponibilidad(pedido, fechaDisponible);
 
         return plantilla
-                .replace("{{NOMBRE_USUARIO}}", nombreUsuario)
+                .replace("{{NOMBRE_USUARIO}}", escaparHtml(textoSeguro(nombreUsuario)))
                 .replace("{{NUMERO_PEDIDO}}", String.valueOf(pedido.getId()))
-                .replace("{{ESTADO_PEDIDO}}", formatearEstadoPedidoCorreo(pedido.getEstado()))
-                .replace("{{METODO_ENTREGA}}", textoMetodoEntrega)
+                .replace("{{ESTADO_PEDIDO}}", escaparHtml(formatearEstadoPedidoCorreo(pedido.getEstado())))
+                .replace("{{METODO_ENTREGA}}", escaparHtml(textoMetodoEntrega))
                 .replace("{{TOTAL_PEDIDO}}", formatearBigDecimal(pedido.getTotal()))
-                .replace("{{INFO_ENTREGA}}", textoDisponibilidad)
+                .replace("{{INFO_ENTREGA}}", escaparHtml(textoDisponibilidad))
                 .replace("{{FECHA_EXPIRACION}}", formatearFecha(confirmacionEntrega.getFechaExpiracion()));
     }
 
@@ -255,6 +255,27 @@ public class ConfirmacionEntregaService {
         } catch (IOException e) {
             throw new RuntimeException("No se pudo leer la plantilla HTML: " + ruta, e);
         }
+    }
+
+    private String textoSeguro(String texto) {
+        if (texto == null || texto.isBlank()) {
+            return "cliente";
+        }
+
+        return texto.trim();
+    }
+
+    private String escaparHtml(String texto) {
+        if (texto == null) {
+            return "";
+        }
+
+        return texto
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&#39;");
     }
 
     private ConfirmacionEntregaResponseDTO convertirAResponseDTO(ConfirmacionEntrega confirmacionEntrega) {

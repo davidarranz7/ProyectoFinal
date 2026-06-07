@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
 
@@ -211,11 +212,17 @@ public class IncidenciaServiceImpl implements IncidenciaService {
         String plantilla = leerPlantillaHtml("templates/incidenciaRespuestaAdmin.html");
 
         return plantilla
-                .replace("{{NOMBRE_CONTACTO}}", escaparHtml(incidencia.getNombreContacto()))
-                .replace("{{CODIGO_SEGUIMIENTO}}", escaparHtml(incidencia.getCodigoSeguimiento()))
-                .replace("{{ASUNTO_INCIDENCIA}}", escaparHtml(incidencia.getAsunto()))
+                .replace("{{NOMBRE_CONTACTO}}", escaparHtml(formatearValorOpcional(incidencia.getNombreContacto(), "Cliente")))
+                .replace("{{NUMERO_INCIDENCIA}}", escaparHtml(formatearNumeroIncidencia(incidencia)))
+                .replace("{{CODIGO_SEGUIMIENTO}}", escaparHtml(formatearValorOpcional(incidencia.getCodigoSeguimiento(), "Sin codigo")))
+                .replace("{{FECHA_INCIDENCIA}}", escaparHtml(formatearFecha(incidencia.getFechaCreacion())))
                 .replace("{{ESTADO_INCIDENCIA}}", escaparHtml(formatearEstadoIncidencia(incidencia.getEstadoIncidencia())))
-                .replace("{{MENSAJE_ADMIN}}", escaparHtml(mensajeAdmin));
+                .replace("{{TIPO_INCIDENCIA}}", escaparHtml(formatearTipoIncidencia(incidencia.getTipoIncidencia())))
+                .replace("{{ASUNTO_INCIDENCIA}}", escaparHtml(formatearValorOpcional(incidencia.getAsunto(), "Sin asunto")))
+                .replace("{{NUMERO_PEDIDO}}", escaparHtml(incidencia.getNumeroPedido() != null ? "#" + incidencia.getNumeroPedido() : "No asociado"))
+                .replace("{{USUARIO_RELACIONADO}}", escaparHtml(formatearValorOpcional(incidencia.getUsuarioRelacionado(), "No indicado")))
+                .replace("{{MENSAJE_INICIAL}}", formatearTextoLargo(incidencia.getMensajeInicial(), "No se incluyo un mensaje inicial."))
+                .replace("{{MENSAJE_ADMIN}}", formatearTextoLargo(mensajeAdmin, "Nuestro equipo te respondera en cuanto haya novedades."));
     }
 
     private void enviarCorreoRespuestaAdmin(Incidencia incidencia, String mensajeAdmin) {
@@ -300,11 +307,16 @@ public class IncidenciaServiceImpl implements IncidenciaService {
         String plantilla = leerPlantillaHtml("templates/incidenciaCreada.html");
 
         return plantilla
-                .replace("{{NOMBRE_CONTACTO}}", incidencia.getNombreContacto())
-                .replace("{{CODIGO_SEGUIMIENTO}}", incidencia.getCodigoSeguimiento())
-                .replace("{{ESTADO_INCIDENCIA}}", formatearEstadoIncidencia(incidencia.getEstadoIncidencia()))
-                .replace("{{TIPO_INCIDENCIA}}", formatearTipoIncidencia(incidencia.getTipoIncidencia()))
-                .replace("{{ASUNTO_INCIDENCIA}}", incidencia.getAsunto());
+                .replace("{{NOMBRE_CONTACTO}}", escaparHtml(formatearValorOpcional(incidencia.getNombreContacto(), "Cliente")))
+                .replace("{{NUMERO_INCIDENCIA}}", escaparHtml(formatearNumeroIncidencia(incidencia)))
+                .replace("{{CODIGO_SEGUIMIENTO}}", escaparHtml(formatearValorOpcional(incidencia.getCodigoSeguimiento(), "Sin codigo")))
+                .replace("{{FECHA_INCIDENCIA}}", escaparHtml(formatearFecha(incidencia.getFechaCreacion())))
+                .replace("{{ESTADO_INCIDENCIA}}", escaparHtml(formatearEstadoIncidencia(incidencia.getEstadoIncidencia())))
+                .replace("{{TIPO_INCIDENCIA}}", escaparHtml(formatearTipoIncidencia(incidencia.getTipoIncidencia())))
+                .replace("{{ASUNTO_INCIDENCIA}}", escaparHtml(formatearValorOpcional(incidencia.getAsunto(), "Sin asunto")))
+                .replace("{{NUMERO_PEDIDO}}", escaparHtml(incidencia.getNumeroPedido() != null ? "#" + incidencia.getNumeroPedido() : "No asociado"))
+                .replace("{{USUARIO_RELACIONADO}}", escaparHtml(formatearValorOpcional(incidencia.getUsuarioRelacionado(), "No indicado")))
+                .replace("{{MENSAJE_INICIAL}}", formatearTextoLargo(incidencia.getMensajeInicial(), "No se incluyo un mensaje inicial."));
     }
 
     private String generarCodigoSeguimiento() {
@@ -369,6 +381,10 @@ public class IncidenciaServiceImpl implements IncidenciaService {
     }
 
     private String formatearTipoIncidencia(TipoIncidencia tipoIncidencia) {
+        if (tipoIncidencia == null) {
+            return "No indicado";
+        }
+
         return switch (tipoIncidencia) {
             case PROBLEMA_ACCESO -> "Problema de acceso";
             case NO_RECUERDO_DATOS -> "No recuerdo mis datos";
@@ -382,6 +398,10 @@ public class IncidenciaServiceImpl implements IncidenciaService {
     }
 
     private String formatearEstadoIncidencia(EstadoIncidencia estadoIncidencia) {
+        if (estadoIncidencia == null) {
+            return "Sin estado";
+        }
+
         return switch (estadoIncidencia) {
             case PENDIENTE -> "Pendiente";
             case EN_REVISION -> "En revision";
@@ -390,5 +410,34 @@ public class IncidenciaServiceImpl implements IncidenciaService {
             case RESUELTA -> "Resuelta";
             case CERRADA -> "Cerrada";
         };
+    }
+
+    private String formatearNumeroIncidencia(Incidencia incidencia) {
+        if (incidencia == null || incidencia.getId() == null) {
+            return "Pendiente";
+        }
+
+        return "INC-" + String.format("%06d", incidencia.getId());
+    }
+
+    private String formatearFecha(LocalDateTime fecha) {
+        if (fecha == null) {
+            return "Sin fecha";
+        }
+
+        return fecha.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+    }
+
+    private String formatearValorOpcional(String valor, String fallback) {
+        if (valor == null || valor.trim().isBlank()) {
+            return fallback;
+        }
+
+        return valor.trim();
+    }
+
+    private String formatearTextoLargo(String valor, String fallback) {
+        String texto = formatearValorOpcional(valor, fallback);
+        return escaparHtml(texto).replace("\r\n", "\n").replace("\n", "<br>");
     }
 }

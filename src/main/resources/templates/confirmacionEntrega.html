@@ -4,56 +4,63 @@
     <meta charset="UTF-8">
     <title>Confirmacion de entrega</title>
 </head>
-<body style="margin:0; padding:0; background-color:#f6efe8; font-family:Arial, Helvetica, sans-serif; color:#2a211c;">
+<body style="margin:0; padding:0; background-color:#f4ede5; font-family:Arial, Helvetica, sans-serif; color:#241c17;">
 
-<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#f6efe8; margin:0; padding:32px 0;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#f4ede5; margin:0; padding:30px 0;">
     <tr>
-        <td align="center" style="padding:0 16px;">
-            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px; background-color:#fffaf5; border:1px solid #eadfce; border-radius:22px; overflow:hidden;">
+        <td align="center" style="padding:0 14px;">
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:680px; background-color:#fffaf5; border:1px solid #e7dacb; border-radius:24px; overflow:hidden;">
 
                 <tr>
-                    <td style="padding:28px 32px; background-color:#2a211c; color:#ffffff;">
-                        <p style="margin:0 0 8px 0; font-size:12px; letter-spacing:2px; text-transform:uppercase; color:#dbc7b0;">MODA</p>
+                    <td style="padding:30px 34px; background-color:#2a211c; color:#ffffff;">
+                        <p style="margin:0 0 10px 0; font-size:12px; letter-spacing:2px; text-transform:uppercase; color:#d9c6b0;">MODA</p>
                         <h1 style="margin:0; font-size:30px; line-height:1.2; font-weight:700;">Tu pedido ya esta listo</h1>
-                        <p style="margin:10px 0 0 0; font-size:14px; line-height:1.6; color:#efe3d5;">
-                            Guarda este QR para confirmar la entrega o la recogida.
+                        <p style="margin:12px 0 0 0; font-size:14px; line-height:1.7; color:#eee1d4;">
+                            Guarda este codigo QR. Lo necesitaras para completar la entrega o la recogida de tu pedido.
                         </p>
                     </td>
                 </tr>
 
                 <tr>
-                    <td style="padding:32px;">
-                        <p style="margin:0 0 18px 0; font-size:15px; line-height:1.7;">
-                            Hola <strong>{{NOMBRE_USUARIO}}</strong>,
+                    <td style="padding:32px 34px;">
+                        <p style="margin:0 0 18px 0; font-size:15px; line-height:1.7; color:#5f5144;">
+                            Hola <strong style="color:#241c17;">{{NOMBRE_USUARIO}}</strong>,
                         </p>
 
-                        <p style="margin:0 0 24px 0; font-size:15px; line-height:1.7; color:#5f5144;">
-                            Tu pedido <strong>#{{NUMERO_PEDIDO}}</strong> ya tiene el codigo de validacion listo.
-                        </p>
-
-                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:separate; background-color:#fcf8f3; border:1px solid #eadfce; border-radius:18px; margin-bottom:24px;">
+                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:separate; background-color:#fcf7f1; border:1px solid #eadfce; border-radius:20px; margin-bottom:22px;">
                             <tr>
                                 <td style="padding:22px;">
-                                    <p style="margin:0 0 8px 0; font-size:14px; color:#5f5144;"><strong>Estado:</strong> {{ESTADO_PEDIDO}}</p>
-                                    <p style="margin:0 0 8px 0; font-size:14px; color:#5f5144;"><strong>Metodo de entrega:</strong> {{METODO_ENTREGA}}</p>
-                                    <p style="margin:0 0 8px 0; font-size:14px; color:#5f5144;"><strong>Total:</strong> {{TOTAL_PEDIDO}} &euro;</p>
-                                    <p style="margin:0 0 8px 0; font-size:14px; color:#5f5144;"><strong>Entrega:</strong> {{INFO_ENTREGA}}</p>
-                                    <p style="margin:0; font-size:14px; color:#5f5144;"><strong>Valido hasta:</strong> {{FECHA_EXPIRACION}}</p>
+                                    <p style="margin:0 0 14px 0; font-size:17px; font-weight:700; color:#241c17;">Resumen</p>
+                                    <p style="margin:0 0 8px 0; font-size:14px; line-height:1.7; color:#5f5144;"><strong style="color:#241c17;">Pedido:</strong> #{{NUMERO_PEDIDO}}</p>
+                                    <p style="margin:0 0 8px 0; font-size:14px; line-height:1.7; color:#5f5144;"><strong style="color:#241c17;">Estado:</strong> {{ESTADO_PEDIDO}}</p>
+                                    <p style="margin:0 0 8px 0; font-size:14px; line-height:1.7; color:#5f5144;"><strong style="color:#241c17;">Metodo de entrega:</strong> {{METODO_ENTREGA}}</p>
+                                    <p style="margin:0 0 8px 0; font-size:14px; line-height:1.7; color:#5f5144;"><strong style="color:#241c17;">Importe:</strong> {{TOTAL_PEDIDO}} &euro;</p>
+                                    <p style="margin:0; font-size:14px; line-height:1.7; color:#5f5144;"><strong style="color:#241c17;">Valido hasta:</strong> {{FECHA_EXPIRACION}}</p>
                                 </td>
                             </tr>
                         </table>
 
-                        <p style="margin:0 0 18px 0; font-size:14px; line-height:1.7; color:#5f5144;">
-                            Ensena este codigo cuando recibas o recojas el pedido.
-                        </p>
+                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:separate; background-color:#f8f2eb; border:1px solid #eadfce; border-radius:20px; margin-bottom:22px;">
+                            <tr>
+                                <td style="padding:22px;">
+                                    <p style="margin:0 0 12px 0; font-size:17px; font-weight:700; color:#241c17;">Siguiente paso</p>
+                                    <p style="margin:0; font-size:14px; line-height:1.8; color:#5f5144;">{{INFO_ENTREGA}}</p>
+                                </td>
+                            </tr>
+                        </table>
 
                         <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 24px 0;">
                             <tr>
                                 <td align="center">
-                                    <table role="presentation" cellspacing="0" cellpadding="0" style="background-color:#ffffff; border:1px solid #eadfce; border-radius:20px;">
+                                    <table role="presentation" cellspacing="0" cellpadding="0" style="background-color:#ffffff; border:1px solid #eadfce; border-radius:22px;">
                                         <tr>
-                                            <td style="padding:18px;">
+                                            <td style="padding:18px 18px 10px 18px;">
                                                 <img src="cid:qrEntrega" alt="Codigo QR del pedido" style="display:block; width:280px; max-width:100%; height:auto; border:0;">
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding:0 18px 18px 18px; text-align:center;">
+                                                <p style="margin:0; font-size:13px; line-height:1.7; color:#7a6755;">Presenta este QR para validar tu pedido.</p>
                                             </td>
                                         </tr>
                                     </table>
@@ -61,15 +68,15 @@
                             </tr>
                         </table>
 
-                        <p style="margin:0; font-size:13px; line-height:1.7; color:#7a6755;">
-                            Si surge cualquier problema con la entrega, responde a este correo o abre una incidencia desde la web.
+                        <p style="margin:0; font-size:14px; line-height:1.8; color:#5f5144;">
+                            Si te surge cualquier incidencia antes de recibirlo, puedes responder a este correo o abrir una incidencia desde la web.
                         </p>
                     </td>
                 </tr>
 
                 <tr>
-                    <td style="padding:18px 32px; border-top:1px solid #eadfce; background-color:#f9f3ec;">
-                        <p style="margin:0; font-size:12px; line-height:1.6; color:#7a6755;">
+                    <td style="padding:18px 34px; border-top:1px solid #eadfce; background-color:#f8f1e9;">
+                        <p style="margin:0; font-size:12px; line-height:1.7; color:#7a6755;">
                             Equipo MODA
                         </p>
                     </td>
