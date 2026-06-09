@@ -45,6 +45,10 @@ public class FavoritoService {
             return favoritoExiste.get();/// Si el favorito ya existe, devuelve el favorito existente
         }
 
+        if (!productoDisponibleEnCatalogo(productoOptional.get())) {
+            throw new RuntimeException("El producto ya no esta disponible");
+        }
+
         Favorito favorito = new Favorito();
         favorito.setUsuario(usuarioOptional.get());
         favorito.setProducto(productoOptional.get());
@@ -62,4 +66,7 @@ public class FavoritoService {
     }
 
 
+    private boolean productoDisponibleEnCatalogo(Producto producto) {
+        return producto != null && !Boolean.FALSE.equals(producto.getDisponibleCatalogo());
+    }
 }

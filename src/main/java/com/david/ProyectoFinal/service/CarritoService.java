@@ -78,6 +78,10 @@ public class CarritoService {
             return null;
         }
 
+        if (!productoDisponibleEnCatalogo(productoOptional.get())) {
+            throw new RuntimeException("El producto ya no esta disponible");
+        }
+
         /// busacmos el producto en el carrito
         Optional<ItemCarrito> itemExistente = itemCarritoRepository.findByCarritoIdAndProductoIdAndTalla(carrito.getId(), productoId, talla);
 
@@ -111,7 +115,8 @@ public class CarritoService {
         }
 
         /// busca todos los ItemCarrito que pertenecen a ese carrito
-        return itemCarritoRepository.findByCarritoId(carrito.getId());
+        List<ItemCarrito> items = itemCarritoRepository.findByCarritoId(carrito.getId());
+        return depurarItemsNoDisponibles(items);
     }
 
     @Transactional/// para eliminar de manera segura
@@ -190,6 +195,11 @@ public class CarritoService {
         /// actualizamos la cantidad
         ItemCarrito item = itemOptional.get();
 
+        if (!productoDisponibleEnCatalogo(item.getProducto())) {
+            itemCarritoRepository.delete(item);
+            throw new RuntimeException("El producto ya no esta disponible");
+        }
+
         /// si la nueva cantidad es 0 o negativa, eliminamos el item del carrito
         if (nuevaCantidad == null || nuevaCantidad <= 0) {
             itemCarritoRepository.delete(item);
@@ -209,6 +219,11 @@ public class CarritoService {
         }
 
         Producto producto = itemActual.getProducto();
+
+        if (!productoDisponibleEnCatalogo(producto)) {
+            itemCarritoRepository.delete(itemActual);
+            throw new RuntimeException("El producto ya no esta disponible");
+        }
 
         ProductoTallaStock stockNuevaTalla = producto.getTallaStocks().stream()
                 .filter(ts -> ts.getTalla() == nuevaTalla)
@@ -232,6 +247,28 @@ public class CarritoService {
 
         itemActual.setTalla(nuevaTalla);
         return itemCarritoRepository.save(itemActual);
+    }
+
+    private List<ItemCarrito> depurarItemsNoDisponibles(List<ItemCarrito> items) {
+        if (items == null || items.isEmpty()) {
+            return List.of();
+        }
+
+        List<ItemCarrito> itemsNoDisponibles = items.stream()
+                .filter(item -> !productoDisponibleEnCatalogo(item.getProducto()))
+                .toList();
+
+        if (!itemsNoDisponibles.isEmpty()) {
+            itemCarritoRepository.deleteAll(itemsNoDisponibles);
+        }
+
+        return items.stream()
+                .filter(item -> productoDisponibleEnCatalogo(item.getProducto()))
+                .toList();
+    }
+
+    private boolean productoDisponibleEnCatalogo(Producto producto) {
+        return producto != null && !Boolean.FALSE.equals(producto.getDisponibleCatalogo());
     }
 
 }

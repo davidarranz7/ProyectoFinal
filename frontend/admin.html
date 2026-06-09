@@ -210,6 +210,71 @@
                         <button class="btn btn-light" type="button" id="btn-scraping-todo">Ejecutar todo</button>
                     </article>
                 </div>
+
+                <div class="scraping-result-panel" id="scraping-resultado-panel" style="display:none;">
+                    <div class="scraping-result-header">
+                        <div>
+                            <p class="admin-section-eyebrow">Ultimo resultado</p>
+                            <h3 id="scraping-resultado-titulo">Scraping finalizado</h3>
+                        </div>
+                        <span class="scraping-result-time" id="scraping-resultado-duracion">Duracion no disponible</span>
+                    </div>
+
+                    <div class="scraping-result-metrics">
+                        <div class="scraping-result-metric">
+                            <span>Encontrados</span>
+                            <strong id="scraping-total-encontrados">0</strong>
+                        </div>
+                        <div class="scraping-result-metric">
+                            <span>Guardados</span>
+                            <strong id="scraping-total-guardados">0</strong>
+                        </div>
+                        <div class="scraping-result-metric">
+                            <span>Nuevos</span>
+                            <strong id="scraping-total-nuevos">0</strong>
+                        </div>
+                        <div class="scraping-result-metric">
+                            <span>Actualizados</span>
+                            <strong id="scraping-total-actualizados">0</strong>
+                        </div>
+                        <div class="scraping-result-metric">
+                            <span>Cambios de precio</span>
+                            <strong id="scraping-total-cambios-precio">0</strong>
+                        </div>
+                        <div class="scraping-result-metric">
+                            <span>Bajadas</span>
+                            <strong id="scraping-total-bajadas-precio">0</strong>
+                        </div>
+                        <div class="scraping-result-metric">
+                            <span>Subidas</span>
+                            <strong id="scraping-total-subidas-precio">0</strong>
+                        </div>
+                        <div class="scraping-result-metric">
+                            <span>No disponibles</span>
+                            <strong id="scraping-total-desactivados">0</strong>
+                        </div>
+                        <div class="scraping-result-metric">
+                            <span>Sin imagen</span>
+                            <strong id="scraping-total-sin-imagen">0</strong>
+                        </div>
+                        <div class="scraping-result-metric">
+                            <span>Sin precio</span>
+                            <strong id="scraping-total-sin-precio">0</strong>
+                        </div>
+                    </div>
+
+                    <div class="scraping-result-columns">
+                        <div class="scraping-result-column">
+                            <h4>Resumen por tienda</h4>
+                            <div class="scraping-result-list" id="scraping-tiendas-lista"></div>
+                        </div>
+
+                        <div class="scraping-result-column">
+                            <h4>Cambios de precio destacados</h4>
+                            <div class="scraping-result-list" id="scraping-cambios-lista"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
 

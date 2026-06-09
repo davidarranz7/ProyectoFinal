@@ -19,6 +19,7 @@ public class ProductoListadoDTO {
     private String urlImagen;
     private String urlProducto;
     private Seccion seccion;
+    private Boolean disponibleCatalogo;
     private CategoriaSimpleDTO categoria;
     private TiendaSimpleDTO tienda;
     private List<ProductoTallaStockResponseDTO> tallaStocks;
@@ -153,6 +154,10 @@ public class ProductoListadoDTO {
         return categoria;
     }
 
+    public Boolean getDisponibleCatalogo() {
+        return disponibleCatalogo;
+    }
+
     public TiendaSimpleDTO getTienda() {
         return tienda;
     }
@@ -207,6 +212,10 @@ public class ProductoListadoDTO {
 
     public void setCategoria(CategoriaSimpleDTO categoria) {
         this.categoria = categoria;
+    }
+
+    public void setDisponibleCatalogo(Boolean disponibleCatalogo) {
+        this.disponibleCatalogo = disponibleCatalogo;
     }
 
     public void setTienda(TiendaSimpleDTO tienda) {

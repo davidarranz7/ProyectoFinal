@@ -7,7 +7,7 @@
         <ul class="nav-menu">
             <li><a href="index.html" class="nav-link">Inicio</a></li>
             <li><a href="ofertas.html" class="nav-link">Ofertas</a></li>
-            <li><a href="nuevaColeccion.html" class="nav-link">Nueva Colección</a></li>
+            <li><a href="nuevaColeccion.html" class="nav-link">Nueva Coleccion</a></li>
 
             <li class="dropdown">
                 <a href="#" class="nav-link">Tiendas</a>
@@ -31,7 +31,15 @@
                     autocomplete="off"
             />
 
-            <button class="login-btn" id="login-link" type="button">Iniciar sesión</button>
+            <button class="login-btn" id="login-link" type="button">Iniciar sesion</button>
+
+            <button id="btn-notificaciones-menu" class="btn-notificaciones-icono" type="button" aria-label="Abrir notificaciones" title="Notificaciones" style="display: none;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                    <path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2a2 2 0 0 1-.6 1.4L4 17h5"></path>
+                    <path d="M9 17a3 3 0 0 0 6 0"></path>
+                </svg>
+                <span id="contador-notificaciones" class="contador-notificaciones">0</span>
+            </button>
 
             <button id="btn-carrito-menu" class="btn-carrito-icono" type="button" aria-label="Abrir carrito" title="Carrito">
                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
@@ -45,47 +53,45 @@
             <div class="profile-menu" id="profile-menu" style="display: none;">
                 <button class="profile-btn" id="profile-btn" type="button">
                     <span id="profile-name">Mi perfil</span>
-                    <span class="profile-arrow">▾</span>
+                    <span class="profile-arrow">v</span>
                 </button>
 
                 <div class="profile-dropdown" id="profile-dropdown">
                     <a href="perfil.html">Mi cuenta</a>
+                    <a href="notificaciones.html">Notificaciones</a>
                     <a href="favoritos.html">Favoritos</a>
                     <a href="pedidos.html">Pedidos</a>
                     <a href="incidencias.html">Soporte</a>
-                    <a href="#" id="logout-btn">Cerrar sesión</a>
+                    <a href="#" id="logout-btn">Cerrar sesion</a>
                 </div>
             </div>
         </div>
     </div>
 </nav>
 
-<!-- OVERLAY LOGIN -->
 <div class="auth-overlay" id="auth-overlay">
     <div class="auth-backdrop" id="auth-backdrop"></div>
 
     <div class="auth-frame-container">
-        <button class="auth-close" id="auth-close">×</button>
+        <button class="auth-close" id="auth-close">x</button>
         <iframe id="auth-frame" src=""></iframe>
     </div>
 </div>
 
-<!-- OVERLAY CARRITO -->
 <div id="overlay-carrito" class="overlay-carrito"></div>
 
-<!-- MINI CARRITO -->
 <aside id="carrito-lateral" class="carrito-lateral">
     <div class="carrito-header">
         <h2>CARRITO</h2>
-        <button id="cerrar-carrito" class="cerrar-carrito-btn" type="button">×</button>
+        <button id="cerrar-carrito" class="cerrar-carrito-btn" type="button">x</button>
     </div>
 
     <div id="carrito-items" class="carrito-items">
-        <p class="carrito-vacio">Tu carrito está vacío.</p>
+        <p class="carrito-vacio">Tu carrito esta vacio.</p>
     </div>
 
     <div class="carrito-footer">
-        <p class="carrito-total-texto">Total: <span id="carrito-total">0 €</span></p>
+        <p class="carrito-total-texto">Total: <span id="carrito-total">0 EUR</span></p>
         <button class="btn-ir-carrito" id="btn-ir-carrito" type="button">Ver carrito</button>
     </div>
 </aside>

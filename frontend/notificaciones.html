@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notificaciones | MODA</title>
+    <link rel="stylesheet" href="css/menu.css">
+    <link rel="stylesheet" href="css/notificaciones.css">
+    <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+<div id="menu-container"></div>
+
+<main class="notificaciones-shell">
+    <section class="notificaciones-hero">
+        <div>
+            <span class="notificaciones-eyebrow">Avisos</span>
+            <h1>Mis notificaciones</h1>
+            <p>
+                Aqui veras los cambios importantes de precio en los productos que tengas en favoritos.
+            </p>
+        </div>
+
+        <button class="notificaciones-btn-secundario" id="btn-marcar-todas" type="button">
+            Marcar todas como leidas
+        </button>
+    </section>
+
+    <div id="mensaje-notificaciones" class="notificaciones-alert hidden"></div>
+
+    <section class="notificaciones-card">
+        <div class="notificaciones-card-header">
+            <h2>Ultimos avisos</h2>
+            <span id="resumen-no-leidas" class="notificaciones-pill">0 sin leer</span>
+        </div>
+
+        <div id="contenedor-notificaciones" class="notificaciones-lista"></div>
+    </section>
+</main>
+
+<script src="js/config.js"></script>
+<script src="js/menu.js"></script>
+<script src="js/notificaciones.js"></script>
+</body>
+</html>

@@ -51,6 +51,7 @@ public class ProductoController {
             @RequestParam(required = false) String orden,
             @RequestParam(required = false) Boolean enOferta,
             @RequestParam(required = false) Boolean nuevaColeccion,
+            @RequestParam(required = false) Boolean incluirNoDisponibles,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "24") int size
     ) {
@@ -61,6 +62,7 @@ public class ProductoController {
                         + ", busqueda=" + busqueda
                         + ", orden=" + orden
                         + ", enOferta=" + enOferta
+                        + ", incluirNoDisponibles=" + incluirNoDisponibles
                         + ", page=" + page
                         + ", size=" + size
         );
@@ -73,6 +75,7 @@ public class ProductoController {
                 orden,
                 enOferta,
                 nuevaColeccion,
+                incluirNoDisponibles,
                 page,
                 size
         );
@@ -81,9 +84,10 @@ public class ProductoController {
     @GetMapping("/catalogo/categorias")
     public List<String> obtenerCategoriasCatalogo(
             @RequestParam(required = false) String tienda,
-            @RequestParam(name = "seccion", required = false) List<Seccion> secciones
+            @RequestParam(name = "seccion", required = false) List<Seccion> secciones,
+            @RequestParam(required = false) Boolean incluirNoDisponibles
     ) {
-        return productoService.obtenerCategoriasCatalogo(tienda, secciones);
+        return productoService.obtenerCategoriasCatalogo(tienda, secciones, incluirNoDisponibles);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -92,10 +96,17 @@ public class ProductoController {
             @RequestParam(required = false) String tienda,
             @RequestParam(name = "seccion", required = false) List<Seccion> secciones,
             @RequestParam(name = "categoria", required = false) List<String> categorias,
-            @RequestParam(required = false) String busqueda
+            @RequestParam(required = false) String busqueda,
+            @RequestParam(required = false) Boolean incluirNoDisponibles
     ) {
         return ResponseEntity.ok(
-                productoService.buscarProductosSinStockParaSeleccion(tienda, secciones, categorias, busqueda)
+                productoService.buscarProductosSinStockParaSeleccion(
+                        tienda,
+                        secciones,
+                        categorias,
+                        busqueda,
+                        incluirNoDisponibles
+                )
         );
     }
 

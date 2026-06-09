@@ -77,9 +77,14 @@ function obtenerReferencias() {
         scrapingTotalGuardados: document.getElementById("scraping-total-guardados"),
         scrapingTotalNuevos: document.getElementById("scraping-total-nuevos"),
         scrapingTotalActualizados: document.getElementById("scraping-total-actualizados"),
+        scrapingTotalCambiosPrecio: document.getElementById("scraping-total-cambios-precio"),
+        scrapingTotalBajadasPrecio: document.getElementById("scraping-total-bajadas-precio"),
+        scrapingTotalSubidasPrecio: document.getElementById("scraping-total-subidas-precio"),
+        scrapingTotalDesactivados: document.getElementById("scraping-total-desactivados"),
         scrapingTotalSinImagen: document.getElementById("scraping-total-sin-imagen"),
         scrapingTotalSinPrecio: document.getElementById("scraping-total-sin-precio"),
         scrapingTiendasLista: document.getElementById("scraping-tiendas-lista"),
+        scrapingCambiosLista: document.getElementById("scraping-cambios-lista"),
 
         btnScrapingZara: document.getElementById("btn-scraping-zara"),
         btnScrapingBershka: document.getElementById("btn-scraping-bershka"),
@@ -763,7 +768,7 @@ function iniciarRefrescoAutomaticoIncidencias(refs, state) {
 async function cargarMetricas(refs) {
     try {
         const [resProductos, resUsuarios, resPedidos] = await Promise.all([
-            fetch(`${BASE_URL}/productos/catalogo?page=0&size=1`, {
+            fetch(`${BASE_URL}/productos/catalogo?incluirNoDisponibles=true&page=0&size=1`, {
                 method: "GET",
                 credentials: "include"
             }),
@@ -1248,11 +1253,16 @@ function normalizarResultadoScraping(data, nombreFallback) {
         totalProductosGuardados: numeroSeguro(data?.totalProductosGuardados),
         totalProductosNuevos: numeroSeguro(data?.totalProductosNuevos),
         totalProductosActualizados: numeroSeguro(data?.totalProductosActualizados),
+        totalProductosCambioPrecio: numeroSeguro(data?.totalProductosCambioPrecio),
+        totalProductosBajadaPrecio: numeroSeguro(data?.totalProductosBajadaPrecio),
+        totalProductosSubidaPrecio: numeroSeguro(data?.totalProductosSubidaPrecio),
+        totalProductosDesactivados: numeroSeguro(data?.totalProductosDesactivados),
         totalProductosSinImagen: numeroSeguro(data?.totalProductosSinImagen),
         totalProductosSinPrecio: numeroSeguro(data?.totalProductosSinPrecio),
         duracionMs: numeroSeguro(data?.duracionMs),
         pendiente: Boolean(data?.pendiente),
         mensajeEstado: data?.mensajeEstado || "",
+        cambiosPrecio: Array.isArray(data?.cambiosPrecio) ? data.cambiosPrecio : [],
         resultadosPorTienda
     };
 }
@@ -1270,6 +1280,10 @@ function crearResultadoScrapingDesdeLista(productos, nombreProceso) {
                 productosGuardados: 0,
                 productosNuevos: 0,
                 productosActualizados: 0,
+                productosCambioPrecio: 0,
+                productosBajadaPrecio: 0,
+                productosSubidaPrecio: 0,
+                productosDesactivados: 0,
                 productosSinImagen: 0,
                 productosSinPrecio: 0
             });
@@ -1298,11 +1312,16 @@ function crearResultadoScrapingDesdeLista(productos, nombreProceso) {
         totalProductosGuardados: productos.length,
         totalProductosNuevos: 0,
         totalProductosActualizados: 0,
+        totalProductosCambioPrecio: 0,
+        totalProductosBajadaPrecio: 0,
+        totalProductosSubidaPrecio: 0,
+        totalProductosDesactivados: 0,
         totalProductosSinImagen: totalSinImagen,
         totalProductosSinPrecio: totalSinPrecio,
         duracionMs: 0,
         pendiente: false,
         mensajeEstado: "",
+        cambiosPrecio: [],
         resultadosPorTienda: Array.from(resultadosPorTienda.values())
     };
 }
@@ -1324,10 +1343,15 @@ function pintarResultadoScraping(refs, resultado) {
     pintarNumeroScraping(refs.scrapingTotalGuardados, resultado.totalProductosGuardados);
     pintarNumeroScraping(refs.scrapingTotalNuevos, resultado.totalProductosNuevos);
     pintarNumeroScraping(refs.scrapingTotalActualizados, resultado.totalProductosActualizados);
+    pintarNumeroScraping(refs.scrapingTotalCambiosPrecio, resultado.totalProductosCambioPrecio);
+    pintarNumeroScraping(refs.scrapingTotalBajadasPrecio, resultado.totalProductosBajadaPrecio);
+    pintarNumeroScraping(refs.scrapingTotalSubidasPrecio, resultado.totalProductosSubidaPrecio);
+    pintarNumeroScraping(refs.scrapingTotalDesactivados, resultado.totalProductosDesactivados);
     pintarNumeroScraping(refs.scrapingTotalSinImagen, resultado.totalProductosSinImagen);
     pintarNumeroScraping(refs.scrapingTotalSinPrecio, resultado.totalProductosSinPrecio);
 
     renderizarResultadoPorTienda(refs, resultado.resultadosPorTienda);
+    renderizarCambiosPrecioScraping(refs, resultado.cambiosPrecio);
 }
 
 function renderizarResultadoPorTienda(refs, resultadosPorTienda) {
@@ -1374,6 +1398,10 @@ function crearCardResultadoTienda(resultadoTienda) {
         crearDatoResultadoScraping("Guardados", resultadoTienda.productosGuardados),
         crearDatoResultadoScraping("Nuevos", resultadoTienda.productosNuevos),
         crearDatoResultadoScraping("Actualizados", resultadoTienda.productosActualizados),
+        crearDatoResultadoScraping("Cambios precio", resultadoTienda.productosCambioPrecio),
+        crearDatoResultadoScraping("Bajadas", resultadoTienda.productosBajadaPrecio),
+        crearDatoResultadoScraping("Subidas", resultadoTienda.productosSubidaPrecio),
+        crearDatoResultadoScraping("No disponibles", resultadoTienda.productosDesactivados),
         crearDatoResultadoScraping("Sin imagen", resultadoTienda.productosSinImagen),
         crearDatoResultadoScraping("Sin precio", resultadoTienda.productosSinPrecio)
     );
@@ -1435,10 +1463,120 @@ function numeroSeguro(valor) {
 
 function construirUrlProductosAdmin(refs, state) {
     const params = construirParamsFiltroProductosAdmin(refs);
+    params.append("incluirNoDisponibles", "true");
     params.append("page", state.paginaProductos);
     params.append("size", state.sizeProductosAdmin);
 
     return `${BASE_URL}/productos/catalogo?${params.toString()}`;
+}
+
+function renderizarCambiosPrecioScraping(refs, cambiosPrecio) {
+    if (!refs.scrapingCambiosLista) return;
+
+    limpiarContenedor(refs.scrapingCambiosLista);
+
+    if (!Array.isArray(cambiosPrecio) || cambiosPrecio.length === 0) {
+        refs.scrapingCambiosLista.appendChild(
+            el("p", {
+                className: "texto-box-vacio",
+                text: "No se han detectado cambios de precio en esta ejecucion."
+            })
+        );
+        return;
+    }
+
+    cambiosPrecio.forEach((cambio) => {
+        refs.scrapingCambiosLista.appendChild(crearCardCambioPrecioScraping(cambio));
+    });
+}
+
+function crearCardCambioPrecioScraping(cambio) {
+    const card = el("article", {
+        className: "scraping-cambio-card"
+    });
+
+    const header = el("div", {
+        className: "scraping-cambio-header"
+    });
+
+    const tituloWrap = el("div");
+    tituloWrap.appendChild(el("h5", {
+        text: cambio?.nombreProducto || "Producto"
+    }));
+    tituloWrap.appendChild(el("p", {
+        text: `${cambio?.tienda || "Sin tienda"} · ${formatearCambioPrecioScraping(cambio)}`
+    }));
+
+    const badge = el("span", {
+        className: `scraping-cambio-badge ${obtenerClaseCambioPrecioScraping(cambio?.tipoCambio)}`,
+        text: formatearTipoCambioPrecio(cambio?.tipoCambio, cambio?.rebajaMayor)
+    });
+
+    header.append(tituloWrap, badge);
+    card.appendChild(header);
+
+    const detalle = [];
+
+    if (cambio?.porcentajeDescuentoAnterior !== undefined || cambio?.porcentajeDescuentoNuevo !== undefined) {
+        detalle.push(`Descuento: ${numeroSeguro(cambio?.porcentajeDescuentoAnterior)}% -> ${numeroSeguro(cambio?.porcentajeDescuentoNuevo)}%`);
+    }
+
+    if (cambio?.fechaCambio) {
+        detalle.push(`Fecha: ${formatearFecha(cambio.fechaCambio)}`);
+    }
+
+    if (detalle.length > 0) {
+        card.appendChild(el("p", {
+            text: detalle.join(" · ")
+        }));
+    }
+
+    if (cambio?.urlProducto) {
+        const link = document.createElement("a");
+        link.href = cambio.urlProducto;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.textContent = "Ver producto original";
+        card.appendChild(link);
+    }
+
+    return card;
+}
+
+function formatearCambioPrecioScraping(cambio) {
+    if (!cambio) return "Cambio detectado";
+
+    const precioAnterior = formatearPrecio(cambio.precioAnterior);
+    const precioNuevo = formatearPrecio(cambio.precioNuevo);
+    const variacion = cambio.porcentajeVariacionPrecio;
+
+    if (variacion === null || variacion === undefined || variacion === "") {
+        return `${precioAnterior} -> ${precioNuevo}`;
+    }
+
+    const numero = Number(variacion);
+    const signo = Number.isFinite(numero) && numero > 0 ? "+" : "";
+    return `${precioAnterior} -> ${precioNuevo} (${signo}${variacion}%)`;
+}
+
+function obtenerClaseCambioPrecioScraping(tipoCambio) {
+    switch (tipoCambio) {
+        case "BAJADA": return "scraping-cambio-bajada";
+        case "SUBIDA": return "scraping-cambio-subida";
+        default: return "scraping-cambio-generico";
+    }
+}
+
+function formatearTipoCambioPrecio(tipoCambio, rebajaMayor) {
+    if (tipoCambio === "BAJADA") {
+        return rebajaMayor ? "Bajada fuerte" : "Bajada";
+    }
+
+    if (tipoCambio === "SUBIDA") {
+        return "Subida";
+    }
+
+    return "Cambio";
 }
 
 function construirUrlSeleccionSinStockProductosAdmin(refs) {
@@ -1643,6 +1781,10 @@ function crearCardProducto(producto, refs, state) {
     meta.appendChild(crearBadge(producto.tienda?.nombre || "Sin tienda"));
     meta.appendChild(crearBadge(producto.categoria?.nombre || "Sin categoría"));
     meta.appendChild(crearBadge(producto.seccion || "Sin sección"));
+    if (producto.disponibleCatalogo === false) {
+        meta.appendChild(crearBadge("No disponible"));
+    }
+
     body.appendChild(meta);
 
     body.appendChild(el("p", {

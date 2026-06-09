@@ -30,7 +30,7 @@ fetch("menu.html")
 
         inicializarMenu();
     })
-    .catch(error => console.error("Error al cargar el menú:", error));
+    .catch(error => console.error("Error al cargar el menu:", error));
 
 function inicializarMenu() {
     const loginLink = document.getElementById("login-link");
@@ -46,6 +46,8 @@ function inicializarMenu() {
     const authFrame = document.getElementById("auth-frame");
 
     const btnAbrirCarritoMenu = document.getElementById("btn-carrito-menu");
+    const btnNotificacionesMenu = document.getElementById("btn-notificaciones-menu");
+    const contadorNotificaciones = document.getElementById("contador-notificaciones");
     const carritoLateral = document.getElementById("carrito-lateral");
     const overlayCarrito = document.getElementById("overlay-carrito");
     const btnCerrarCarrito = document.getElementById("cerrar-carrito");
@@ -66,7 +68,7 @@ function inicializarMenu() {
 
             return await response.json();
         } catch (error) {
-            console.error("Error al comprobar sesión:", error);
+            console.error("Error al comprobar sesion:", error);
             return null;
         }
     }
@@ -79,10 +81,17 @@ function inicializarMenu() {
             if (profileMenu) profileMenu.style.display = "block";
             if (profileName) profileName.textContent = sesion.nombre;
             if (btnAbrirCarritoMenu) btnAbrirCarritoMenu.style.display = "inline-flex";
+            if (btnNotificacionesMenu) btnNotificacionesMenu.style.display = "inline-flex";
+            await actualizarContadorNotificaciones(sesion);
         } else {
             if (loginLink) loginLink.style.display = "inline-flex";
             if (profileMenu) profileMenu.style.display = "none";
             if (btnAbrirCarritoMenu) btnAbrirCarritoMenu.style.display = "none";
+            if (btnNotificacionesMenu) btnNotificacionesMenu.style.display = "none";
+            if (contadorNotificaciones) {
+                contadorNotificaciones.style.display = "none";
+                contadorNotificaciones.textContent = "0";
+            }
         }
     }
 
@@ -155,6 +164,44 @@ function inicializarMenu() {
         }
     }
 
+    async function actualizarContadorNotificaciones(sesionPrevia = null) {
+        if (!contadorNotificaciones) return;
+
+        const sesion = sesionPrevia || await obtenerSesionActual();
+
+        if (!sesion || !sesion.id) {
+            contadorNotificaciones.style.display = "none";
+            contadorNotificaciones.textContent = "0";
+            return;
+        }
+
+        try {
+            const response = await fetch(`${BASE_URL}/notificaciones/mias/no-leidas/count`, {
+                method: "GET",
+                credentials: "include"
+            });
+
+            if (!response.ok) {
+                throw new Error("No se pudo cargar el contador de notificaciones");
+            }
+
+            const data = await response.json();
+            const total = Number(data?.total || 0);
+
+            if (total > 0) {
+                contadorNotificaciones.textContent = total > 99 ? "99+" : String(total);
+                contadorNotificaciones.style.display = "block";
+            } else {
+                contadorNotificaciones.textContent = "0";
+                contadorNotificaciones.style.display = "none";
+            }
+        } catch (error) {
+            console.error("Error al actualizar contador de notificaciones:", error);
+            contadorNotificaciones.style.display = "none";
+            contadorNotificaciones.textContent = "0";
+        }
+    }
+
     async function cargarMiniCarrito() {
         const contenedorItems = document.getElementById("carrito-items");
         const totalElemento = document.getElementById("carrito-total");
@@ -164,8 +211,8 @@ function inicializarMenu() {
         const sesion = await obtenerSesionActual();
 
         if (!sesion || !sesion.id) {
-            contenedorItems.innerHTML = `<p class="carrito-vacio">Inicia sesión para ver tu carrito.</p>`;
-            totalElemento.textContent = "0 €";
+            contenedorItems.innerHTML = `<p class="carrito-vacio">Inicia sesion para ver tu carrito.</p>`;
+            totalElemento.textContent = "0 EUR";
             actualizarContadorCarrito();
             return;
         }
@@ -190,8 +237,8 @@ function inicializarMenu() {
             const total = await totalResponse.json();
 
             if (!items || items.length === 0) {
-                contenedorItems.innerHTML = `<p class="carrito-vacio">Tu carrito está vacío.</p>`;
-                totalElemento.textContent = "0 €";
+                contenedorItems.innerHTML = `<p class="carrito-vacio">Tu carrito esta vacio.</p>`;
+                totalElemento.textContent = "0 EUR";
                 actualizarContadorCarrito();
                 return;
             }
@@ -216,7 +263,7 @@ function inicializarMenu() {
                             <button class="btn-cantidad btn-sumar" type="button">+</button>
                         </div>
 
-                        <p class="carrito-item-precio">${subtotal.toFixed(2)} €</p>
+                        <p class="carrito-item-precio">${subtotal.toFixed(2)} EUR</p>
 
                         <button class="carrito-item-eliminar" type="button" aria-label="Eliminar producto del carrito" title="Eliminar">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
@@ -300,12 +347,12 @@ function inicializarMenu() {
                 contenedorItems.appendChild(itemHtml);
             });
 
-            totalElemento.textContent = `${Number(total).toFixed(2)} €`;
+            totalElemento.textContent = `${Number(total).toFixed(2)} EUR`;
             actualizarContadorCarrito();
         } catch (error) {
             console.error("Error al cargar mini carrito:", error);
             contenedorItems.innerHTML = `<p class="carrito-vacio">No se pudo cargar el carrito.</p>`;
-            totalElemento.textContent = "0 €";
+            totalElemento.textContent = "0 EUR";
             actualizarContadorCarrito();
         }
     }
@@ -339,7 +386,7 @@ function inicializarMenu() {
                 credentials: "include"
             });
         } catch (error) {
-            console.error("Error al cerrar sesión:", error);
+            console.error("Error al cerrar sesion:", error);
         }
 
         await actualizarEstadoUsuario();
@@ -384,6 +431,12 @@ function inicializarMenu() {
 
     if (btnAbrirCarritoMenu) {
         btnAbrirCarritoMenu.addEventListener("click", abrirCarrito);
+    }
+
+    if (btnNotificacionesMenu) {
+        btnNotificacionesMenu.addEventListener("click", () => {
+            window.location.href = "notificaciones.html";
+        });
     }
 
     if (btnCerrarCarrito) {
@@ -435,4 +488,5 @@ function inicializarMenu() {
     window.cerrarCarritoLateral = cerrarCarrito;
     window.cargarMiniCarrito = cargarMiniCarrito;
     window.actualizarContadorCarrito = actualizarContadorCarrito;
+    window.actualizarContadorNotificaciones = actualizarContadorNotificaciones;
 }

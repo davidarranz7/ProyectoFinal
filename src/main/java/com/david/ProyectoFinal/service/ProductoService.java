@@ -9,7 +9,9 @@ import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -21,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -28,13 +31,15 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.math.RoundingMode;
 import java.util.*;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 @Service
 public class ProductoService {
+
+    private static final int LIMITE_CAMBIOS_PRECIO_RESUMEN = 12;
 
     private final ProductoRepository productoRepository;
     private final GestorScraping gestorScraping;
@@ -44,7 +49,12 @@ public class ProductoService {
     private final FavoritoRepository favoritoRepository;
     private final ProductoImagenRepository productoImagenRepository;
     private final ScrapingPendienteRepository scrapingPendienteRepository;
+    private final ScrapingEjecucionRepository scrapingEjecucionRepository;
+    private final HistorialPrecioProductoService historialPrecioProductoService;
+    private final ScrapingResumenAdminService scrapingResumenAdminService;
+    private final NotificacionUsuarioService notificacionUsuarioService;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ReentrantLock scrapingLock = new ReentrantLock();
 
     @Value("${app.scraping.relay.enabled:false}")
     private boolean scrapingRelayEnabled;
@@ -61,7 +71,21 @@ public class ProductoService {
     @Value("${app.scraping.relay.read-timeout-ms:300000}")
     private long scrapingRelayReadTimeoutMs;
 
-    public ProductoService(ProductoRepository productoRepository, GestorScraping gestorScraping, TiendaRepository tiendaRepository, CategoriaRepository categoriaRepository, ProductoTallaStockRepository productoTallaStockRepository, FavoritoRepository favoritoRepository, ProductoImagenRepository productoImagenRepository, ScrapingPendienteRepository scrapingPendienteRepository) {
+    @Value("${app.scraping.auto.enabled:false}")
+    private boolean scrapingAutomaticoEnabled;
+
+    public ProductoService(ProductoRepository productoRepository,
+                           GestorScraping gestorScraping,
+                           TiendaRepository tiendaRepository,
+                           CategoriaRepository categoriaRepository,
+                           ProductoTallaStockRepository productoTallaStockRepository,
+                           FavoritoRepository favoritoRepository,
+                           ProductoImagenRepository productoImagenRepository,
+                           ScrapingPendienteRepository scrapingPendienteRepository,
+                           ScrapingEjecucionRepository scrapingEjecucionRepository,
+                           HistorialPrecioProductoService historialPrecioProductoService,
+                           ScrapingResumenAdminService scrapingResumenAdminService,
+                           NotificacionUsuarioService notificacionUsuarioService) {
         this.productoRepository = productoRepository;
         this.gestorScraping = gestorScraping;
         this.tiendaRepository = tiendaRepository;
@@ -70,10 +94,26 @@ public class ProductoService {
         this.favoritoRepository = favoritoRepository;
         this.productoImagenRepository = productoImagenRepository;
         this.scrapingPendienteRepository = scrapingPendienteRepository;
+        this.scrapingEjecucionRepository = scrapingEjecucionRepository;
+        this.historialPrecioProductoService = historialPrecioProductoService;
+        this.scrapingResumenAdminService = scrapingResumenAdminService;
+        this.notificacionUsuarioService = notificacionUsuarioService;
+    }
+
+    @EventListener(ApplicationReadyEvent.class)
+    @Transactional
+    public void inicializarDisponibilidadCatalogoProductos() {
+        productoRepository.marcarDisponibilidadCatalogoNulaComoTrue();
     }
 
     public List<Producto> obtenerProductosMasFavoritos(int limite) {
-        return favoritoRepository.findProductosMasFavoritos(PageRequest.of(0, limite));
+        int tamanoConsulta = Math.max(limite * 3, limite);
+
+        return favoritoRepository.findProductosMasFavoritos(PageRequest.of(0, tamanoConsulta))
+                .stream()
+                .filter(this::productoDisponibleEnCatalogo)
+                .limit(limite)
+                .toList();
     }
 
     public List<Producto> obtenerTodos() {
@@ -81,6 +121,9 @@ public class ProductoService {
     }
 
     public Producto guardar(Producto producto) {
+        if (producto != null && producto.getDisponibleCatalogo() == null) {
+            producto.setDisponibleCatalogo(true);
+        }
         return productoRepository.save(producto);
     }
 
@@ -89,7 +132,16 @@ public class ProductoService {
     }
 
     public void eliminar(Long id) {
-        productoRepository.deleteById(id);
+        Producto producto = productoRepository.findById(id).orElse(null);
+
+        if (producto == null) {
+            return;
+        }
+
+        producto.setDisponibleCatalogo(false);
+        producto.setFechaDesactivacion(LocalDateTime.now());
+        producto.setMotivoDesactivacion("DESACTIVADO_MANUALMENTE");
+        productoRepository.save(producto);
     }
 
     public Producto actualizar(Long id, Producto productoActualizado) {
@@ -150,30 +202,55 @@ public class ProductoService {
     }
 
     public ResultadoScrapingDTO scrapearYGuardarConResultado() {
-        return ejecutarScraping(
+        return ejecutarScrapingConBloqueo(
                 TipoScrapingPendiente.TOTAL,
-                gestorScraping::scrapearTodo
+                gestorScraping::scrapearTodo,
+                OrigenScrapingEjecucion.MANUAL,
+                false
         );
     }
 
     public ResultadoScrapingDTO scrapearZaraYGuardarConResultado() {
-        return ejecutarScraping(
+        return ejecutarScrapingConBloqueo(
                 TipoScrapingPendiente.ZARA,
-                gestorScraping::scrapearZara
+                gestorScraping::scrapearZara,
+                OrigenScrapingEjecucion.MANUAL,
+                false
         );
     }
 
     public ResultadoScrapingDTO scrapearBershkaYGuardarConResultado() {
-        return ejecutarScraping(
+        return ejecutarScrapingConBloqueo(
                 TipoScrapingPendiente.BERSHKA,
-                gestorScraping::scrapearBershka
+                gestorScraping::scrapearBershka,
+                OrigenScrapingEjecucion.MANUAL,
+                false
         );
     }
 
     public ResultadoScrapingDTO scrapearPullAndBearYGuardarConResultado() {
-        return ejecutarScraping(
+        return ejecutarScrapingConBloqueo(
                 TipoScrapingPendiente.PULL_AND_BEAR,
-                gestorScraping::scrapearPullAndBear
+                gestorScraping::scrapearPullAndBear,
+                OrigenScrapingEjecucion.MANUAL,
+                false
+        );
+    }
+
+    @Scheduled(
+            initialDelayString = "${app.scraping.auto.initial-delay-ms:300000}",
+            fixedDelayString = "${app.scraping.auto.fixed-delay-ms:21600000}"
+    )
+    public void ejecutarScrapingAutomaticoProgramado() {
+        if (!scrapingAutomaticoEnabled) {
+            return;
+        }
+
+        ejecutarScrapingConBloqueo(
+                TipoScrapingPendiente.TOTAL,
+                gestorScraping::scrapearTodo,
+                OrigenScrapingEjecucion.AUTOMATICO,
+                true
         );
     }
 
@@ -183,29 +260,94 @@ public class ProductoService {
             return;
         }
 
-        List<ScrapingPendiente> pendientes = scrapingPendienteRepository.findTop3ByEstadoOrderByFechaCreacionAsc(
-                EstadoScrapingPendiente.PENDIENTE
-        );
+        if (!scrapingLock.tryLock()) {
+            return;
+        }
 
-        for (ScrapingPendiente scrapingPendiente : pendientes) {
-            try {
-                procesarScrapingRelay(scrapingPendiente.getTipo());
-                marcarScrapingComoProcesado(scrapingPendiente);
-                marcarPendientesDuplicadosComoProcesados(scrapingPendiente.getTipo());
-            } catch (Exception e) {
-                registrarIntentoFallido(scrapingPendiente, e);
+        try {
+            List<ScrapingPendiente> pendientes = scrapingPendienteRepository.findTop3ByEstadoOrderByFechaCreacionAsc(
+                    EstadoScrapingPendiente.PENDIENTE
+            );
+
+            for (ScrapingPendiente scrapingPendiente : pendientes) {
+                long inicio = System.currentTimeMillis();
+                ScrapingEjecucion ejecucion = registrarInicioEjecucion(
+                        scrapingPendiente.getTipo(),
+                        OrigenScrapingEjecucion.REINTENTO_PENDIENTE
+                );
+
+                try {
+                    ResultadoScrapingDTO resultado = procesarScrapingRelay(scrapingPendiente.getTipo(), ejecucion);
+                    resultado.setPendiente(false);
+                    resultado.setDuracionMs(System.currentTimeMillis() - inicio);
+
+                    marcarScrapingComoProcesado(scrapingPendiente);
+                    marcarPendientesDuplicadosComoProcesados(scrapingPendiente.getTipo());
+                    finalizarEjecucion(ejecucion, EstadoScrapingEjecucion.COMPLETADO, resultado, null);
+                } catch (Exception e) {
+                    registrarIntentoFallido(scrapingPendiente, e);
+
+                    ResultadoScrapingDTO resultadoPendiente = new ResultadoScrapingDTO(
+                            scrapingPendiente.getTipo().getNombreProceso()
+                    );
+                    resultadoPendiente.setPendiente(true);
+                    resultadoPendiente.setMensajeEstado(
+                            construirMensajePendienteScraping(scrapingPendiente.getTipo(), scrapingPendiente)
+                    );
+                    resultadoPendiente.setDuracionMs(System.currentTimeMillis() - inicio);
+
+                    finalizarEjecucion(ejecucion, EstadoScrapingEjecucion.PENDIENTE, resultadoPendiente, e);
+                }
+            }
+        } finally {
+            scrapingLock.unlock();
+        }
+    }
+
+    private ResultadoScrapingDTO ejecutarScrapingConBloqueo(TipoScrapingPendiente tipoScraping,
+                                                            Supplier<List<Producto>> scrapingLocal,
+                                                            OrigenScrapingEjecucion origen,
+                                                            boolean omitirSiYaHayScraping) {
+        boolean lockAdquirido;
+
+        if (omitirSiYaHayScraping) {
+            lockAdquirido = scrapingLock.tryLock();
+
+            if (!lockAdquirido) {
+                registrarEjecucionOmitida(
+                        tipoScraping,
+                        origen,
+                        "Se omitio la ejecucion porque ya hay otro scraping en curso."
+                );
+                return crearResultadoScrapingOmitido(
+                        tipoScraping,
+                        "Se omitio la ejecucion porque ya hay otro scraping en curso."
+                );
+            }
+        } else {
+            scrapingLock.lock();
+            lockAdquirido = true;
+        }
+
+        try {
+            return ejecutarScraping(tipoScraping, scrapingLocal, origen);
+        } finally {
+            if (lockAdquirido) {
+                scrapingLock.unlock();
             }
         }
     }
 
     private ResultadoScrapingDTO ejecutarScraping(TipoScrapingPendiente tipoScraping,
-                                                  Supplier<List<Producto>> scrapingLocal) {
+                                                  Supplier<List<Producto>> scrapingLocal,
+                                                  OrigenScrapingEjecucion origen) {
         long inicio = System.currentTimeMillis();
+        ScrapingEjecucion ejecucion = registrarInicioEjecucion(tipoScraping, origen);
 
         try {
             ResultadoScrapingDTO resultado = scrapingRelayEnabled
-                    ? procesarScrapingRelay(tipoScraping)
-                    : procesarScrapingLocal(tipoScraping, scrapingLocal);
+                    ? procesarScrapingRelay(tipoScraping, ejecucion)
+                    : procesarScrapingLocal(tipoScraping, scrapingLocal, ejecucion);
 
             resultado.setPendiente(false);
             resultado.setDuracionMs(System.currentTimeMillis() - inicio);
@@ -214,9 +356,11 @@ public class ProductoService {
                 marcarPendientesDuplicadosComoProcesados(tipoScraping);
             }
 
+            finalizarEjecucion(ejecucion, EstadoScrapingEjecucion.COMPLETADO, resultado, null);
             return resultado;
         } catch (Exception e) {
             if (!scrapingRelayEnabled) {
+                finalizarEjecucion(ejecucion, EstadoScrapingEjecucion.ERROR, null, e);
                 throw new RuntimeException("No se pudo completar el scraping de " + tipoScraping.getNombreProceso(), e);
             }
 
@@ -227,31 +371,43 @@ public class ProductoService {
                     construirMensajePendienteScraping(tipoScraping, scrapingPendiente)
             );
             resultadoPendiente.setDuracionMs(System.currentTimeMillis() - inicio);
+            finalizarEjecucion(ejecucion, EstadoScrapingEjecucion.PENDIENTE, resultadoPendiente, e);
             return resultadoPendiente;
         }
     }
 
     private ResultadoScrapingDTO procesarScrapingLocal(TipoScrapingPendiente tipoScraping,
-                                                       Supplier<List<Producto>> scrapingLocal) {
+                                                       Supplier<List<Producto>> scrapingLocal,
+                                                       ScrapingEjecucion ejecucion) {
         List<Producto> productosScrapeados = scrapingLocal.get();
         return guardarProductosScrapeadosConResultado(
+                tipoScraping,
                 tipoScraping.getNombreProceso(),
-                productosScrapeados
+                productosScrapeados,
+                ejecucion
         );
     }
 
-    private ResultadoScrapingDTO procesarScrapingRelay(TipoScrapingPendiente tipoScraping)
+    private ResultadoScrapingDTO procesarScrapingRelay(TipoScrapingPendiente tipoScraping,
+                                                       ScrapingEjecucion ejecucion)
             throws IOException, InterruptedException {
         List<Producto> productosScrapeados = solicitarProductosRelay(tipoScraping);
         return guardarProductosScrapeadosConResultado(
+                tipoScraping,
                 tipoScraping.getNombreProceso(),
-                productosScrapeados
+                productosScrapeados,
+                ejecucion
         );
     }
 
-    private ResultadoScrapingDTO guardarProductosScrapeadosConResultado(String nombreProceso, List<Producto> productosScrapeados) {
+    private ResultadoScrapingDTO guardarProductosScrapeadosConResultado(TipoScrapingPendiente tipoScraping,
+                                                                        String nombreProceso,
+                                                                        List<Producto> productosScrapeados,
+                                                                        ScrapingEjecucion ejecucion) {
         ResultadoScrapingDTO resultado = new ResultadoScrapingDTO(nombreProceso);
         Map<String, ResultadoScrapingTiendaDTO> resultadosPorTienda = new LinkedHashMap<>();
+        Map<String, Set<String>> urlsEncontradasPorTienda = new LinkedHashMap<>();
+        LocalDateTime fechaSincronizacion = LocalDateTime.now();
 
         if (productosScrapeados == null || productosScrapeados.isEmpty()) {
             resultado.setResultadosPorTienda(new ArrayList<>(resultadosPorTienda.values()));
@@ -283,6 +439,8 @@ public class ProductoService {
                 resultadoTienda.sumarProductoSinPrecio();
             }
 
+            normalizarProductoScrapeado(producto);
+
             Tienda tiendaScrapeada = producto.getTienda();
 
             if (tiendaScrapeada != null) {
@@ -307,6 +465,18 @@ public class ProductoService {
                 }
             }
 
+            activarProductoParaCatalogo(producto, fechaSincronizacion);
+
+            if (producto.getUrlProducto() != null
+                    && !producto.getUrlProducto().isBlank()
+                    && producto.getTienda() != null
+                    && producto.getTienda().getNombre() != null
+                    && !producto.getTienda().getNombre().isBlank()) {
+                urlsEncontradasPorTienda
+                        .computeIfAbsent(producto.getTienda().getNombre(), clave -> new LinkedHashSet<>())
+                        .add(producto.getUrlProducto());
+            }
+
             Optional<Producto> existente = Optional.empty();
 
             if (producto.getUrlProducto() != null && !producto.getUrlProducto().isBlank()) {
@@ -315,6 +485,17 @@ public class ProductoService {
 
             if (existente.isPresent()) {
                 Producto productoExistente = existente.get();
+
+                historialPrecioProductoService.registrarCambioSiCorresponde(
+                        productoExistente,
+                        producto,
+                        ejecucion,
+                        fechaSincronizacion
+                ).ifPresent(cambioPrecio -> {
+                    resultado.registrarCambioPrecio(cambioPrecio);
+                    resultadoTienda.registrarCambioPrecio(cambioPrecio);
+                    notificacionUsuarioService.crearNotificacionesPorCambioFavoritos(productoExistente, cambioPrecio);
+                });
 
                 productoExistente.setNombre(producto.getNombre());
                 productoExistente.setDescripcion(producto.getDescripcion());
@@ -328,6 +509,7 @@ public class ProductoService {
                 productoExistente.setSeccion(producto.getSeccion());
                 productoExistente.setCategoria(producto.getCategoria());
                 productoExistente.setTienda(producto.getTienda());
+                activarProductoParaCatalogo(productoExistente, fechaSincronizacion);
 
                 productoRepository.save(productoExistente);
 
@@ -347,9 +529,82 @@ public class ProductoService {
             }
         }
 
+        desactivarProductosNoEncontrados(urlsEncontradasPorTienda, resultadosPorTienda, resultado);
+        resultado.ordenarYLimitarCambiosPrecio(LIMITE_CAMBIOS_PRECIO_RESUMEN);
         resultado.setResultadosPorTienda(new ArrayList<>(resultadosPorTienda.values()));
 
         return resultado;
+    }
+
+    private void normalizarProductoScrapeado(Producto producto) {
+        if (producto == null) {
+            return;
+        }
+
+        if (producto.getUrlProducto() != null) {
+            producto.setUrlProducto(producto.getUrlProducto().trim());
+        }
+
+        if (producto.getUrlImagen() != null) {
+            producto.setUrlImagen(producto.getUrlImagen().trim());
+        }
+    }
+
+    private void activarProductoParaCatalogo(Producto producto, LocalDateTime fechaSincronizacion) {
+        if (producto == null) {
+            return;
+        }
+
+        producto.setDisponibleCatalogo(true);
+        producto.setUltimaVezVistoEnScraping(fechaSincronizacion);
+        producto.setFechaDesactivacion(null);
+        producto.setMotivoDesactivacion(null);
+    }
+
+    private void desactivarProductosNoEncontrados(Map<String, Set<String>> urlsEncontradasPorTienda,
+                                                  Map<String, ResultadoScrapingTiendaDTO> resultadosPorTienda,
+                                                  ResultadoScrapingDTO resultado) {
+        if (urlsEncontradasPorTienda == null || urlsEncontradasPorTienda.isEmpty()) {
+            return;
+        }
+
+        LocalDateTime fechaDesactivacion = LocalDateTime.now();
+
+        for (Map.Entry<String, Set<String>> entry : urlsEncontradasPorTienda.entrySet()) {
+            String nombreTienda = entry.getKey();
+            Set<String> urlsDetectadas = entry.getValue();
+
+            if (nombreTienda == null || nombreTienda.isBlank() || urlsDetectadas == null || urlsDetectadas.isEmpty()) {
+                continue;
+            }
+
+            ResultadoScrapingTiendaDTO resultadoTienda = resultadosPorTienda.computeIfAbsent(
+                    nombreTienda,
+                    ResultadoScrapingTiendaDTO::new
+            );
+
+            List<Producto> productosActivosDeTienda = productoRepository.findDisponiblesCatalogoPorTienda(nombreTienda);
+
+            for (Producto productoExistente : productosActivosDeTienda) {
+                String urlProductoExistente = productoExistente.getUrlProducto();
+
+                if (urlProductoExistente == null || urlProductoExistente.isBlank()) {
+                    continue;
+                }
+
+                if (urlsDetectadas.contains(urlProductoExistente.trim())) {
+                    continue;
+                }
+
+                productoExistente.setDisponibleCatalogo(false);
+                productoExistente.setFechaDesactivacion(fechaDesactivacion);
+                productoExistente.setMotivoDesactivacion("NO_ENCONTRADO_EN_SCRAPING");
+                productoRepository.save(productoExistente);
+
+                resultado.sumarProductoDesactivado();
+                resultadoTienda.sumarProductoDesactivado();
+            }
+        }
     }
 
     private String obtenerNombreTiendaScraping(Producto producto) {
@@ -489,6 +744,71 @@ public class ProductoService {
         return e.getMessage();
     }
 
+    private ScrapingEjecucion registrarInicioEjecucion(TipoScrapingPendiente tipoScraping,
+                                                       OrigenScrapingEjecucion origen) {
+        ScrapingEjecucion ejecucion = new ScrapingEjecucion();
+        ejecucion.setTipo(tipoScraping);
+        ejecucion.setOrigen(origen);
+        ejecucion.setEstado(EstadoScrapingEjecucion.COMPLETADO);
+        ejecucion.setRelayHabilitado(scrapingRelayEnabled);
+        ejecucion.setFechaInicio(LocalDateTime.now());
+        return scrapingEjecucionRepository.save(ejecucion);
+    }
+
+    private void registrarEjecucionOmitida(TipoScrapingPendiente tipoScraping,
+                                           OrigenScrapingEjecucion origen,
+                                           String mensaje) {
+        ScrapingEjecucion ejecucion = registrarInicioEjecucion(tipoScraping, origen);
+        ResultadoScrapingDTO resultado = crearResultadoScrapingOmitido(tipoScraping, mensaje);
+        finalizarEjecucion(ejecucion, EstadoScrapingEjecucion.OMITIDO, resultado, null);
+    }
+
+    private ResultadoScrapingDTO crearResultadoScrapingOmitido(TipoScrapingPendiente tipoScraping,
+                                                               String mensaje) {
+        ResultadoScrapingDTO resultado = new ResultadoScrapingDTO(tipoScraping.getNombreProceso());
+        resultado.setPendiente(false);
+        resultado.setMensajeEstado(mensaje);
+        resultado.setDuracionMs(0);
+        return resultado;
+    }
+
+    private void finalizarEjecucion(ScrapingEjecucion ejecucion,
+                                    EstadoScrapingEjecucion estado,
+                                    ResultadoScrapingDTO resultado,
+                                    Exception exception) {
+        if (ejecucion == null) {
+            return;
+        }
+
+        LocalDateTime fechaFin = LocalDateTime.now();
+        ejecucion.setEstado(estado);
+        ejecucion.setFechaFin(fechaFin);
+
+        if (ejecucion.getFechaInicio() != null) {
+            ejecucion.setDuracionMs(Duration.between(ejecucion.getFechaInicio(), fechaFin).toMillis());
+        }
+
+        if (resultado != null) {
+            ejecucion.setTotalProductosEncontrados(resultado.getTotalProductosEncontrados());
+            ejecucion.setTotalProductosGuardados(resultado.getTotalProductosGuardados());
+            ejecucion.setTotalProductosNuevos(resultado.getTotalProductosNuevos());
+            ejecucion.setTotalProductosActualizados(resultado.getTotalProductosActualizados());
+            ejecucion.setTotalProductosDesactivados(resultado.getTotalProductosDesactivados());
+            ejecucion.setTotalProductosCambioPrecio(resultado.getTotalProductosCambioPrecio());
+            ejecucion.setTotalProductosBajadaPrecio(resultado.getTotalProductosBajadaPrecio());
+            ejecucion.setTotalProductosSubidaPrecio(resultado.getTotalProductosSubidaPrecio());
+            ejecucion.setTotalProductosRebajaMayor(resultado.getTotalProductosRebajaMayor());
+            ejecucion.setMensajeEstado(resultado.getMensajeEstado());
+        }
+
+        if (exception != null) {
+            ejecucion.setDetalleError(limpiarMensajeErrorScraping(exception));
+        }
+
+        scrapingEjecucionRepository.save(ejecucion);
+        scrapingResumenAdminService.enviarResumenSiCorresponde(ejecucion, resultado, exception);
+    }
+
     private HttpClient crearHttpClientScraping() {
         return HttpClient.newBuilder()
                 .connectTimeout(Duration.ofMillis(scrapingRelayConnectTimeoutMs))
@@ -535,6 +855,7 @@ public class ProductoService {
                                                    String orden,
                                                    Boolean enOferta,
                                                    Boolean nuevaColeccion,
+                                                   Boolean incluirNoDisponibles,
                                                    int page,
                                                    int size) {
         int pagina = Math.max(page, 0);
@@ -548,6 +869,7 @@ public class ProductoService {
                 busqueda,
                 enOferta,
                 nuevaColeccion,
+                Boolean.TRUE.equals(incluirNoDisponibles),
                 false
         );
 
@@ -591,7 +913,8 @@ public class ProductoService {
     public List<ProductoSeleccionStockDTO> buscarProductosSinStockParaSeleccion(String tienda,
                                                                                  List<Seccion> secciones,
                                                                                  List<String> categorias,
-                                                                                 String busqueda) {
+                                                                                 String busqueda,
+                                                                                 Boolean incluirNoDisponibles) {
         Specification<Producto> specification = crearEspecificacionProductos(
                 tienda,
                 secciones,
@@ -599,6 +922,7 @@ public class ProductoService {
                 busqueda,
                 null,
                 null,
+                Boolean.TRUE.equals(incluirNoDisponibles),
                 true
         );
 
@@ -608,14 +932,21 @@ public class ProductoService {
                 .toList();
     }
 
-    public List<String> obtenerCategoriasCatalogo(String tienda, List<Seccion> secciones) {
+    public List<String> obtenerCategoriasCatalogo(String tienda,
+                                                  List<Seccion> secciones,
+                                                  Boolean incluirNoDisponibles) {
         String tiendaLimpia = tienda == null ? "" : tienda.trim();
+        boolean incluirNoDisponiblesValor = Boolean.TRUE.equals(incluirNoDisponibles);
 
         List<Seccion> seccionesValidas = secciones == null
                 ? List.of()
                 : secciones.stream()
                 .filter(Objects::nonNull)
                 .toList();
+
+        if (incluirNoDisponiblesValor) {
+            return obtenerCategoriasCatalogoIncluyendoNoDisponibles(tiendaLimpia, seccionesValidas);
+        }
 
         if (!tiendaLimpia.isBlank() && !seccionesValidas.isEmpty()) {
             return productoRepository.findCategoriasDistintasPorTiendaYSecciones(tiendaLimpia, seccionesValidas);
@@ -630,6 +961,35 @@ public class ProductoService {
         }
 
         return productoRepository.findCategoriasDistintas();
+    }
+
+    private List<String> obtenerCategoriasCatalogoIncluyendoNoDisponibles(String tienda,
+                                                                          List<Seccion> secciones) {
+        Specification<Producto> specification = crearEspecificacionProductos(
+                tienda,
+                secciones,
+                null,
+                null,
+                null,
+                null,
+                true,
+                false
+        );
+
+        return productoRepository.findAll(specification)
+                .stream()
+                .map(Producto::getCategoria)
+                .filter(Objects::nonNull)
+                .map(Categoria::getNombre)
+                .filter(nombre -> nombre != null && !nombre.isBlank())
+                .map(String::trim)
+                .distinct()
+                .sorted(String.CASE_INSENSITIVE_ORDER)
+                .toList();
+    }
+
+    private boolean productoDisponibleEnCatalogo(Producto producto) {
+        return producto != null && !Boolean.FALSE.equals(producto.getDisponibleCatalogo());
     }
 
     private Sort obtenerOrdenProductos(String orden) {
@@ -653,6 +1013,7 @@ public class ProductoService {
                                                                  String busqueda,
                                                                  Boolean enOferta,
                                                                  Boolean nuevaColeccion,
+                                                                 boolean incluirNoDisponibles,
                                                                  boolean soloSinStock) {
         return (root, query, criteriaBuilder) -> {
             query.distinct(true);
@@ -661,6 +1022,15 @@ public class ProductoService {
             Join<Producto, Categoria> categoriaJoin = root.join("categoria", JoinType.LEFT);
 
             List<jakarta.persistence.criteria.Predicate> predicates = new ArrayList<>();
+
+            if (!incluirNoDisponibles) {
+                predicates.add(
+                        criteriaBuilder.or(
+                                criteriaBuilder.isTrue(root.get("disponibleCatalogo")),
+                                criteriaBuilder.isNull(root.get("disponibleCatalogo"))
+                        )
+                );
+            }
 
             if (tienda != null && !tienda.isBlank()) {
                 predicates.add(
@@ -773,7 +1143,7 @@ public class ProductoService {
             );
         }
 
-        return new ProductoListadoDTO(
+        ProductoListadoDTO dto = new ProductoListadoDTO(
                 producto.getId(),
                 producto.getNombre(),
                 producto.getDescripcion(),
@@ -789,6 +1159,9 @@ public class ProductoService {
                 construirTallasCompletas(tallaStocks),
                 construirImagenesProducto(imagenes)
         );
+
+        dto.setDisponibleCatalogo(producto.getDisponibleCatalogo());
+        return dto;
     }
 
     private ProductoSeleccionStockDTO convertirAProductoSeleccionStockDTO(Producto producto) {

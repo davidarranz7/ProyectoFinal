@@ -448,6 +448,182 @@ body {
   color: white;
 }
 
+.scraping-result-panel {
+  margin-top: 22px;
+  border: 1px solid var(--border);
+  border-radius: 28px;
+  background: linear-gradient(180deg, #ffffff 0%, #fcfbff 100%);
+  box-shadow: var(--shadow-soft);
+  padding: 22px;
+}
+
+.scraping-result-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.scraping-result-header h3 {
+  font-size: 22px;
+  color: var(--text);
+}
+
+.scraping-result-time {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: var(--purple-soft);
+  color: var(--purple-dark);
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.scraping-result-metrics {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.scraping-result-metric {
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 16px;
+  background: #fff;
+}
+
+.scraping-result-metric span {
+  display: block;
+  font-size: 12px;
+  color: var(--text-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+}
+
+.scraping-result-metric strong {
+  font-size: 24px;
+  color: var(--text);
+}
+
+.scraping-result-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.scraping-result-column {
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  background: linear-gradient(180deg, #fff 0%, #faf7ff 100%);
+  padding: 18px;
+}
+
+.scraping-result-column h4 {
+  font-size: 16px;
+  color: var(--text);
+  margin-bottom: 14px;
+}
+
+.scraping-result-list {
+  display: grid;
+  gap: 12px;
+}
+
+.scraping-tienda-card,
+.scraping-cambio-card {
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: #fff;
+  padding: 14px;
+}
+
+.scraping-tienda-header,
+.scraping-cambio-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.scraping-tienda-header h5,
+.scraping-cambio-header h5 {
+  font-size: 15px;
+  color: var(--text);
+}
+
+.scraping-tienda-datos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.scraping-tienda-dato {
+  border-radius: 14px;
+  background: #faf7ff;
+  padding: 10px 12px;
+}
+
+.scraping-tienda-dato span {
+  display: block;
+  font-size: 11px;
+  color: var(--text-soft);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.scraping-tienda-dato strong {
+  font-size: 17px;
+  color: var(--text);
+}
+
+.scraping-cambio-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.scraping-cambio-bajada {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.scraping-cambio-subida {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.scraping-cambio-generico {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+.scraping-cambio-card p {
+  font-size: 14px;
+  color: var(--text-soft);
+  line-height: 1.6;
+}
+
+.scraping-cambio-card a {
+  color: var(--purple-dark);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.scraping-cambio-card a:hover {
+  text-decoration: underline;
+}
+
 /* TOOLBAR */
 .toolbar-admin {
   display: flex;
@@ -1358,8 +1534,13 @@ body {
   }
 
   .scraping-cards-grid,
+  .scraping-result-columns,
   .confirmacion-entrega-grid {
     grid-template-columns: 1fr;
+  }
+
+  .scraping-result-metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   #contenedor-incidencias-admin .item-admin-card {
@@ -1412,6 +1593,10 @@ body {
   .scraping-status-grid,
   .detalle-grid-top {
     grid-template-columns: 1fr;
+  }
+
+  .scraping-result-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -1673,6 +1858,11 @@ body {
 
   .admin-sidebar-bottom,
   .admin-metrics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .scraping-result-metrics,
+  .scraping-tienda-datos {
     grid-template-columns: 1fr;
   }
 

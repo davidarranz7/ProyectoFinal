@@ -109,6 +109,15 @@ public class PagoServiceImpl implements PagoService {
             throw new RuntimeException("El carrito esta vacio");
         }
 
+        List<ItemCarrito> itemsNoDisponibles = items.stream()
+                .filter(item -> !productoDisponibleEnCatalogo(item.getProducto()))
+                .toList();
+
+        if (!itemsNoDisponibles.isEmpty()) {
+            itemCarritoRepository.deleteAll(itemsNoDisponibles);
+            throw new RuntimeException("Hay productos de tu carrito que ya no estan disponibles. Hemos actualizado el carrito.");
+        }
+
         BigDecimal total = items.stream()
                 .map(item -> item.getProducto().getPrecio().multiply(BigDecimal.valueOf(item.getCantidad())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -636,5 +645,9 @@ public class PagoServiceImpl implements PagoService {
                 .replace(">", "&gt;")
                 .replace("\"", "&quot;")
                 .replace("'", "&#39;");
+    }
+
+    private boolean productoDisponibleEnCatalogo(Producto producto) {
+        return producto != null && !Boolean.FALSE.equals(producto.getDisponibleCatalogo());
     }
 }

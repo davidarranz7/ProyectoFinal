@@ -3,6 +3,7 @@ package com.david.ProyectoFinal.model;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -45,6 +46,16 @@ public class Producto {
 
     @Column(name = "nueva_coleccion")
     private Boolean nuevaColeccion = false;
+
+    @Column(name = "disponible_catalogo")
+    private Boolean disponibleCatalogo = true;
+
+    private LocalDateTime ultimaVezVistoEnScraping;
+
+    private LocalDateTime fechaDesactivacion;
+
+    @Column(length = 120)
+    private String motivoDesactivacion;
 
     @OneToMany(mappedBy = "producto", cascade = CascadeType.ALL, orphanRemoval = true)/// Un producto puede tener muchas tallas y stock
     private List<ProductoTallaStock> tallaStocks = new ArrayList<>();
@@ -213,5 +224,37 @@ public class Producto {
 
     public void setNuevaColeccion(Boolean nuevaColeccion) {
         this.nuevaColeccion = nuevaColeccion;
+    }
+
+    public Boolean getDisponibleCatalogo() {
+        return disponibleCatalogo;
+    }
+
+    public void setDisponibleCatalogo(Boolean disponibleCatalogo) {
+        this.disponibleCatalogo = disponibleCatalogo;
+    }
+
+    public LocalDateTime getUltimaVezVistoEnScraping() {
+        return ultimaVezVistoEnScraping;
+    }
+
+    public void setUltimaVezVistoEnScraping(LocalDateTime ultimaVezVistoEnScraping) {
+        this.ultimaVezVistoEnScraping = ultimaVezVistoEnScraping;
+    }
+
+    public LocalDateTime getFechaDesactivacion() {
+        return fechaDesactivacion;
+    }
+
+    public void setFechaDesactivacion(LocalDateTime fechaDesactivacion) {
+        this.fechaDesactivacion = fechaDesactivacion;
+    }
+
+    public String getMotivoDesactivacion() {
+        return motivoDesactivacion;
+    }
+
+    public void setMotivoDesactivacion(String motivoDesactivacion) {
+        this.motivoDesactivacion = motivoDesactivacion;
     }
 }
