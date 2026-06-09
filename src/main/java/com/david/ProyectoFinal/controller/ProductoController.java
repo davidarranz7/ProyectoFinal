@@ -8,11 +8,15 @@ import com.david.ProyectoFinal.dto.ProductoTallaStockMasivoDTO;
 import com.david.ProyectoFinal.dto.ProductoTallaStockResponseDTO;
 import com.david.ProyectoFinal.dto.ResultadoScrapingDTO;
 import com.david.ProyectoFinal.model.Producto;
+import com.david.ProyectoFinal.model.Rol;
 import com.david.ProyectoFinal.model.Seccion;
 import com.david.ProyectoFinal.service.ProductoService;
+import jakarta.servlet.http.HttpSession;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -27,8 +31,13 @@ public class ProductoController {
     }
 
     @GetMapping
-    public List<Producto> obtenerTodos(){
-        return productoService.obtenerTodos();
+    public List<Producto> obtenerTodos(@RequestParam(required = false) Boolean incluirNoDisponibles,
+                                       HttpSession session){
+        if (permitirIncluirNoDisponibles(incluirNoDisponibles, session)) {
+            return productoService.obtenerTodos();
+        }
+
+        return productoService.obtenerTodosDisponiblesCatalogo();
     }
 
     @GetMapping("/populares")
@@ -53,8 +62,11 @@ public class ProductoController {
             @RequestParam(required = false) Boolean nuevaColeccion,
             @RequestParam(required = false) Boolean incluirNoDisponibles,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "24") int size
+            @RequestParam(defaultValue = "24") int size,
+            HttpSession session
     ) {
+        boolean incluirNoDisponiblesSeguro = permitirIncluirNoDisponibles(incluirNoDisponibles, session);
+
         System.out.println(
                 "Petición catálogo -> tienda=" + tienda
                         + ", secciones=" + secciones
@@ -62,7 +74,7 @@ public class ProductoController {
                         + ", busqueda=" + busqueda
                         + ", orden=" + orden
                         + ", enOferta=" + enOferta
-                        + ", incluirNoDisponibles=" + incluirNoDisponibles
+                        + ", incluirNoDisponibles=" + incluirNoDisponiblesSeguro
                         + ", page=" + page
                         + ", size=" + size
         );
@@ -75,7 +87,7 @@ public class ProductoController {
                 orden,
                 enOferta,
                 nuevaColeccion,
-                incluirNoDisponibles,
+                incluirNoDisponiblesSeguro,
                 page,
                 size
         );
@@ -85,9 +97,14 @@ public class ProductoController {
     public List<String> obtenerCategoriasCatalogo(
             @RequestParam(required = false) String tienda,
             @RequestParam(name = "seccion", required = false) List<Seccion> secciones,
-            @RequestParam(required = false) Boolean incluirNoDisponibles
+            @RequestParam(required = false) Boolean incluirNoDisponibles,
+            HttpSession session
     ) {
-        return productoService.obtenerCategoriasCatalogo(tienda, secciones, incluirNoDisponibles);
+        return productoService.obtenerCategoriasCatalogo(
+                tienda,
+                secciones,
+                permitirIncluirNoDisponibles(incluirNoDisponibles, session)
+        );
     }
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -112,8 +129,19 @@ public class ProductoController {
 
 
     @GetMapping("/{id}")
-    public Producto obtenerPorId(@PathVariable Long id) {
-        return productoService.obtenerPorId(id);
+    public Producto obtenerPorId(@PathVariable Long id,
+                                 @RequestParam(required = false) Boolean incluirNoDisponibles,
+                                 HttpSession session) {
+        Producto producto = productoService.obtenerPorId(
+                id,
+                permitirIncluirNoDisponibles(incluirNoDisponibles, session)
+        );
+
+        if (producto == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Producto no disponible");
+        }
+
+        return producto;
     }
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -170,8 +198,26 @@ public class ProductoController {
     }
 
     @GetMapping("/{productoId}/talla-stock")
-    public ResponseEntity<List<ProductoTallaStockResponseDTO>> obtenerTallasStockPorProducto(@PathVariable Long productoId) {
-        return ResponseEntity.ok(productoService.obtenerTallasStockPorProducto(productoId));
+    public ResponseEntity<List<ProductoTallaStockResponseDTO>> obtenerTallasStockPorProducto(
+            @PathVariable Long productoId,
+            @RequestParam(required = false) Boolean incluirNoDisponibles,
+            HttpSession session
+    ) {
+        return ResponseEntity.ok(
+                productoService.obtenerTallasStockPorProducto(
+                        productoId,
+                        permitirIncluirNoDisponibles(incluirNoDisponibles, session)
+                )
+        );
+    }
+
+    private boolean permitirIncluirNoDisponibles(Boolean incluirNoDisponibles, HttpSession session) {
+        if (!Boolean.TRUE.equals(incluirNoDisponibles) || session == null) {
+            return false;
+        }
+
+        Object rol = session.getAttribute("usuarioRol");
+        return rol == Rol.ADMIN;
     }
 
 }

@@ -58,7 +58,10 @@ public class FavoritoService {
     }
 
     public List<Favorito> obtenerFavoritosDeUsuario(Long usuarioId){
-        return favoritoRepository.findByUsuarioId(usuarioId);/// Devuelve todos los favoritos de un usuario
+        return favoritoRepository.findByUsuarioId(usuarioId)
+                .stream()
+                .filter(favorito -> productoDisponibleEnCatalogo(favorito == null ? null : favorito.getProducto()))
+                .toList();
     }
     @Transactional
     public void eliminarFavorito(Long usuarioId, Long productoId){

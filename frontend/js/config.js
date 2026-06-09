@@ -1,9 +1,12 @@
+const FRONTEND_PROTOCOL = window.location.protocol === "https:" ? "https" : "http";
 const FRONTEND_HOST = window.location.hostname;
-const API_HOST = !FRONTEND_HOST || FRONTEND_HOST === "localhost" || FRONTEND_HOST === "127.0.0.1"
-    ? "localhost"
-    : FRONTEND_HOST;
+const FRONTEND_PORT = window.location.port;
+const ES_ENTORNO_LOCAL = !FRONTEND_HOST || FRONTEND_HOST === "localhost" || FRONTEND_HOST === "127.0.0.1";
+const API_HOST = ES_ENTORNO_LOCAL ? "localhost" : FRONTEND_HOST;
+const API_PROTOCOL = ES_ENTORNO_LOCAL ? "http" : FRONTEND_PROTOCOL;
+const FRONTEND_ORIGIN = `${FRONTEND_PROTOCOL}://${FRONTEND_HOST}${FRONTEND_PORT ? `:${FRONTEND_PORT}` : ""}`;
 
-const BASE_URL = `http://${API_HOST}:8080`;
+const BASE_URL = `${API_PROTOCOL}://${API_HOST}:8080`;
 
 const TALLAS_ROPA = ["XS", "S", "M", "L", "XL"];
 const TALLAS_ZAPATOS = ["TALLA_35", "TALLA_36", "TALLA_37", "TALLA_38", "TALLA_39", "TALLA_40", "TALLA_41", "TALLA_42"];
@@ -235,3 +238,62 @@ window.TallasProducto = {
     obtenerTallasPermitidas: obtenerTallasPermitidasProducto,
     filtrarTallaStocks: filtrarTallaStocksProducto
 };
+
+window.ModaRuntimeConfig = {
+    frontendOrigin: FRONTEND_ORIGIN,
+    baseUrl: BASE_URL,
+    esEntornoLocal: ES_ENTORNO_LOCAL
+};
+
+inyectarConfiguracionPwa();
+
+function inyectarConfiguracionPwa() {
+    if (!document || !document.head) {
+        return;
+    }
+
+    asegurarMeta("theme-color", "#171411");
+    asegurarMeta("apple-mobile-web-app-capable", "yes");
+    asegurarMeta("apple-mobile-web-app-status-bar-style", "default");
+    asegurarMeta("apple-mobile-web-app-title", "MODA");
+    asegurarMeta("mobile-web-app-capable", "yes");
+    asegurarLink("manifest", "manifest.json");
+    asegurarIconoPrincipal();
+}
+
+function asegurarMeta(name, content) {
+    let meta = document.head.querySelector(`meta[name="${name}"]`);
+
+    if (!meta) {
+        meta = document.createElement("meta");
+        meta.setAttribute("name", name);
+        document.head.appendChild(meta);
+    }
+
+    meta.setAttribute("content", content);
+}
+
+function asegurarLink(rel, href) {
+    let link = document.head.querySelector(`link[rel="${rel}"]`);
+
+    if (!link) {
+        link = document.createElement("link");
+        link.setAttribute("rel", rel);
+        document.head.appendChild(link);
+    }
+
+    link.setAttribute("href", href);
+}
+
+function asegurarIconoPrincipal() {
+    let icon = document.head.querySelector('link[rel="icon"]');
+
+    if (!icon) {
+        icon = document.createElement("link");
+        icon.setAttribute("rel", "icon");
+        document.head.appendChild(icon);
+    }
+
+    icon.setAttribute("href", "icon.svg");
+    icon.setAttribute("type", "image/svg+xml");
+}

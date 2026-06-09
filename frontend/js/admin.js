@@ -1820,7 +1820,7 @@ function crearCardProducto(producto, refs, state) {
 
 async function abrirEditarProducto(refs, productoId) {
     try {
-        const response = await fetch(`${BASE_URL}/productos/${productoId}`, {
+        const response = await fetch(`${BASE_URL}/productos/${productoId}?incluirNoDisponibles=true`, {
             method: "GET",
             credentials: "include"
         });
@@ -1858,7 +1858,7 @@ async function guardarEdicionProducto(refs, state) {
     try {
         bloquearBoton(refs.guardarCambiosProducto, "Guardando...");
 
-        const responseActual = await fetch(`${BASE_URL}/productos/${productoId}`, {
+        const responseActual = await fetch(`${BASE_URL}/productos/${productoId}?incluirNoDisponibles=true`, {
             method: "GET",
             credentials: "include"
         });
@@ -2080,7 +2080,7 @@ async function abrirModalStock(refs, state, productos) {
 
     if (productos.length === 1) {
         try {
-            const response = await fetch(`${BASE_URL}/productos/${productos[0].id}/talla-stock`, {
+            const response = await fetch(`${BASE_URL}/productos/${productos[0].id}/talla-stock?incluirNoDisponibles=true`, {
                 method: "GET",
                 credentials: "include"
             });

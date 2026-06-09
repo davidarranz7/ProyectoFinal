@@ -120,6 +120,13 @@ public class ProductoService {
         return productoRepository.findAll();
     }
 
+    public List<Producto> obtenerTodosDisponiblesCatalogo() {
+        return productoRepository.findAll()
+                .stream()
+                .filter(this::productoDisponibleEnCatalogo)
+                .toList();
+    }
+
     public Producto guardar(Producto producto) {
         if (producto != null && producto.getDisponibleCatalogo() == null) {
             producto.setDisponibleCatalogo(true);
@@ -129,6 +136,20 @@ public class ProductoService {
 
     public Producto obtenerPorId(Long id) {
         return productoRepository.findById(id).orElse(null);
+    }
+
+    public Producto obtenerPorId(Long id, Boolean incluirNoDisponibles) {
+        Producto producto = obtenerPorId(id);
+
+        if (producto == null) {
+            return null;
+        }
+
+        if (Boolean.TRUE.equals(incluirNoDisponibles) || productoDisponibleEnCatalogo(producto)) {
+            return producto;
+        }
+
+        return null;
     }
 
     public void eliminar(Long id) {
@@ -1317,7 +1338,14 @@ public class ProductoService {
         productoTallaStockRepository.saveAll(stockAGuardar);
     }
 
-    public List<ProductoTallaStockResponseDTO> obtenerTallasStockPorProducto(Long productoId) {
+    public List<ProductoTallaStockResponseDTO> obtenerTallasStockPorProducto(Long productoId,
+                                                                             Boolean incluirNoDisponibles) {
+        Producto producto = obtenerPorId(productoId, incluirNoDisponibles);
+
+        if (producto == null) {
+            throw new RuntimeException("Producto no disponible");
+        }
+
         List<ProductoTallaStock> lista = productoTallaStockRepository.findByProductoId(productoId);
 
         return Arrays.stream(Talla.values())

@@ -30,6 +30,7 @@ public class NotificacionUsuarioService {
     private final NotificacionUsuarioRepository notificacionUsuarioRepository;
     private final FavoritoRepository favoritoRepository;
     private final EmailService emailService;
+    private final NotificacionPushService notificacionPushService;
 
     @Value("${app.frontend-url:http://localhost:8081}")
     private String frontendUrl;
@@ -42,10 +43,12 @@ public class NotificacionUsuarioService {
 
     public NotificacionUsuarioService(NotificacionUsuarioRepository notificacionUsuarioRepository,
                                       FavoritoRepository favoritoRepository,
-                                      EmailService emailService) {
+                                      EmailService emailService,
+                                      NotificacionPushService notificacionPushService) {
         this.notificacionUsuarioRepository = notificacionUsuarioRepository;
         this.favoritoRepository = favoritoRepository;
         this.emailService = emailService;
+        this.notificacionPushService = notificacionPushService;
     }
 
     public void crearNotificacionesPorCambioFavoritos(Producto producto, CambioPrecioProductoDTO cambioPrecio) {
@@ -82,6 +85,8 @@ public class NotificacionUsuarioService {
             if (correoNotificacionEnabled) {
                 enviarCorreoNotificacion(usuario, guardada);
             }
+
+            notificacionPushService.enviarNotificacion(usuario, guardada);
         }
     }
 
@@ -210,8 +215,9 @@ public class NotificacionUsuarioService {
         html.append("</p>");
 
         if (notificacion.getUrlDestino() != null && !notificacion.getUrlDestino().isBlank()) {
+            String urlCorreo = construirUrlAbsolutaCorreo(notificacion.getUrlDestino());
             html.append("<p style=\"margin:0 0 12px 0;\">");
-            html.append("<a href=\"").append(escaparHtml(notificacion.getUrlDestino())).append("\" ");
+            html.append("<a href=\"").append(escaparHtml(urlCorreo)).append("\" ");
             html.append("style=\"display:inline-block; padding:12px 18px; background:#111827; color:#ffffff; text-decoration:none; border-radius:999px; font-weight:700;\">");
             html.append("Ver producto en MODA");
             html.append("</a></p>");
@@ -273,5 +279,29 @@ public class NotificacionUsuarioService {
                 .replace(">", "&gt;")
                 .replace("\"", "&quot;")
                 .replace("'", "&#39;");
+    }
+
+    private String construirUrlAbsolutaCorreo(String urlDestino) {
+        if (urlDestino == null || urlDestino.isBlank()) {
+            return "";
+        }
+
+        String urlLimpia = urlDestino.trim();
+
+        if (urlLimpia.startsWith("http://") || urlLimpia.startsWith("https://")) {
+            return urlLimpia;
+        }
+
+        String base = frontendUrl == null ? "" : frontendUrl.trim();
+
+        if (base.endsWith("/")) {
+            base = base.substring(0, base.length() - 1);
+        }
+
+        if (urlLimpia.startsWith("/")) {
+            return base + urlLimpia;
+        }
+
+        return base + "/" + urlLimpia;
     }
 }

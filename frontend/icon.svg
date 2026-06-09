@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="MODA">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#171411"/>
+      <stop offset="100%" stop-color="#6f5b4c"/>
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="56" fill="url(#bg)"/>
+  <path d="M52 190V66h28l48 70 48-70h28v124h-31v-72l-34 48h-22l-34-48v72z" fill="#faf7f2"/>
+</svg>
