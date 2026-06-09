@@ -181,17 +181,8 @@ public class NotificacionUsuarioService {
             return null;
         }
 
-        String base = frontendUrl == null ? "" : frontendUrl.trim();
-
-        if (base.endsWith("/")) {
-            base = base.substring(0, base.length() - 1);
-        }
-
-        if (base.isBlank()) {
-            return "fichaProducto.html?id=" + producto.getId();
-        }
-
-        return base + "/fichaProducto.html?id=" + producto.getId();
+        // Ruta relativa para que funcione desde PC, móvil y servidor.
+        return "fichaProducto.html?id=" + producto.getId();
     }
 
     private void enviarCorreoNotificacion(Usuario usuario, NotificacionUsuario notificacion) {
