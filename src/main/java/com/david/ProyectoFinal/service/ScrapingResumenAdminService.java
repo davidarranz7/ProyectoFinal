@@ -86,6 +86,7 @@ public class ScrapingResumenAdminService {
 
     private String construirAsunto(ScrapingEjecucion ejecucion) {
         String estadoTexto = switch (ejecucion.getEstado()) {
+            case EN_CURSO -> "en curso";
             case COMPLETADO -> "completado";
             case PENDIENTE -> "pendiente";
             case ERROR -> "con errores";
@@ -224,6 +225,7 @@ public class ScrapingResumenAdminService {
 
     private String formatearEstado(EstadoScrapingEjecucion estado) {
         return switch (estado) {
+            case EN_CURSO -> "En curso";
             case COMPLETADO -> "Completado";
             case PENDIENTE -> "Pendiente";
             case ERROR -> "Error";

@@ -52,6 +52,7 @@ function iniciarAdmin() {
 
     cargarTodo(refs, state);
     iniciarRefrescoAutomaticoIncidencias(refs, state);
+    iniciarRefrescoEstadoScraping(refs, state);
 }
 
 function obtenerReferencias() {
@@ -69,6 +70,14 @@ function obtenerReferencias() {
         chipScraping: document.getElementById("chip-scraping"),
         scrapingEstadoBox: document.getElementById("scraping-estado-box"),
         scrapingUltimaAccion: document.getElementById("scraping-ultima-accion"),
+        scrapingRelayBox: document.getElementById("scraping-relay-box"),
+        scrapingRelayDetalle: document.getElementById("scraping-relay-detalle"),
+        scrapingAutoBox: document.getElementById("scraping-auto-box"),
+        scrapingAutoDetalle: document.getElementById("scraping-auto-detalle"),
+        scrapingColaTitulo: document.getElementById("scraping-cola-titulo"),
+        scrapingColaBadge: document.getElementById("scraping-cola-badge"),
+        scrapingColaResumen: document.getElementById("scraping-cola-resumen"),
+        scrapingPendientesLista: document.getElementById("scraping-pendientes-lista"),
 
         scrapingResultadoPanel: document.getElementById("scraping-resultado-panel"),
         scrapingResultadoTitulo: document.getElementById("scraping-resultado-titulo"),
@@ -85,6 +94,11 @@ function obtenerReferencias() {
         scrapingTotalSinPrecio: document.getElementById("scraping-total-sin-precio"),
         scrapingTiendasLista: document.getElementById("scraping-tiendas-lista"),
         scrapingCambiosLista: document.getElementById("scraping-cambios-lista"),
+        scrapingOverlay: document.getElementById("scraping-overlay"),
+        scrapingOverlayTitulo: document.getElementById("scraping-overlay-titulo"),
+        scrapingOverlayDetalle: document.getElementById("scraping-overlay-detalle"),
+        scrapingOverlayTimer: document.getElementById("scraping-overlay-timer"),
+        scrapingOverlayStep: document.getElementById("scraping-overlay-step"),
 
         btnScrapingZara: document.getElementById("btn-scraping-zara"),
         btnScrapingBershka: document.getElementById("btn-scraping-bershka"),
@@ -271,6 +285,11 @@ function crearEstadoInicial() {
         intervaloIncidenciasAdmin: null,
         cargandoIncidencias: false,
         snapshotIncidencias: "",
+        intervaloEstadoScraping: null,
+        actualizandoEstadoScraping: false,
+        ultimoEstadoScrapingAdmin: null,
+        scrapingOverlayInicio: null,
+        scrapingOverlayIntervalo: null,
 
         modoSeleccionProductos: false,
         productosSeleccionados: new Set(),
@@ -371,6 +390,8 @@ function configurarScraping(refs, state) {
     refs.btnScrapingTodo?.addEventListener("click", () =>
         ejecutarScraping(refs, state, "/productos/scrapear/total", "Scraping completo", refs.btnScrapingTodo, "Ejecutar todo")
     );
+
+    cargarEstadoScrapingAdmin(refs, state, { silencioso: true });
 }
 
 function configurarProductos(refs, state) {
@@ -765,6 +786,16 @@ function iniciarRefrescoAutomaticoIncidencias(refs, state) {
     }, 10000);
 }
 
+function iniciarRefrescoEstadoScraping(refs, state) {
+    if (state.intervaloEstadoScraping) {
+        clearInterval(state.intervaloEstadoScraping);
+    }
+
+    state.intervaloEstadoScraping = setInterval(async () => {
+        await cargarEstadoScrapingAdmin(refs, state, { silencioso: true });
+    }, 15000);
+}
+
 async function cargarMetricas(refs) {
     try {
         const [resProductos, resUsuarios, resPedidos] = await Promise.all([
@@ -1153,11 +1184,397 @@ function obtenerPrioridadIncidencia(estado) {
    SCRAPING
 ========================= */
 
+async function cargarEstadoScrapingAdmin(refs, state, opciones = {}) {
+    if (state.actualizandoEstadoScraping && !opciones.forzar) {
+        return state.ultimoEstadoScrapingAdmin;
+    }
+
+    state.actualizandoEstadoScraping = true;
+
+    try {
+        const response = await fetch(`${BASE_URL}/productos/scraping/estado`, {
+            method: "GET",
+            credentials: "include"
+        });
+
+        if (!response.ok) {
+            throw new Error(`No se pudo cargar el estado del scraping (HTTP ${response.status})`);
+        }
+
+        const data = await response.json();
+        state.ultimoEstadoScrapingAdmin = data;
+        pintarEstadoScrapingAdmin(refs, state, data);
+        return data;
+        await cargarEstadoScrapingAdmin(refs, state, {
+            silencioso: true,
+            forzar: true
+        });
+    } catch (error) {
+        console.error("Error cargando estado del scraping:", error);
+
+        if (!opciones.silencioso) {
+            mostrarMensaje(refs, error.message || "No se pudo cargar el estado del scraping.", "error");
+        }
+
+        if (refs.scrapingRelayBox) refs.scrapingRelayBox.textContent = "Sin datos";
+        if (refs.scrapingRelayDetalle) refs.scrapingRelayDetalle.textContent = "No se pudo actualizar el estado del puente local.";
+        return null;
+    } finally {
+        state.actualizandoEstadoScraping = false;
+    }
+}
+
+function pintarEstadoScrapingAdmin(refs, state, data) {
+    if (!data) {
+        return;
+    }
+
+    const ultima = data.ultimaEjecucion || null;
+    const totalPendientes = numeroSeguro(data.totalPendientes);
+    const relayHabilitado = Boolean(data.relayHabilitado);
+    const relayDisponible = Boolean(data.relayDisponible);
+    const automaticoHabilitado = Boolean(data.automaticoHabilitado);
+
+    if (ultima?.estado === "EN_CURSO" || data.scrapingEnCurso) {
+        actualizarEstadoScraping(
+            refs,
+            "En curso",
+            construirDetalleEstadoScraping(ultima, "Hay un scraping ejecutandose ahora mismo."),
+            "info"
+        );
+    } else if (totalPendientes > 0 || ultima?.estado === "PENDIENTE") {
+        actualizarEstadoScraping(
+            refs,
+            "Pendiente",
+            construirDetallePendienteScraping(data, ultima),
+            "info"
+        );
+    } else if (ultima?.estado === "ERROR") {
+        actualizarEstadoScraping(
+            refs,
+            "Error",
+            construirDetalleEstadoScraping(ultima, ultima?.detalleError || "El ultimo scraping termino con errores."),
+            "error"
+        );
+    } else if (ultima) {
+        actualizarEstadoScraping(
+            refs,
+            "Finalizado",
+            construirDetalleEstadoScraping(ultima, ultima?.mensajeEstado || "Ultimo scraping completado."),
+            "success"
+        );
+    } else {
+        actualizarEstadoScraping(refs, "Inactivo", "Sin ejecuciones recientes.", "neutral");
+    }
+
+    if (refs.scrapingRelayBox) {
+        refs.scrapingRelayBox.textContent = relayHabilitado
+            ? (relayDisponible ? "Conectado" : "Servidor local apagado")
+            : "No usa puente";
+    }
+
+    if (refs.scrapingRelayDetalle) {
+        refs.scrapingRelayDetalle.textContent = relayHabilitado
+            ? (data.relayMensaje || (relayDisponible ? "Puente local disponible." : "Puente local no disponible."))
+            : "El scraping se ejecuta en el propio servidor.";
+    }
+
+    if (refs.scrapingAutoBox) {
+        refs.scrapingAutoBox.textContent = automaticoHabilitado
+            ? `Activo cada ${formatearFrecuenciaScraping(data.frecuenciaAutomaticaMs)}`
+            : "Desactivado";
+    }
+
+    if (refs.scrapingAutoDetalle) {
+        refs.scrapingAutoDetalle.textContent = automaticoHabilitado
+            ? `Si algo queda pendiente, se reintentara cada ${formatearFrecuenciaScraping(data.intervaloReintentoMs)}.`
+            : "Solo funcionaran los lanzamientos manuales desde el panel.";
+    }
+
+    renderizarPendientesScraping(refs, data);
+
+    if (data.ultimoResultado && ultima?.estado !== "EN_CURSO") {
+        pintarResultadoScraping(
+            refs,
+            normalizarResultadoScraping(data.ultimoResultado, ultima?.nombreProceso || "Scraping")
+        );
+    } else if (!data.ultimoResultado && refs.scrapingResultadoPanel) {
+        refs.scrapingResultadoPanel.style.display = "none";
+    }
+}
+
+function construirDetalleEstadoScraping(ultima, fallback) {
+    if (!ultima) {
+        return fallback || "Sin actividad reciente.";
+    }
+
+    const partes = [];
+
+    if (ultima.nombreProceso) {
+        partes.push(ultima.nombreProceso);
+    }
+
+    if (ultima.origen) {
+        partes.push(`origen ${formatearOrigenScraping(ultima.origen)}`);
+    }
+
+    if (ultima.fechaInicio) {
+        partes.push(`inicio ${formatearFecha(ultima.fechaInicio)}`);
+    }
+
+    if (ultima.duracionMs) {
+        partes.push(`duracion ${formatearDuracionScraping(ultima.duracionMs)}`);
+    }
+
+    if (fallback) {
+        partes.push(fallback);
+    }
+
+    return partes.join(" · ");
+}
+
+function construirDetallePendienteScraping(data, ultima) {
+    const totalPendientes = numeroSeguro(data?.totalPendientes);
+    const reintento = formatearFrecuenciaScraping(data?.intervaloReintentoMs);
+
+    if (totalPendientes > 0) {
+        return `${totalPendientes} scraping pendiente(s). Se volvera a intentar cada ${reintento}.`;
+    }
+
+    return construirDetalleEstadoScraping(
+        ultima,
+        ultima?.mensajeEstado || "Hay una peticion esperando a que vuelva el puente local."
+    );
+}
+
+function renderizarPendientesScraping(refs, data) {
+    if (!refs.scrapingPendientesLista) {
+        return;
+    }
+
+    const pendientes = Array.isArray(data?.pendientes) ? data.pendientes : [];
+    const totalPendientes = numeroSeguro(data?.totalPendientes);
+
+    if (refs.scrapingColaTitulo) {
+        refs.scrapingColaTitulo.textContent = totalPendientes > 0
+            ? `${totalPendientes} tarea(s) pendiente(s)`
+            : "Sin tareas pendientes";
+    }
+
+    if (refs.scrapingColaBadge) {
+        refs.scrapingColaBadge.textContent = `${totalPendientes} pendiente${totalPendientes === 1 ? "" : "s"}`;
+    }
+
+    if (refs.scrapingColaResumen) {
+        if (totalPendientes > 0) {
+            refs.scrapingColaResumen.textContent = `El servidor ya ha guardado estas peticiones. Se relanzaran automaticamente cada ${formatearFrecuenciaScraping(data?.intervaloReintentoMs)} cuando el puente local vuelva a responder.`;
+        } else if (data?.relayHabilitado && !data?.relayDisponible) {
+            refs.scrapingColaResumen.textContent = "Ahora mismo el puente local no esta accesible, pero todavia no hay tareas guardadas en cola.";
+        } else {
+            refs.scrapingColaResumen.textContent = "No hay peticiones pendientes. Si el ordenador local se apaga, las nuevas solicitudes se guardaran aqui.";
+        }
+    }
+
+    limpiarContenedor(refs.scrapingPendientesLista);
+
+    if (!pendientes.length) {
+        refs.scrapingPendientesLista.appendChild(
+            el("div", {
+                className: "scraping-pendiente-card",
+                children: [
+                    el("p", {
+                        text: "Todo limpio. No hay ningun scraping esperando a que vuelva el equipo local."
+                    })
+                ]
+            })
+        );
+        return;
+    }
+
+    pendientes.forEach((pendiente) => {
+        refs.scrapingPendientesLista.appendChild(crearCardPendienteScraping(pendiente));
+    });
+}
+
+function crearCardPendienteScraping(pendiente) {
+    const ultimoError = pendiente?.ultimoError || "Sin detalle del ultimo intento.";
+
+    return el("article", {
+        className: "scraping-pendiente-card",
+        children: [
+            el("div", {
+                className: "scraping-pendiente-header",
+                children: [
+                    el("h5", { text: pendiente?.nombreProceso || "Scraping pendiente" }),
+                    el("span", {
+                        className: "scraping-pendiente-badge",
+                        text: `${numeroSeguro(pendiente?.intentos)} intento(s)`
+                    })
+                ]
+            }),
+            el("div", {
+                className: "scraping-pendiente-meta",
+                children: [
+                    crearMetaPendienteScraping("Creado", formatearFecha(pendiente?.fechaCreacion)),
+                    crearMetaPendienteScraping("Ultimo intento", formatearFecha(pendiente?.fechaUltimoIntento)),
+                    crearMetaPendienteScraping("Estado", pendiente?.estado || "PENDIENTE"),
+                    crearMetaPendienteScraping("Ultimo error", recortarTexto(ultimoError, 120))
+                ]
+            })
+        ]
+    });
+}
+
+function crearMetaPendienteScraping(etiqueta, valor) {
+    return el("div", {
+        className: "scraping-pendiente-meta-item",
+        children: [
+            el("span", { text: etiqueta }),
+            el("strong", { text: valor || "-" })
+        ]
+    });
+}
+
+function formatearFrecuenciaScraping(valorMs) {
+    const ms = numeroSeguro(valorMs);
+
+    if (!ms) {
+        return "0 min";
+    }
+
+    const totalMinutos = Math.max(1, Math.round(ms / 60000));
+
+    if (totalMinutos < 60) {
+        return `${totalMinutos} min`;
+    }
+
+    const horas = Math.floor(totalMinutos / 60);
+    const minutosRestantes = totalMinutos % 60;
+
+    if (!minutosRestantes) {
+        return `${horas} h`;
+    }
+
+    return `${horas} h ${minutosRestantes} min`;
+}
+
+function formatearOrigenScraping(origen) {
+    switch (origen) {
+        case "AUTOMATICO": return "automatico";
+        case "REINTENTO_PENDIENTE": return "reintento";
+        case "MANUAL": return "manual";
+        default: return "desconocido";
+    }
+}
+
+function mostrarOverlayScraping(refs, titulo, detalle, paso) {
+    if (!refs.scrapingOverlay) {
+        return;
+    }
+
+    refs.scrapingOverlay.style.display = "flex";
+    refs.scrapingOverlay.setAttribute("aria-hidden", "false");
+    statefulActualizarOverlayScrapingTimer(refs, true);
+    actualizarOverlayScraping(refs, titulo, detalle, paso);
+}
+
+function actualizarOverlayScraping(refs, titulo, detalle, paso) {
+    if (refs.scrapingOverlayTitulo && titulo) refs.scrapingOverlayTitulo.textContent = titulo;
+    if (refs.scrapingOverlayDetalle && detalle) refs.scrapingOverlayDetalle.textContent = detalle;
+    if (refs.scrapingOverlayStep && paso) refs.scrapingOverlayStep.textContent = paso;
+}
+
+function ocultarOverlayScraping(refs) {
+    if (!refs.scrapingOverlay) {
+        return;
+    }
+
+    refs.scrapingOverlay.style.display = "none";
+    refs.scrapingOverlay.setAttribute("aria-hidden", "true");
+    statefulActualizarOverlayScrapingTimer(refs, false);
+}
+
+function statefulActualizarOverlayScrapingTimer(refs, activar) {
+    if (activar) {
+        if (!refs.scrapingOverlayTimer) {
+            return;
+        }
+
+        refs.scrapingOverlayTimer.dataset.start = String(Date.now());
+        refs.scrapingOverlayTimer.textContent = "00:00";
+
+        if (refs.scrapingOverlayTimer.intervalId) {
+            clearInterval(refs.scrapingOverlayTimer.intervalId);
+        }
+
+        refs.scrapingOverlayTimer.intervalId = setInterval(() => {
+            const inicio = Number(refs.scrapingOverlayTimer.dataset.start || Date.now());
+            const transcurrido = Math.max(0, Date.now() - inicio);
+            const segundos = Math.floor(transcurrido / 1000);
+            const minutos = String(Math.floor(segundos / 60)).padStart(2, "0");
+            const restoSegundos = String(segundos % 60).padStart(2, "0");
+            refs.scrapingOverlayTimer.textContent = `${minutos}:${restoSegundos}`;
+        }, 1000);
+
+        return;
+    }
+
+    if (refs.scrapingOverlayTimer?.intervalId) {
+        clearInterval(refs.scrapingOverlayTimer.intervalId);
+        refs.scrapingOverlayTimer.intervalId = null;
+    }
+}
+
 async function ejecutarScraping(refs, state, url, nombre, boton, textoOriginal) {
     try {
         bloquearBoton(boton, "Ejecutando...");
-        actualizarEstadoScraping(refs, "Ejecutando", `Lanzando ${nombre}...`, "info");
+        actualizarEstadoScraping(refs, "Preparando", `Preparando ${nombre}...`, "info");
         mostrarMensaje(refs, `Iniciando ${nombre}...`, "info");
+        mostrarOverlayScraping(
+            refs,
+            `Preparando ${nombre}...`,
+            "Comprobando el estado del servidor y del puente local.",
+            "Preparando solicitud..."
+        );
+
+        const estadoPrevio = await cargarEstadoScrapingAdmin(refs, state, {
+            silencioso: true,
+            forzar: true
+        });
+
+        if (estadoPrevio?.relayHabilitado) {
+            if (estadoPrevio?.relayDisponible) {
+                actualizarEstadoScraping(refs, "Conectando", `El puente local esta disponible para ${nombre}.`, "info");
+                actualizarOverlayScraping(
+                    refs,
+                    `${nombre} en camino`,
+                    "Puente local conectado. La peticion se va a enviar al relay real.",
+                    "Puente local conectado"
+                );
+            } else {
+                actualizarEstadoScraping(refs, "Pendiente", `El puente local no responde. Si falla la llamada, ${nombre} se guardara en cola.`, "info");
+                actualizarOverlayScraping(
+                    refs,
+                    `${nombre} esperando al puente`,
+                    "El ordenador local parece apagado. Si no responde, guardaremos la peticion para reintentarlo despues.",
+                    "Servidor local apagado o no disponible"
+                );
+            }
+        } else {
+            actualizarOverlayScraping(
+                refs,
+                `${nombre} en servidor`,
+                "Este scraping se ejecuta directamente en el servidor.",
+                "Ejecucion directa"
+            );
+        }
+
+        actualizarOverlayScraping(
+            refs,
+            `${nombre} ejecutandose`,
+            "La peticion ya se ha enviado. Estamos esperando a que termine el scraping.",
+            "Esperando resultado del scraping..."
+        );
 
         const response = await fetch(`${BASE_URL}${url}`, {
             method: "POST",
@@ -1190,11 +1607,23 @@ async function ejecutarScraping(refs, state, url, nombre, boton, textoOriginal) 
                 "info"
             );
 
+            actualizarOverlayScraping(
+                refs,
+                `${resultado.nombreProceso} en cola`,
+                resultado.mensajeEstado || "La peticion se ha guardado para cuando vuelva el equipo local.",
+                "Solicitud guardada correctamente"
+            );
+
             mostrarMensaje(
                 refs,
                 resultado.mensajeEstado || `${resultado.nombreProceso} queda pendiente.`,
                 "info"
             );
+
+            await cargarEstadoScrapingAdmin(refs, state, {
+                silencioso: true,
+                forzar: true
+            });
             return;
         }
 
@@ -1207,15 +1636,35 @@ async function ejecutarScraping(refs, state, url, nombre, boton, textoOriginal) 
             "success"
         );
 
+        actualizarOverlayScraping(
+            refs,
+            `${resultado.nombreProceso} finalizado`,
+            `Encontrados: ${formatearNumero(resultado.totalProductosEncontrados)} · Nuevos: ${formatearNumero(resultado.totalProductosNuevos)} · Actualizados: ${formatearNumero(resultado.totalProductosActualizados)}`,
+            "Proceso completado"
+        );
+
         mostrarMensaje(refs, `${resultado.nombreProceso} completado correctamente.`, "ok");
 
         await cargarProductos(refs, state, true);
         await cargarMetricas(refs);
+        await cargarEstadoScrapingAdmin(refs, state, {
+            silencioso: true,
+            forzar: true
+        });
     } catch (error) {
         console.error(`Error en ${nombre}:`, error);
         actualizarEstadoScraping(refs, "Error", `Falló ${nombre}`, "error");
+        actualizarOverlayScraping(
+            refs,
+            `${nombre} con error`,
+            error.message || `No se pudo ejecutar ${nombre}.`,
+            "Proceso interrumpido"
+        );
         mostrarMensaje(refs, error.message || `Error al ejecutar ${nombre}.`, "error");
     } finally {
+        setTimeout(() => {
+            ocultarOverlayScraping(refs);
+        }, 700);
         restaurarBoton(boton, textoOriginal);
     }
 }

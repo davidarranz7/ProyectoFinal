@@ -7,12 +7,15 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/internal/mail-relay")
@@ -50,6 +53,18 @@ public class MailRelayController {
     ) {
         validarPeticionRelay(token, httpServletRequest);
         return ResponseEntity.ok(mailRelayScrapingService.ejecutar(request));
+    }
+
+    @GetMapping("/ping")
+    public ResponseEntity<Map<String, String>> pingRelay(
+            @RequestHeader(name = "X-Relay-Token", required = false) String token,
+            HttpServletRequest httpServletRequest
+    ) {
+        validarPeticionRelay(token, httpServletRequest);
+        return ResponseEntity.ok(Map.of(
+                "status", "ok",
+                "message", "Relay local disponible"
+        ));
     }
 
     private void validarPeticionRelay(String token, HttpServletRequest httpServletRequest) {

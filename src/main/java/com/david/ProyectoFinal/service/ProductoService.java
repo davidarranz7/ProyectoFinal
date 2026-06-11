@@ -74,6 +74,12 @@ public class ProductoService {
     @Value("${app.scraping.auto.enabled:false}")
     private boolean scrapingAutomaticoEnabled;
 
+    @Value("${app.scraping.auto.fixed-delay-ms:21600000}")
+    private long scrapingAutomaticoFixedDelayMs;
+
+    @Value("${app.scraping.relay.retry-interval-ms:60000}")
+    private long scrapingRelayRetryIntervalMs;
+
     public ProductoService(ProductoRepository productoRepository,
                            GestorScraping gestorScraping,
                            TiendaRepository tiendaRepository,
@@ -256,6 +262,46 @@ public class ProductoService {
                 OrigenScrapingEjecucion.MANUAL,
                 false
         );
+    }
+
+    public EstadoScrapingAdminDTO obtenerEstadoScrapingAdmin() {
+        EstadoScrapingAdminDTO estado = new EstadoScrapingAdminDTO();
+        estado.setRelayHabilitado(scrapingRelayEnabled);
+        estado.setAutomaticoHabilitado(scrapingAutomaticoEnabled);
+        estado.setFrecuenciaAutomaticaMs(scrapingAutomaticoFixedDelayMs);
+        estado.setIntervaloReintentoMs(scrapingRelayRetryIntervalMs);
+
+        if (scrapingRelayEnabled) {
+            actualizarEstadoRelayActual(estado);
+        } else {
+            estado.setRelayDisponible(true);
+            estado.setRelayMensaje("El scraping se ejecuta directamente en el servidor.");
+        }
+
+        List<ScrapingPendiente> pendientes = scrapingPendienteRepository.findTop5ByEstadoOrderByFechaCreacionAsc(
+                EstadoScrapingPendiente.PENDIENTE
+        );
+        estado.setTotalPendientes((int) scrapingPendienteRepository.countByEstado(EstadoScrapingPendiente.PENDIENTE));
+        estado.setPendientes(
+                pendientes.stream()
+                        .map(this::mapearPendienteAdmin)
+                        .toList()
+        );
+
+        Optional<ScrapingEjecucion> ultimaEjecucion = scrapingEjecucionRepository.findTopByOrderByFechaInicioDesc();
+        ultimaEjecucion.ifPresent(ejecucion -> {
+            estado.setUltimaEjecucion(mapearEjecucionAdmin(ejecucion));
+            estado.setScrapingEnCurso(ejecucion.getEstado() == EstadoScrapingEjecucion.EN_CURSO);
+        });
+
+        Optional<ScrapingEjecucion> ultimaFinalizada = scrapingEjecucionRepository.findTop5ByOrderByFechaInicioDesc()
+                .stream()
+                .filter(ejecucion -> ejecucion.getEstado() != EstadoScrapingEjecucion.EN_CURSO)
+                .findFirst();
+
+        ultimaFinalizada.ifPresent(ejecucion -> estado.setUltimoResultado(mapearResultadoDesdeEjecucion(ejecucion)));
+
+        return estado;
     }
 
     @Scheduled(
@@ -770,7 +816,7 @@ public class ProductoService {
         ScrapingEjecucion ejecucion = new ScrapingEjecucion();
         ejecucion.setTipo(tipoScraping);
         ejecucion.setOrigen(origen);
-        ejecucion.setEstado(EstadoScrapingEjecucion.COMPLETADO);
+        ejecucion.setEstado(EstadoScrapingEjecucion.EN_CURSO);
         ejecucion.setRelayHabilitado(scrapingRelayEnabled);
         ejecucion.setFechaInicio(LocalDateTime.now());
         return scrapingEjecucionRepository.save(ejecucion);
@@ -835,6 +881,116 @@ public class ProductoService {
                 .connectTimeout(Duration.ofMillis(scrapingRelayConnectTimeoutMs))
                 .version(HttpClient.Version.HTTP_1_1)
                 .build();
+    }
+
+    private void actualizarEstadoRelayActual(EstadoScrapingAdminDTO estado) {
+        try {
+            HttpResponse<String> response = crearHttpClientEstadoRelay().send(
+                    HttpRequest.newBuilder()
+                            .uri(URI.create(construirPingUrlRelay()))
+                            .timeout(Duration.ofMillis(obtenerReadTimeoutEstadoRelay()))
+                            .header("X-Relay-Token", scrapingRelayToken)
+                            .GET()
+                            .build(),
+                    HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8)
+            );
+
+            if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                estado.setRelayDisponible(true);
+                estado.setRelayMensaje("Puente local conectado y listo para scrapear.");
+                return;
+            }
+
+            estado.setRelayDisponible(false);
+            estado.setRelayMensaje("El puente local no respondio correctamente (HTTP " + response.statusCode() + ").");
+        } catch (Exception e) {
+            estado.setRelayDisponible(false);
+            estado.setRelayMensaje("Servidor local apagado o relay no disponible ahora mismo.");
+        }
+    }
+
+    private HttpClient crearHttpClientEstadoRelay() {
+        long timeoutConexion = Math.max(750L, Math.min(scrapingRelayConnectTimeoutMs, 1500L));
+
+        return HttpClient.newBuilder()
+                .connectTimeout(Duration.ofMillis(timeoutConexion))
+                .version(HttpClient.Version.HTTP_1_1)
+                .build();
+    }
+
+    private long obtenerReadTimeoutEstadoRelay() {
+        return Math.max(1000L, Math.min(scrapingRelayReadTimeoutMs, 3000L));
+    }
+
+    private String construirPingUrlRelay() {
+        if (scrapingRelayReceiverUrl == null || scrapingRelayReceiverUrl.isBlank()) {
+            return "http://127.0.0.1:8095/internal/mail-relay/ping";
+        }
+
+        if (scrapingRelayReceiverUrl.endsWith("/scraping")) {
+            return scrapingRelayReceiverUrl.substring(0, scrapingRelayReceiverUrl.length() - "/scraping".length()) + "/ping";
+        }
+
+        return scrapingRelayReceiverUrl + "/ping";
+    }
+
+    private ScrapingPendienteAdminDTO mapearPendienteAdmin(ScrapingPendiente scrapingPendiente) {
+        ScrapingPendienteAdminDTO dto = new ScrapingPendienteAdminDTO();
+        dto.setId(scrapingPendiente.getId());
+        dto.setTipo(scrapingPendiente.getTipo() == null ? null : scrapingPendiente.getTipo().name());
+        dto.setNombreProceso(scrapingPendiente.getTipo() == null ? "Scraping" : scrapingPendiente.getTipo().getNombreProceso());
+        dto.setEstado(scrapingPendiente.getEstado() == null ? null : scrapingPendiente.getEstado().name());
+        dto.setIntentos(scrapingPendiente.getIntentos());
+        dto.setUltimoError(scrapingPendiente.getUltimoError());
+        dto.setFechaCreacion(scrapingPendiente.getFechaCreacion());
+        dto.setFechaUltimoIntento(scrapingPendiente.getFechaUltimoIntento());
+        return dto;
+    }
+
+    private ScrapingEjecucionAdminDTO mapearEjecucionAdmin(ScrapingEjecucion ejecucion) {
+        ScrapingEjecucionAdminDTO dto = new ScrapingEjecucionAdminDTO();
+        dto.setId(ejecucion.getId());
+        dto.setTipo(ejecucion.getTipo() == null ? null : ejecucion.getTipo().name());
+        dto.setNombreProceso(ejecucion.getTipo() == null ? "Scraping" : ejecucion.getTipo().getNombreProceso());
+        dto.setOrigen(ejecucion.getOrigen() == null ? null : ejecucion.getOrigen().name());
+        dto.setEstado(ejecucion.getEstado() == null ? null : ejecucion.getEstado().name());
+        dto.setRelayHabilitado(ejecucion.getRelayHabilitado());
+        dto.setFechaInicio(ejecucion.getFechaInicio());
+        dto.setFechaFin(ejecucion.getFechaFin());
+        dto.setDuracionMs(ejecucion.getDuracionMs());
+        dto.setTotalProductosEncontrados(ejecucion.getTotalProductosEncontrados());
+        dto.setTotalProductosGuardados(ejecucion.getTotalProductosGuardados());
+        dto.setTotalProductosNuevos(ejecucion.getTotalProductosNuevos());
+        dto.setTotalProductosActualizados(ejecucion.getTotalProductosActualizados());
+        dto.setTotalProductosDesactivados(ejecucion.getTotalProductosDesactivados());
+        dto.setTotalProductosCambioPrecio(ejecucion.getTotalProductosCambioPrecio());
+        dto.setTotalProductosBajadaPrecio(ejecucion.getTotalProductosBajadaPrecio());
+        dto.setTotalProductosSubidaPrecio(ejecucion.getTotalProductosSubidaPrecio());
+        dto.setMensajeEstado(ejecucion.getMensajeEstado());
+        dto.setDetalleError(ejecucion.getDetalleError());
+        return dto;
+    }
+
+    private ResultadoScrapingDTO mapearResultadoDesdeEjecucion(ScrapingEjecucion ejecucion) {
+        ResultadoScrapingDTO resultado = new ResultadoScrapingDTO(
+                ejecucion.getTipo() == null ? "Scraping" : ejecucion.getTipo().getNombreProceso()
+        );
+        resultado.setTotalProductosEncontrados(valorSeguro(ejecucion.getTotalProductosEncontrados()));
+        resultado.setTotalProductosGuardados(valorSeguro(ejecucion.getTotalProductosGuardados()));
+        resultado.setTotalProductosNuevos(valorSeguro(ejecucion.getTotalProductosNuevos()));
+        resultado.setTotalProductosActualizados(valorSeguro(ejecucion.getTotalProductosActualizados()));
+        resultado.setTotalProductosDesactivados(valorSeguro(ejecucion.getTotalProductosDesactivados()));
+        resultado.setTotalProductosCambioPrecio(valorSeguro(ejecucion.getTotalProductosCambioPrecio()));
+        resultado.setTotalProductosBajadaPrecio(valorSeguro(ejecucion.getTotalProductosBajadaPrecio()));
+        resultado.setTotalProductosSubidaPrecio(valorSeguro(ejecucion.getTotalProductosSubidaPrecio()));
+        resultado.setDuracionMs(ejecucion.getDuracionMs() == null ? 0 : ejecucion.getDuracionMs());
+        resultado.setPendiente(ejecucion.getEstado() == EstadoScrapingEjecucion.PENDIENTE);
+        resultado.setMensajeEstado(ejecucion.getMensajeEstado());
+        return resultado;
+    }
+
+    private int valorSeguro(Integer valor) {
+        return valor == null ? 0 : valor;
     }
 
     public List<Producto> obtenerPorTienda(String nombreTienda) {

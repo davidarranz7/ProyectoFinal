@@ -163,6 +163,31 @@
                         <span class="scraping-status-label">Última acción</span>
                         <strong id="scraping-ultima-accion">Sin ejecuciones recientes</strong>
                     </div>
+                    <div class="scraping-status-card">
+                        <span class="scraping-status-label">Puente local</span>
+                        <strong id="scraping-relay-box">Comprobando...</strong>
+                        <p class="scraping-status-help" id="scraping-relay-detalle">Verificando si el ordenador local esta accesible.</p>
+                    </div>
+
+                    <div class="scraping-status-card">
+                        <span class="scraping-status-label">Modo automatico</span>
+                        <strong id="scraping-auto-box">Comprobando...</strong>
+                        <p class="scraping-status-help" id="scraping-auto-detalle">Cargando configuracion del scraping programado.</p>
+                    </div>
+                </div>
+
+                <div class="scraping-live-panel">
+                    <div class="scraping-live-header">
+                        <div>
+                            <p class="admin-section-eyebrow">Seguimiento</p>
+                            <h3 id="scraping-cola-titulo">Sin tareas pendientes</h3>
+                        </div>
+                        <span class="scraping-live-badge" id="scraping-cola-badge">0 pendientes</span>
+                    </div>
+                    <p class="scraping-live-copy" id="scraping-cola-resumen">
+                        Si el ordenador local esta apagado, las peticiones de scraping quedaran guardadas aqui para reintentarse despues.
+                    </p>
+                    <div class="scraping-pendientes-lista" id="scraping-pendientes-lista"></div>
                 </div>
 
                 <div class="scraping-cards-grid">
@@ -1045,6 +1070,17 @@
                 <button type="submit" class="btn btn-primary" id="guardar-editar-punto-recogida">Guardar cambios</button>
             </div>
         </form>
+    </div>
+</div>
+
+<div id="scraping-overlay" class="scraping-overlay" style="display:none;" aria-hidden="true">
+    <div class="scraping-overlay-card">
+        <div class="scraping-overlay-spinner" aria-hidden="true"></div>
+        <p class="admin-section-eyebrow">Proceso en marcha</p>
+        <h3 id="scraping-overlay-titulo">Preparando scraping...</h3>
+        <p id="scraping-overlay-detalle">Conectando con el servidor y revisando el puente local.</p>
+        <div class="scraping-overlay-timer" id="scraping-overlay-timer">00:00</div>
+        <div class="scraping-overlay-step" id="scraping-overlay-step">Esperando respuesta...</div>
     </div>
 </div>
 

@@ -7,6 +7,7 @@ import com.david.ProyectoFinal.dto.ProductoTallaStockDTO;
 import com.david.ProyectoFinal.dto.ProductoTallaStockMasivoDTO;
 import com.david.ProyectoFinal.dto.ProductoTallaStockResponseDTO;
 import com.david.ProyectoFinal.dto.ResultadoScrapingDTO;
+import com.david.ProyectoFinal.dto.EstadoScrapingAdminDTO;
 import com.david.ProyectoFinal.model.Producto;
 import com.david.ProyectoFinal.model.Rol;
 import com.david.ProyectoFinal.model.Seccion;
@@ -181,6 +182,12 @@ public class ProductoController {
     public ResponseEntity<ResultadoScrapingDTO> scrapearProductosPullAndBear() {
         ResultadoScrapingDTO resultado = productoService.scrapearPullAndBearYGuardarConResultado();
         return ResponseEntity.ok(resultado);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/scraping/estado")
+    public ResponseEntity<EstadoScrapingAdminDTO> obtenerEstadoScrapingAdmin() {
+        return ResponseEntity.ok(productoService.obtenerEstadoScrapingAdmin());
     }
 
     @PreAuthorize("hasRole('ADMIN')")

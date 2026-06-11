@@ -12,10 +12,14 @@ public interface ScrapingPendienteRepository extends JpaRepository<ScrapingPendi
 
     List<ScrapingPendiente> findTop3ByEstadoOrderByFechaCreacionAsc(EstadoScrapingPendiente estado);
 
+    List<ScrapingPendiente> findTop5ByEstadoOrderByFechaCreacionAsc(EstadoScrapingPendiente estado);
+
     Optional<ScrapingPendiente> findFirstByTipoAndEstadoOrderByFechaCreacionAsc(
             TipoScrapingPendiente tipo,
             EstadoScrapingPendiente estado
     );
 
     List<ScrapingPendiente> findByTipoAndEstado(TipoScrapingPendiente tipo, EstadoScrapingPendiente estado);
+
+    long countByEstado(EstadoScrapingPendiente estado);
 }
