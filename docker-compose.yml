@@ -3,6 +3,7 @@ services:
     image: mariadb:11
     container_name: ropa_mariadb
     restart: always
+    command: --max_allowed_packet=256M
     environment:
       MARIADB_ROOT_PASSWORD: root
       MARIADB_DATABASE: ropa_db
@@ -17,13 +18,24 @@ services:
       timeout: 5s
       retries: 10
 
+  db-init:
+    image: mariadb:11
+    container_name: ropa_db_init
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    restart: "no"
+    command: >
+      sh -c "mariadb -hmariadb -uroot -proot
+      -e 'CREATE DATABASE IF NOT EXISTS ropa_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;'"
+
   app:
     build: .
     container_name: ropa-app
     restart: always
     depends_on:
-      mariadb:
-        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
     ports:
       - "8080:8080"
     environment:
