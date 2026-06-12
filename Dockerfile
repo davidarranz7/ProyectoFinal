@@ -12,8 +12,15 @@ FROM mcr.microsoft.com/playwright/java:v1.52.0-jammy
 
 WORKDIR /app
 
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends mariadb-client \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY --from=build /app/target/ProyectoFinal-0.0.1-SNAPSHOT.jar app.jar
+COPY docker/app-entrypoint.sh /app/docker/app-entrypoint.sh
+
+RUN chmod +x /app/docker/app-entrypoint.sh
 
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["/app/docker/app-entrypoint.sh"]
