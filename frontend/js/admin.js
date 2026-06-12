@@ -1473,7 +1473,12 @@ function formatearOrigenScraping(origen) {
 }
 
 const OVERLAY_SCRAPING_MINIMO_VISIBLE_MS = 3000;
+const OVERLAY_SCRAPING_INSERTANDO_VISIBLE_MS = 5000;
 const OVERLAY_SCRAPING_CIERRE_MS = 900;
+
+function esperar(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 function mostrarOverlayScraping(refs, titulo, detalle, paso) {
     if (!refs.scrapingOverlay) {
@@ -1619,6 +1624,19 @@ function resolverFaseOverlayScraping(ultima) {
         return "CONECTANDO_PUENTE";
     }
 
+    // Esta comprobacion va antes de "equipo local",
+    // porque el backend puede mandar un mensaje que contiene ambas cosas:
+    // "terminado en tu equipo local" + "insertando en base de datos".
+    if (
+        mensaje.includes("insertando productos") ||
+        mensaje.includes("insertando los productos") ||
+        mensaje.includes("base de datos") ||
+        mensaje.includes("guardando productos") ||
+        mensaje.includes("actualizando productos")
+    ) {
+        return "INSERTANDO_BASE_DATOS";
+    }
+
     if (
         mensaje.includes("equipo local") ||
         mensaje.includes("ordenador local") ||
@@ -1629,15 +1647,7 @@ function resolverFaseOverlayScraping(ultima) {
     }
 
     if (mensaje.includes("servidor")) {
-        return "SCRAPING_SERVIDOR";
-    }
-
-    if (
-        mensaje.includes("insertando productos") ||
-        mensaje.includes("base de datos") ||
-        mensaje.includes("guardando productos")
-    ) {
-        return "INSERTANDO_BASE_DATOS";
+        return "DESCARGANDO_DATOS";
     }
 
     if (mensaje.includes("finalizado correctamente") || mensaje.includes("finalizado sin productos")) {
@@ -1650,23 +1660,28 @@ function resolverFaseOverlayScraping(ultima) {
 function construirTituloOverlayScraping(nombreProceso, fase) {
     switch (fase) {
         case "PREPARANDO":
-            return `Preparando ${nombreProceso}`;
+            return `${nombreProceso}: preparando solicitud`;
+
         case "CONECTANDO_PUENTE":
-            return `Conectando ${nombreProceso}`;
+            return `${nombreProceso}: conectando`;
+
         case "DESCARGANDO_DATOS":
-            return `${nombreProceso} descargando datos`;
-        case "SCRAPING_SERVIDOR":
-            return `${nombreProceso} en servidor`;
+            return `${nombreProceso}: descargando datos`;
+
         case "INSERTANDO_BASE_DATOS":
-            return `${nombreProceso} guardando productos`;
+            return `${nombreProceso}: guardando productos`;
+
         case "FINALIZADO":
-            return `${nombreProceso} finalizado`;
+            return `${nombreProceso}: finalizado`;
+
         case "PENDIENTE":
-            return `${nombreProceso} queda pendiente`;
+            return `${nombreProceso}: queda pendiente`;
+
         case "ERROR":
-            return `${nombreProceso} con error`;
+            return `${nombreProceso}: error en el proceso`;
+
         default:
-            return `${nombreProceso} en proceso`;
+            return `${nombreProceso}: proceso en marcha`;
     }
 }
 
@@ -1675,21 +1690,26 @@ function construirDetalleOverlayScraping(fase, ultima) {
 
     switch (fase) {
         case "PREPARANDO":
-            return "Estamos preparando la solicitud y comprobando el estado del sistema.";
+            return "Preparando la solicitud antes de lanzar el scraping.";
+
         case "CONECTANDO_PUENTE":
-            return "Conectando con el puente local para enviar la peticion de scraping.";
+            return "Conectando con el puente local para poder ejecutar la petición.";
+
         case "DESCARGANDO_DATOS":
-            return "La peticion ya se ha enviado. Estamos descargando y preparando los productos encontrados.";
-        case "SCRAPING_SERVIDOR":
-            return "El scraping se esta ejecutando directamente en el servidor.";
+            return "Descargando datos del catálogo y esperando los productos encontrados.";
+
         case "INSERTANDO_BASE_DATOS":
-            return "El scraping ya ha terminado. Ahora se estan insertando y actualizando productos en la base de datos.";
+            return "El scraping ya ha terminado. Ahora se están insertando y actualizando productos en la base de datos.";
+
         case "FINALIZADO":
             return mensajeReal || "El proceso ha terminado correctamente.";
+
         case "PENDIENTE":
-            return mensajeReal || "La peticion se ha guardado para reintentarla cuando el puente local este disponible.";
+            return mensajeReal || "La petición se ha guardado para reintentarla cuando el puente local esté disponible.";
+
         case "ERROR":
             return ultima?.detalleError || mensajeReal || "No se pudo completar el proceso de scraping.";
+
         default:
             return mensajeReal || "Esperando respuesta del proceso de scraping.";
     }
@@ -1699,20 +1719,25 @@ function construirPasoOverlayScraping(fase) {
     switch (fase) {
         case "PREPARANDO":
             return "Preparando solicitud";
+
         case "CONECTANDO_PUENTE":
             return "Conectando con el puente local";
+
         case "DESCARGANDO_DATOS":
-            return "Descargando datos del catalogo";
-        case "SCRAPING_SERVIDOR":
-            return "Scraping activo en servidor";
+            return "Descargando datos del catálogo";
+
         case "INSERTANDO_BASE_DATOS":
             return "Insertando productos en base de datos";
+
         case "FINALIZADO":
             return "Proceso completado";
+
         case "PENDIENTE":
             return "Solicitud guardada en cola";
+
         case "ERROR":
             return "Proceso interrumpido";
+
         default:
             return "Esperando resultado";
     }
@@ -1810,7 +1835,7 @@ async function ejecutarScraping(refs, state, url, nombre, boton, textoOriginal) 
             actualizarEstadoScraping(
                 refs,
                 "En curso",
-                "Todavia se estan insertando productos en la base de datos. Cuando termine podras lanzar otro scraping.",
+                "Todavía se están insertando productos en la base de datos. Cuando termine podrás lanzar otro scraping.",
                 "info"
             );
 
@@ -1825,8 +1850,8 @@ async function ejecutarScraping(refs, state, url, nombre, boton, textoOriginal) 
 
         mostrarOverlayScraping(
             refs,
-            `Preparando ${nombre}`,
-            "Comprobando el estado del servidor y del puente local.",
+            `${nombre}: preparando solicitud`,
+            "Preparando la solicitud antes de lanzar el scraping.",
             "Preparando solicitud"
         );
 
@@ -1842,45 +1867,45 @@ async function ejecutarScraping(refs, state, url, nombre, boton, textoOriginal) 
                 actualizarEstadoScraping(
                     refs,
                     "Conectando",
-                    `El puente local esta disponible para ${nombre}.`,
+                    `El puente local está disponible para ${nombre}.`,
                     "info"
                 );
 
                 actualizarOverlayScraping(
                     refs,
-                    `Conectando ${nombre}`,
-                    "Puente local conectado. La peticion se va a enviar al equipo local.",
+                    `${nombre}: conectando`,
+                    "Conectando con el puente local para poder ejecutar la petición.",
                     "Conectando con el puente local"
                 );
             } else {
                 actualizarEstadoScraping(
                     refs,
                     "Pendiente",
-                    `El puente local no responde. Si falla la llamada, ${nombre} se guardara en cola.`,
+                    `El puente local no responde. Si falla la llamada, ${nombre} se guardará en cola.`,
                     "info"
                 );
 
                 actualizarOverlayScraping(
                     refs,
-                    `${nombre} esperando al puente`,
-                    "El ordenador local parece apagado. Si no responde, se guardara la peticion para reintentarla despues.",
-                    "Servidor local no disponible"
+                    `${nombre}: esperando puente local`,
+                    "El ordenador local parece apagado. Si no responde, se guardará la petición para reintentarla después.",
+                    "Conectando con el puente local"
                 );
             }
         } else {
             actualizarOverlayScraping(
                 refs,
-                `${nombre} en servidor`,
-                "Este scraping se ejecuta directamente en el servidor.",
-                "Scraping activo en servidor"
+                `${nombre}: conectando`,
+                "El scraping se ejecutará directamente en el servidor.",
+                "Conectando con el servidor"
             );
         }
 
         actualizarOverlayScraping(
             refs,
-            `${nombre} ejecutandose`,
-            "La peticion ya se ha enviado. Estamos esperando a que termine el scraping.",
-            "Descargando datos del catalogo"
+            `${nombre}: descargando datos`,
+            "Descargando datos del catálogo y esperando los productos encontrados.",
+            "Descargando datos del catálogo"
         );
 
         state.scrapingOverlayPermiteEstadoFinal = true;
@@ -1921,8 +1946,8 @@ async function ejecutarScraping(refs, state, url, nombre, boton, textoOriginal) 
 
             actualizarOverlayScraping(
                 refs,
-                `${resultado.nombreProceso} en cola`,
-                resultado.mensajeEstado || "La peticion se ha guardado para cuando vuelva el equipo local.",
+                `${resultado.nombreProceso}: queda pendiente`,
+                resultado.mensajeEstado || "La petición se ha guardado para cuando vuelva el equipo local.",
                 "Solicitud guardada en cola"
             );
 
@@ -1940,27 +1965,39 @@ async function ejecutarScraping(refs, state, url, nombre, boton, textoOriginal) 
             return;
         }
 
+        // A partir de aquí la petición ya ha respondido.
+        // Como Zara puede ir muy rápido, forzamos visualmente estas fases
+        // para que el usuario vea claramente qué está pasando.
+        state.scrapingOverlayPermiteEstadoFinal = false;
+
         actualizarOverlayScraping(
             refs,
-            `${resultado.nombreProceso} guardando productos`,
-            "El scraping ya ha devuelto datos. Estamos terminando de insertar y actualizar productos.",
+            `${resultado.nombreProceso}: procesando productos`,
+            "Revisando los productos encontrados antes de actualizar el catálogo.",
+            "Procesando productos encontrados"
+        );
+
+        await esperar(900);
+
+        actualizarOverlayScraping(
+            refs,
+            `${resultado.nombreProceso}: guardando productos`,
+            "Insertando y actualizando productos en la base de datos.",
             "Insertando productos en base de datos"
         );
+
+        await esperar(OVERLAY_SCRAPING_INSERTANDO_VISIBLE_MS);
+
+        ocultarOverlayScraping(refs);
+        detenerSeguimientoOverlayScraping(state);
 
         pintarResultadoScraping(refs, resultado);
 
         actualizarEstadoScraping(
             refs,
-            "Completado",
+            "Productos insertados correctamente",
             `${resultado.nombreProceso} finalizado. Encontrados: ${formatearNumero(resultado.totalProductosEncontrados)} · Nuevos: ${formatearNumero(resultado.totalProductosNuevos)} · Actualizados: ${formatearNumero(resultado.totalProductosActualizados)}`,
             "success"
-        );
-
-        actualizarOverlayScraping(
-            refs,
-            `${resultado.nombreProceso} finalizado`,
-            `Encontrados: ${formatearNumero(resultado.totalProductosEncontrados)} · Nuevos: ${formatearNumero(resultado.totalProductosNuevos)} · Actualizados: ${formatearNumero(resultado.totalProductosActualizados)}`,
-            "Proceso completado"
         );
 
         mostrarMensaje(refs, `${resultado.nombreProceso} completado correctamente.`, "ok");
@@ -1981,14 +2018,17 @@ async function ejecutarScraping(refs, state, url, nombre, boton, textoOriginal) 
 
         actualizarOverlayScraping(
             refs,
-            `${nombre} con error`,
+            `${nombre}: error en el proceso`,
             error.message || `No se pudo ejecutar ${nombre}.`,
             "Proceso interrumpido"
         );
 
         mostrarMensaje(refs, error.message || `Error al ejecutar ${nombre}.`, "error");
     } finally {
-        programarCierreOverlayScraping(refs, state, OVERLAY_SCRAPING_CIERRE_MS);
+        if (state.scrapingOverlayVisible) {
+            programarCierreOverlayScraping(refs, state, OVERLAY_SCRAPING_CIERRE_MS);
+        }
+
         restaurarBoton(boton, textoOriginal);
     }
 }
