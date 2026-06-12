@@ -290,6 +290,10 @@ function crearEstadoInicial() {
         ultimoEstadoScrapingAdmin: null,
         scrapingOverlayInicio: null,
         scrapingOverlayIntervalo: null,
+        scrapingOverlayVisible: false,
+        scrapingOverlayNombreProceso: null,
+        scrapingOverlayCierreProgramado: false,
+        scrapingOverlayCierreTimeout: null,
 
         modoSeleccionProductos: false,
         productosSeleccionados: new Set(),
@@ -1192,9 +1196,10 @@ async function cargarEstadoScrapingAdmin(refs, state, opciones = {}) {
     state.actualizandoEstadoScraping = true;
 
     try {
-        const response = await fetch(`${BASE_URL}/productos/scraping/estado`, {
+        const response = await fetch(`${BASE_URL}/productos/scraping/estado?_=${Date.now()}`, {
             method: "GET",
-            credentials: "include"
+            credentials: "include",
+            cache: "no-store"
         });
 
         if (!response.ok) {
@@ -1205,10 +1210,6 @@ async function cargarEstadoScrapingAdmin(refs, state, opciones = {}) {
         state.ultimoEstadoScrapingAdmin = data;
         pintarEstadoScrapingAdmin(refs, state, data);
         return data;
-        await cargarEstadoScrapingAdmin(refs, state, {
-            silencioso: true,
-            forzar: true
-        });
     } catch (error) {
         console.error("Error cargando estado del scraping:", error);
 
@@ -1239,7 +1240,7 @@ function pintarEstadoScrapingAdmin(refs, state, data) {
         actualizarEstadoScraping(
             refs,
             "En curso",
-            construirDetalleEstadoScraping(ultima, "Hay un scraping ejecutandose ahora mismo."),
+            construirDetalleEstadoScraping(ultima, ultima?.mensajeEstado || "Hay un scraping ejecutandose ahora mismo."),
             "info"
         );
     } else if (totalPendientes > 0 || ultima?.estado === "PENDIENTE") {
@@ -1300,6 +1301,10 @@ function pintarEstadoScrapingAdmin(refs, state, data) {
         );
     } else if (!data.ultimoResultado && refs.scrapingResultadoPanel) {
         refs.scrapingResultadoPanel.style.display = "none";
+    }
+
+    if (state.scrapingOverlayVisible) {
+        actualizarOverlayScrapingDesdeEstado(refs, state, data);
     }
 }
 
@@ -1494,6 +1499,187 @@ function ocultarOverlayScraping(refs) {
     statefulActualizarOverlayScrapingTimer(refs, false);
 }
 
+function iniciarSeguimientoOverlayScraping(refs, state, nombreProceso) {
+    state.scrapingOverlayVisible = true;
+    state.scrapingOverlayNombreProceso = nombreProceso || null;
+    state.scrapingOverlayCierreProgramado = false;
+
+    if (state.scrapingOverlayCierreTimeout) {
+        clearTimeout(state.scrapingOverlayCierreTimeout);
+        state.scrapingOverlayCierreTimeout = null;
+    }
+
+    if (state.scrapingOverlayIntervalo) {
+        clearInterval(state.scrapingOverlayIntervalo);
+    }
+
+    state.scrapingOverlayIntervalo = setInterval(async () => {
+        await cargarEstadoScrapingAdmin(refs, state, {
+            silencioso: true,
+            forzar: true
+        });
+    }, 1000);
+}
+
+function detenerSeguimientoOverlayScraping(state) {
+    state.scrapingOverlayVisible = false;
+    state.scrapingOverlayNombreProceso = null;
+    state.scrapingOverlayCierreProgramado = false;
+
+    if (state.scrapingOverlayIntervalo) {
+        clearInterval(state.scrapingOverlayIntervalo);
+        state.scrapingOverlayIntervalo = null;
+    }
+
+    if (state.scrapingOverlayCierreTimeout) {
+        clearTimeout(state.scrapingOverlayCierreTimeout);
+        state.scrapingOverlayCierreTimeout = null;
+    }
+}
+
+function actualizarOverlayScrapingDesdeEstado(refs, state, data) {
+    const ultima = data?.ultimaEjecucion;
+
+    if (!ultima) {
+        return;
+    }
+
+    if (state.scrapingOverlayNombreProceso && ultima?.nombreProceso && ultima.nombreProceso !== state.scrapingOverlayNombreProceso) {
+        return;
+    }
+
+    const fase = resolverFaseOverlayScraping(ultima);
+    const nombreProceso = ultima?.nombreProceso || state.scrapingOverlayNombreProceso || "Scraping";
+
+    actualizarOverlayScraping(
+        refs,
+        construirTituloOverlayScraping(nombreProceso, fase),
+        construirDetalleOverlayScraping(fase, ultima),
+        construirPasoOverlayScraping(fase)
+    );
+
+    if (fase === "INSERTANDO_BASE_DATOS" && !state.scrapingOverlayCierreProgramado) {
+        state.scrapingOverlayCierreProgramado = true;
+
+        if (state.scrapingOverlayIntervalo) {
+            clearInterval(state.scrapingOverlayIntervalo);
+            state.scrapingOverlayIntervalo = null;
+        }
+
+        state.scrapingOverlayCierreTimeout = setTimeout(() => {
+            ocultarOverlayScraping(refs);
+            detenerSeguimientoOverlayScraping(state);
+        }, 900);
+    }
+}
+
+function resolverFaseOverlayScraping(ultima) {
+    if (!ultima) {
+        return "ESPERANDO_RESULTADO";
+    }
+
+    const mensaje = (ultima.mensajeEstado || "").toLowerCase();
+
+    if (ultima.estado === "ERROR") {
+        return "ERROR";
+    }
+
+    if (ultima.estado === "PENDIENTE") {
+        return "PENDIENTE";
+    }
+
+    if (ultima.estado === "COMPLETADO") {
+        return "FINALIZADO";
+    }
+
+    if (mensaje.includes("insertando productos") || mensaje.includes("base de datos")) {
+        return "INSERTANDO_BASE_DATOS";
+    }
+
+    if (mensaje.includes("ordenador local") || mensaje.includes("esperando los datos") || mensaje.includes("esperando datos")) {
+        return "SCRAPING_LOCAL";
+    }
+
+    if (mensaje.includes("conectando con el puente") || mensaje.includes("puente local")) {
+        return "CONECTANDO_PUENTE";
+    }
+
+    if (mensaje.includes("servidor")) {
+        return "SCRAPING_SERVIDOR";
+    }
+
+    return "ESPERANDO_RESULTADO";
+}
+
+function construirTituloOverlayScraping(nombreProceso, fase) {
+    switch (fase) {
+        case "CONECTANDO_PUENTE":
+            return `${nombreProceso} conectando con el puente`;
+        case "SCRAPING_LOCAL":
+        case "SCRAPING_SERVIDOR":
+        case "ESPERANDO_RESULTADO":
+            return `${nombreProceso} ejecutandose`;
+        case "INSERTANDO_BASE_DATOS":
+            return `${nombreProceso} insertando productos`;
+        case "FINALIZADO":
+            return `${nombreProceso} finalizado`;
+        case "PENDIENTE":
+            return `${nombreProceso} pendiente`;
+        case "ERROR":
+            return `${nombreProceso} con error`;
+        default:
+            return `${nombreProceso} ejecutandose`;
+    }
+}
+
+function construirDetalleOverlayScraping(fase, ultima) {
+    const mensaje = ultima?.mensajeEstado;
+
+    if (mensaje) {
+        return mensaje;
+    }
+
+    switch (fase) {
+        case "CONECTANDO_PUENTE":
+            return "Estamos conectando con el puente local de scraping.";
+        case "SCRAPING_LOCAL":
+            return "El scraping se esta ejecutando en el ordenador local. Estamos esperando los datos.";
+        case "SCRAPING_SERVIDOR":
+            return "El scraping se esta ejecutando en el servidor.";
+        case "INSERTANDO_BASE_DATOS":
+            return "El scraping ya ha terminado. Estamos insertando los productos en la base de datos.";
+        case "FINALIZADO":
+            return "El scraping ha finalizado correctamente.";
+        case "PENDIENTE":
+            return "La peticion ha quedado en cola para intentarlo mas tarde.";
+        case "ERROR":
+            return ultima?.detalleError || "No se pudo completar el scraping.";
+        default:
+            return "La peticion ya se ha enviado. Estamos esperando a que termine el scraping.";
+    }
+}
+
+function construirPasoOverlayScraping(fase) {
+    switch (fase) {
+        case "CONECTANDO_PUENTE":
+            return "Conectando con el puente local...";
+        case "SCRAPING_LOCAL":
+            return "Scraping en el ordenador local...";
+        case "SCRAPING_SERVIDOR":
+            return "Scraping en el servidor...";
+        case "INSERTANDO_BASE_DATOS":
+            return "Insertando productos en la base de datos...";
+        case "FINALIZADO":
+            return "Proceso completado";
+        case "PENDIENTE":
+            return "Solicitud guardada en cola";
+        case "ERROR":
+            return "Proceso interrumpido";
+        default:
+            return "Esperando resultado del scraping...";
+    }
+}
+
 function statefulActualizarOverlayScrapingTimer(refs, activar) {
     if (activar) {
         if (!refs.scrapingOverlayTimer) {
@@ -1527,6 +1713,22 @@ function statefulActualizarOverlayScrapingTimer(refs, activar) {
 
 async function ejecutarScraping(refs, state, url, nombre, boton, textoOriginal) {
     try {
+        const estadoActual = await cargarEstadoScrapingAdmin(refs, state, {
+            silencioso: true,
+            forzar: true
+        });
+
+        if (estadoActual?.scrapingEnCurso) {
+            actualizarEstadoScraping(
+                refs,
+                "En curso",
+                "Todavia se estan insertando productos en la base de datos. Cuando termine podras lanzar otro scraping.",
+                "info"
+            );
+            mostrarMensaje(refs, "Ahora mismo ya hay un scraping terminando de guardarse.", "info");
+            return;
+        }
+
         bloquearBoton(boton, "Ejecutando...");
         actualizarEstadoScraping(refs, "Preparando", `Preparando ${nombre}...`, "info");
         mostrarMensaje(refs, `Iniciando ${nombre}...`, "info");
@@ -1536,6 +1738,7 @@ async function ejecutarScraping(refs, state, url, nombre, boton, textoOriginal) 
             "Comprobando el estado del servidor y del puente local.",
             "Preparando solicitud..."
         );
+        iniciarSeguimientoOverlayScraping(refs, state, nombre);
 
         const estadoPrevio = await cargarEstadoScrapingAdmin(refs, state, {
             silencioso: true,
@@ -1662,9 +1865,12 @@ async function ejecutarScraping(refs, state, url, nombre, boton, textoOriginal) 
         );
         mostrarMensaje(refs, error.message || `Error al ejecutar ${nombre}.`, "error");
     } finally {
-        setTimeout(() => {
-            ocultarOverlayScraping(refs);
-        }, 700);
+        if (!state.scrapingOverlayCierreProgramado) {
+            setTimeout(() => {
+                ocultarOverlayScraping(refs);
+                detenerSeguimientoOverlayScraping(state);
+            }, 700);
+        }
         restaurarBoton(boton, textoOriginal);
     }
 }

@@ -446,7 +446,15 @@ public class ProductoService {
     private ResultadoScrapingDTO procesarScrapingLocal(TipoScrapingPendiente tipoScraping,
                                                        Supplier<List<Producto>> scrapingLocal,
                                                        ScrapingEjecucion ejecucion) {
+        actualizarMensajeEjecucion(
+                ejecucion,
+                "El scraping se esta ejecutando en el servidor."
+        );
         List<Producto> productosScrapeados = scrapingLocal.get();
+        actualizarMensajeEjecucion(
+                ejecucion,
+                "El scraping ha terminado. Estamos insertando los productos en la base de datos."
+        );
         return guardarProductosScrapeadosConResultado(
                 tipoScraping,
                 tipoScraping.getNombreProceso(),
@@ -458,7 +466,18 @@ public class ProductoService {
     private ResultadoScrapingDTO procesarScrapingRelay(TipoScrapingPendiente tipoScraping,
                                                        ScrapingEjecucion ejecucion)
             throws IOException, InterruptedException {
-        List<Producto> productosScrapeados = solicitarProductosRelay(tipoScraping);
+        actualizarMensajeEjecucion(
+                ejecucion,
+                "Conectando con el puente local de scraping."
+        );
+
+        List<Producto> productosScrapeados = solicitarProductosRelay(tipoScraping, ejecucion);
+
+        actualizarMensajeEjecucion(
+                ejecucion,
+                "El scraping ha terminado en tu equipo local. Estamos insertando los productos en la base de datos."
+        );
+
         return guardarProductosScrapeadosConResultado(
                 tipoScraping,
                 tipoScraping.getNombreProceso(),
@@ -477,6 +496,7 @@ public class ProductoService {
         LocalDateTime fechaSincronizacion = LocalDateTime.now();
 
         if (productosScrapeados == null || productosScrapeados.isEmpty()) {
+            resultado.setMensajeEstado(nombreProceso + " finalizado sin productos para insertar.");
             resultado.setResultadosPorTienda(new ArrayList<>(resultadosPorTienda.values()));
             return resultado;
         }
@@ -599,6 +619,7 @@ public class ProductoService {
         desactivarProductosNoEncontrados(urlsEncontradasPorTienda, resultadosPorTienda, resultado);
         resultado.ordenarYLimitarCambiosPrecio(LIMITE_CAMBIOS_PRECIO_RESUMEN);
         resultado.setResultadosPorTienda(new ArrayList<>(resultadosPorTienda.values()));
+        resultado.setMensajeEstado(nombreProceso + " finalizado correctamente.");
 
         return resultado;
     }
@@ -690,7 +711,8 @@ public class ProductoService {
         return producto.getPrecio() == null || producto.getPrecio().compareTo(BigDecimal.ZERO) <= 0;
     }
 
-    private List<Producto> solicitarProductosRelay(TipoScrapingPendiente tipoScraping)
+    private List<Producto> solicitarProductosRelay(TipoScrapingPendiente tipoScraping,
+                                                   ScrapingEjecucion ejecucion)
             throws IOException, InterruptedException {
         validarConfiguracionScrapingRelay();
 
@@ -704,6 +726,11 @@ public class ProductoService {
                 .header("X-Relay-Token", scrapingRelayToken)
                 .POST(HttpRequest.BodyPublishers.ofString(payload, StandardCharsets.UTF_8))
                 .build();
+
+        actualizarMensajeEjecucion(
+                ejecucion,
+                "El scraping se esta ejecutando en tu equipo local. Estamos esperando los datos."
+        );
 
         HttpResponse<String> response = crearHttpClientScraping().send(
                 request,
@@ -819,7 +846,21 @@ public class ProductoService {
         ejecucion.setEstado(EstadoScrapingEjecucion.EN_CURSO);
         ejecucion.setRelayHabilitado(scrapingRelayEnabled);
         ejecucion.setFechaInicio(LocalDateTime.now());
+        ejecucion.setMensajeEstado("Preparando solicitud de scraping.");
         return scrapingEjecucionRepository.save(ejecucion);
+    }
+
+    private void actualizarMensajeEjecucion(ScrapingEjecucion ejecucion, String mensajeEstado) {
+        if (ejecucion == null || mensajeEstado == null || mensajeEstado.isBlank()) {
+            return;
+        }
+
+        if (Objects.equals(ejecucion.getMensajeEstado(), mensajeEstado)) {
+            return;
+        }
+
+        ejecucion.setMensajeEstado(mensajeEstado);
+        scrapingEjecucionRepository.save(ejecucion);
     }
 
     private void registrarEjecucionOmitida(TipoScrapingPendiente tipoScraping,
