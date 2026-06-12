@@ -1472,6 +1472,9 @@ function formatearOrigenScraping(origen) {
     }
 }
 
+const OVERLAY_SCRAPING_MINIMO_VISIBLE_MS = 3000;
+const OVERLAY_SCRAPING_CIERRE_MS = 900;
+
 function mostrarOverlayScraping(refs, titulo, detalle, paso) {
     if (!refs.scrapingOverlay) {
         return;
@@ -1479,14 +1482,23 @@ function mostrarOverlayScraping(refs, titulo, detalle, paso) {
 
     refs.scrapingOverlay.style.display = "flex";
     refs.scrapingOverlay.setAttribute("aria-hidden", "false");
+
     statefulActualizarOverlayScrapingTimer(refs, true);
     actualizarOverlayScraping(refs, titulo, detalle, paso);
 }
 
 function actualizarOverlayScraping(refs, titulo, detalle, paso) {
-    if (refs.scrapingOverlayTitulo && titulo) refs.scrapingOverlayTitulo.textContent = titulo;
-    if (refs.scrapingOverlayDetalle && detalle) refs.scrapingOverlayDetalle.textContent = detalle;
-    if (refs.scrapingOverlayStep && paso) refs.scrapingOverlayStep.textContent = paso;
+    if (refs.scrapingOverlayTitulo && titulo) {
+        refs.scrapingOverlayTitulo.textContent = titulo;
+    }
+
+    if (refs.scrapingOverlayDetalle && detalle) {
+        refs.scrapingOverlayDetalle.textContent = detalle;
+    }
+
+    if (refs.scrapingOverlayStep && paso) {
+        refs.scrapingOverlayStep.textContent = paso;
+    }
 }
 
 function ocultarOverlayScraping(refs) {
@@ -1496,13 +1508,16 @@ function ocultarOverlayScraping(refs) {
 
     refs.scrapingOverlay.style.display = "none";
     refs.scrapingOverlay.setAttribute("aria-hidden", "true");
+
     statefulActualizarOverlayScrapingTimer(refs, false);
 }
 
 function iniciarSeguimientoOverlayScraping(refs, state, nombreProceso) {
     state.scrapingOverlayVisible = true;
     state.scrapingOverlayNombreProceso = nombreProceso || null;
+    state.scrapingOverlayInicio = Date.now();
     state.scrapingOverlayCierreProgramado = false;
+    state.scrapingOverlayPermiteEstadoFinal = false;
 
     if (state.scrapingOverlayCierreTimeout) {
         clearTimeout(state.scrapingOverlayCierreTimeout);
@@ -1511,6 +1526,7 @@ function iniciarSeguimientoOverlayScraping(refs, state, nombreProceso) {
 
     if (state.scrapingOverlayIntervalo) {
         clearInterval(state.scrapingOverlayIntervalo);
+        state.scrapingOverlayIntervalo = null;
     }
 
     state.scrapingOverlayIntervalo = setInterval(async () => {
@@ -1524,7 +1540,9 @@ function iniciarSeguimientoOverlayScraping(refs, state, nombreProceso) {
 function detenerSeguimientoOverlayScraping(state) {
     state.scrapingOverlayVisible = false;
     state.scrapingOverlayNombreProceso = null;
+    state.scrapingOverlayInicio = null;
     state.scrapingOverlayCierreProgramado = false;
+    state.scrapingOverlayPermiteEstadoFinal = false;
 
     if (state.scrapingOverlayIntervalo) {
         clearInterval(state.scrapingOverlayIntervalo);
@@ -1544,11 +1562,21 @@ function actualizarOverlayScrapingDesdeEstado(refs, state, data) {
         return;
     }
 
-    if (state.scrapingOverlayNombreProceso && ultima?.nombreProceso && ultima.nombreProceso !== state.scrapingOverlayNombreProceso) {
+    if (
+        state.scrapingOverlayNombreProceso &&
+        ultima?.nombreProceso &&
+        ultima.nombreProceso !== state.scrapingOverlayNombreProceso
+    ) {
         return;
     }
 
     const fase = resolverFaseOverlayScraping(ultima);
+    const esEstadoFinal = ["FINALIZADO", "PENDIENTE", "ERROR"].includes(fase);
+
+    if (esEstadoFinal && !state.scrapingOverlayPermiteEstadoFinal) {
+        return;
+    }
+
     const nombreProceso = ultima?.nombreProceso || state.scrapingOverlayNombreProceso || "Scraping";
 
     actualizarOverlayScraping(
@@ -1558,18 +1586,8 @@ function actualizarOverlayScrapingDesdeEstado(refs, state, data) {
         construirPasoOverlayScraping(fase)
     );
 
-    if (fase === "INSERTANDO_BASE_DATOS" && !state.scrapingOverlayCierreProgramado) {
-        state.scrapingOverlayCierreProgramado = true;
-
-        if (state.scrapingOverlayIntervalo) {
-            clearInterval(state.scrapingOverlayIntervalo);
-            state.scrapingOverlayIntervalo = null;
-        }
-
-        state.scrapingOverlayCierreTimeout = setTimeout(() => {
-            ocultarOverlayScraping(refs);
-            detenerSeguimientoOverlayScraping(state);
-        }, 900);
+    if (esEstadoFinal) {
+        programarCierreOverlayScraping(refs, state, OVERLAY_SCRAPING_CIERRE_MS);
     }
 }
 
@@ -1578,34 +1596,52 @@ function resolverFaseOverlayScraping(ultima) {
         return "ESPERANDO_RESULTADO";
     }
 
-    const mensaje = (ultima.mensajeEstado || "").toLowerCase();
+    const estado = ultima.estado || "";
+    const mensaje = normalizarTextoOverlay(ultima.mensajeEstado || "");
 
-    if (ultima.estado === "ERROR") {
+    if (estado === "ERROR") {
         return "ERROR";
     }
 
-    if (ultima.estado === "PENDIENTE") {
+    if (estado === "PENDIENTE") {
         return "PENDIENTE";
     }
 
-    if (ultima.estado === "COMPLETADO") {
+    if (estado === "COMPLETADO") {
         return "FINALIZADO";
     }
 
-    if (mensaje.includes("insertando productos") || mensaje.includes("base de datos")) {
-        return "INSERTANDO_BASE_DATOS";
+    if (mensaje.includes("preparando solicitud")) {
+        return "PREPARANDO";
     }
 
-    if (mensaje.includes("ordenador local") || mensaje.includes("esperando los datos") || mensaje.includes("esperando datos")) {
-        return "SCRAPING_LOCAL";
-    }
-
-    if (mensaje.includes("conectando con el puente") || mensaje.includes("puente local")) {
+    if (mensaje.includes("conectando con el puente")) {
         return "CONECTANDO_PUENTE";
+    }
+
+    if (
+        mensaje.includes("equipo local") ||
+        mensaje.includes("ordenador local") ||
+        mensaje.includes("esperando los datos") ||
+        mensaje.includes("esperando datos")
+    ) {
+        return "DESCARGANDO_DATOS";
     }
 
     if (mensaje.includes("servidor")) {
         return "SCRAPING_SERVIDOR";
+    }
+
+    if (
+        mensaje.includes("insertando productos") ||
+        mensaje.includes("base de datos") ||
+        mensaje.includes("guardando productos")
+    ) {
+        return "INSERTANDO_BASE_DATOS";
+    }
+
+    if (mensaje.includes("finalizado correctamente") || mensaje.includes("finalizado sin productos")) {
+        return "FINALIZADO";
     }
 
     return "ESPERANDO_RESULTADO";
@@ -1613,62 +1649,64 @@ function resolverFaseOverlayScraping(ultima) {
 
 function construirTituloOverlayScraping(nombreProceso, fase) {
     switch (fase) {
+        case "PREPARANDO":
+            return `Preparando ${nombreProceso}`;
         case "CONECTANDO_PUENTE":
-            return `${nombreProceso} conectando con el puente`;
-        case "SCRAPING_LOCAL":
+            return `Conectando ${nombreProceso}`;
+        case "DESCARGANDO_DATOS":
+            return `${nombreProceso} descargando datos`;
         case "SCRAPING_SERVIDOR":
-        case "ESPERANDO_RESULTADO":
-            return `${nombreProceso} ejecutandose`;
+            return `${nombreProceso} en servidor`;
         case "INSERTANDO_BASE_DATOS":
-            return `${nombreProceso} insertando productos`;
+            return `${nombreProceso} guardando productos`;
         case "FINALIZADO":
             return `${nombreProceso} finalizado`;
         case "PENDIENTE":
-            return `${nombreProceso} pendiente`;
+            return `${nombreProceso} queda pendiente`;
         case "ERROR":
             return `${nombreProceso} con error`;
         default:
-            return `${nombreProceso} ejecutandose`;
+            return `${nombreProceso} en proceso`;
     }
 }
 
 function construirDetalleOverlayScraping(fase, ultima) {
-    const mensaje = ultima?.mensajeEstado;
-
-    if (mensaje) {
-        return mensaje;
-    }
+    const mensajeReal = ultima?.mensajeEstado;
 
     switch (fase) {
+        case "PREPARANDO":
+            return "Estamos preparando la solicitud y comprobando el estado del sistema.";
         case "CONECTANDO_PUENTE":
-            return "Estamos conectando con el puente local de scraping.";
-        case "SCRAPING_LOCAL":
-            return "El scraping se esta ejecutando en el ordenador local. Estamos esperando los datos.";
+            return "Conectando con el puente local para enviar la peticion de scraping.";
+        case "DESCARGANDO_DATOS":
+            return "La peticion ya se ha enviado. Estamos descargando y preparando los productos encontrados.";
         case "SCRAPING_SERVIDOR":
-            return "El scraping se esta ejecutando en el servidor.";
+            return "El scraping se esta ejecutando directamente en el servidor.";
         case "INSERTANDO_BASE_DATOS":
-            return "El scraping ya ha terminado. Estamos insertando los productos en la base de datos.";
+            return "El scraping ya ha terminado. Ahora se estan insertando y actualizando productos en la base de datos.";
         case "FINALIZADO":
-            return "El scraping ha finalizado correctamente.";
+            return mensajeReal || "El proceso ha terminado correctamente.";
         case "PENDIENTE":
-            return "La peticion ha quedado en cola para intentarlo mas tarde.";
+            return mensajeReal || "La peticion se ha guardado para reintentarla cuando el puente local este disponible.";
         case "ERROR":
-            return ultima?.detalleError || "No se pudo completar el scraping.";
+            return ultima?.detalleError || mensajeReal || "No se pudo completar el proceso de scraping.";
         default:
-            return "La peticion ya se ha enviado. Estamos esperando a que termine el scraping.";
+            return mensajeReal || "Esperando respuesta del proceso de scraping.";
     }
 }
 
 function construirPasoOverlayScraping(fase) {
     switch (fase) {
+        case "PREPARANDO":
+            return "Preparando solicitud";
         case "CONECTANDO_PUENTE":
-            return "Conectando con el puente local...";
-        case "SCRAPING_LOCAL":
-            return "Scraping en el ordenador local...";
+            return "Conectando con el puente local";
+        case "DESCARGANDO_DATOS":
+            return "Descargando datos del catalogo";
         case "SCRAPING_SERVIDOR":
-            return "Scraping en el servidor...";
+            return "Scraping activo en servidor";
         case "INSERTANDO_BASE_DATOS":
-            return "Insertando productos en la base de datos...";
+            return "Insertando productos en base de datos";
         case "FINALIZADO":
             return "Proceso completado";
         case "PENDIENTE":
@@ -1676,7 +1714,7 @@ function construirPasoOverlayScraping(fase) {
         case "ERROR":
             return "Proceso interrumpido";
         default:
-            return "Esperando resultado del scraping...";
+            return "Esperando resultado";
     }
 }
 
@@ -1699,6 +1737,7 @@ function statefulActualizarOverlayScrapingTimer(refs, activar) {
             const segundos = Math.floor(transcurrido / 1000);
             const minutos = String(Math.floor(segundos / 60)).padStart(2, "0");
             const restoSegundos = String(segundos % 60).padStart(2, "0");
+
             refs.scrapingOverlayTimer.textContent = `${minutos}:${restoSegundos}`;
         }, 1000);
 
@@ -1708,6 +1747,55 @@ function statefulActualizarOverlayScrapingTimer(refs, activar) {
     if (refs.scrapingOverlayTimer?.intervalId) {
         clearInterval(refs.scrapingOverlayTimer.intervalId);
         refs.scrapingOverlayTimer.intervalId = null;
+    }
+}
+
+function programarCierreOverlayScraping(refs, state, retrasoExtraMs = 0) {
+    if (state.scrapingOverlayCierreProgramado) {
+        return;
+    }
+
+    state.scrapingOverlayCierreProgramado = true;
+
+    const inicio = state.scrapingOverlayInicio || Date.now();
+    const transcurrido = Date.now() - inicio;
+    const tiempoRestanteMinimo = Math.max(0, OVERLAY_SCRAPING_MINIMO_VISIBLE_MS - transcurrido);
+    const retrasoTotal = tiempoRestanteMinimo + retrasoExtraMs;
+
+    if (state.scrapingOverlayIntervalo) {
+        clearInterval(state.scrapingOverlayIntervalo);
+        state.scrapingOverlayIntervalo = null;
+    }
+
+    state.scrapingOverlayCierreTimeout = setTimeout(() => {
+        ocultarOverlayScraping(refs);
+        detenerSeguimientoOverlayScraping(state);
+    }, retrasoTotal);
+}
+
+function normalizarTextoOverlay(texto) {
+    return String(texto || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .trim();
+}
+
+function actualizarEstadoScraping(refs, estado, detalle, tipo) {
+    if (refs.estadoScraping) refs.estadoScraping.textContent = estado;
+    if (refs.detalleScraping) refs.detalleScraping.textContent = detalle;
+    if (refs.scrapingEstadoBox) refs.scrapingEstadoBox.textContent = estado;
+    if (refs.scrapingUltimaAccion) refs.scrapingUltimaAccion.textContent = detalle;
+
+    if (refs.chipScraping) {
+        refs.chipScraping.className = "status-chip";
+
+        if (tipo === "success") refs.chipScraping.classList.add("status-chip-success");
+        else if (tipo === "error") refs.chipScraping.classList.add("status-chip-error");
+        else if (tipo === "info") refs.chipScraping.classList.add("status-chip-info");
+        else refs.chipScraping.classList.add("status-chip-neutral");
+
+        refs.chipScraping.textContent = estado;
     }
 }
 
@@ -1725,19 +1813,23 @@ async function ejecutarScraping(refs, state, url, nombre, boton, textoOriginal) 
                 "Todavia se estan insertando productos en la base de datos. Cuando termine podras lanzar otro scraping.",
                 "info"
             );
+
             mostrarMensaje(refs, "Ahora mismo ya hay un scraping terminando de guardarse.", "info");
             return;
         }
 
         bloquearBoton(boton, "Ejecutando...");
+
         actualizarEstadoScraping(refs, "Preparando", `Preparando ${nombre}...`, "info");
         mostrarMensaje(refs, `Iniciando ${nombre}...`, "info");
+
         mostrarOverlayScraping(
             refs,
-            `Preparando ${nombre}...`,
+            `Preparando ${nombre}`,
             "Comprobando el estado del servidor y del puente local.",
-            "Preparando solicitud..."
+            "Preparando solicitud"
         );
+
         iniciarSeguimientoOverlayScraping(refs, state, nombre);
 
         const estadoPrevio = await cargarEstadoScrapingAdmin(refs, state, {
@@ -1747,20 +1839,32 @@ async function ejecutarScraping(refs, state, url, nombre, boton, textoOriginal) 
 
         if (estadoPrevio?.relayHabilitado) {
             if (estadoPrevio?.relayDisponible) {
-                actualizarEstadoScraping(refs, "Conectando", `El puente local esta disponible para ${nombre}.`, "info");
+                actualizarEstadoScraping(
+                    refs,
+                    "Conectando",
+                    `El puente local esta disponible para ${nombre}.`,
+                    "info"
+                );
+
                 actualizarOverlayScraping(
                     refs,
-                    `${nombre} en camino`,
-                    "Puente local conectado. La peticion se va a enviar al relay real.",
-                    "Puente local conectado"
+                    `Conectando ${nombre}`,
+                    "Puente local conectado. La peticion se va a enviar al equipo local.",
+                    "Conectando con el puente local"
                 );
             } else {
-                actualizarEstadoScraping(refs, "Pendiente", `El puente local no responde. Si falla la llamada, ${nombre} se guardara en cola.`, "info");
+                actualizarEstadoScraping(
+                    refs,
+                    "Pendiente",
+                    `El puente local no responde. Si falla la llamada, ${nombre} se guardara en cola.`,
+                    "info"
+                );
+
                 actualizarOverlayScraping(
                     refs,
                     `${nombre} esperando al puente`,
-                    "El ordenador local parece apagado. Si no responde, guardaremos la peticion para reintentarlo despues.",
-                    "Servidor local apagado o no disponible"
+                    "El ordenador local parece apagado. Si no responde, se guardara la peticion para reintentarla despues.",
+                    "Servidor local no disponible"
                 );
             }
         } else {
@@ -1768,7 +1872,7 @@ async function ejecutarScraping(refs, state, url, nombre, boton, textoOriginal) 
                 refs,
                 `${nombre} en servidor`,
                 "Este scraping se ejecuta directamente en el servidor.",
-                "Ejecucion directa"
+                "Scraping activo en servidor"
             );
         }
 
@@ -1776,8 +1880,10 @@ async function ejecutarScraping(refs, state, url, nombre, boton, textoOriginal) 
             refs,
             `${nombre} ejecutandose`,
             "La peticion ya se ha enviado. Estamos esperando a que termine el scraping.",
-            "Esperando resultado del scraping..."
+            "Descargando datos del catalogo"
         );
+
+        state.scrapingOverlayPermiteEstadoFinal = true;
 
         const response = await fetch(`${BASE_URL}${url}`, {
             method: "POST",
@@ -1789,7 +1895,10 @@ async function ejecutarScraping(refs, state, url, nombre, boton, textoOriginal) 
 
             try {
                 const texto = await response.text();
-                if (texto) mensajeError = texto;
+
+                if (texto) {
+                    mensajeError = texto;
+                }
             } catch (_) {}
 
             throw new Error(mensajeError);
@@ -1814,7 +1923,7 @@ async function ejecutarScraping(refs, state, url, nombre, boton, textoOriginal) 
                 refs,
                 `${resultado.nombreProceso} en cola`,
                 resultado.mensajeEstado || "La peticion se ha guardado para cuando vuelva el equipo local.",
-                "Solicitud guardada correctamente"
+                "Solicitud guardada en cola"
             );
 
             mostrarMensaje(
@@ -1827,8 +1936,16 @@ async function ejecutarScraping(refs, state, url, nombre, boton, textoOriginal) 
                 silencioso: true,
                 forzar: true
             });
+
             return;
         }
+
+        actualizarOverlayScraping(
+            refs,
+            `${resultado.nombreProceso} guardando productos`,
+            "El scraping ya ha devuelto datos. Estamos terminando de insertar y actualizar productos.",
+            "Insertando productos en base de datos"
+        );
 
         pintarResultadoScraping(refs, resultado);
 
@@ -1850,46 +1967,29 @@ async function ejecutarScraping(refs, state, url, nombre, boton, textoOriginal) 
 
         await cargarProductos(refs, state, true);
         await cargarMetricas(refs);
+
         await cargarEstadoScrapingAdmin(refs, state, {
             silencioso: true,
             forzar: true
         });
     } catch (error) {
         console.error(`Error en ${nombre}:`, error);
-        actualizarEstadoScraping(refs, "Error", `Falló ${nombre}`, "error");
+
+        state.scrapingOverlayPermiteEstadoFinal = true;
+
+        actualizarEstadoScraping(refs, "Error", `Fallo ${nombre}`, "error");
+
         actualizarOverlayScraping(
             refs,
             `${nombre} con error`,
             error.message || `No se pudo ejecutar ${nombre}.`,
             "Proceso interrumpido"
         );
+
         mostrarMensaje(refs, error.message || `Error al ejecutar ${nombre}.`, "error");
     } finally {
-        if (!state.scrapingOverlayCierreProgramado) {
-            setTimeout(() => {
-                ocultarOverlayScraping(refs);
-                detenerSeguimientoOverlayScraping(state);
-            }, 700);
-        }
+        programarCierreOverlayScraping(refs, state, OVERLAY_SCRAPING_CIERRE_MS);
         restaurarBoton(boton, textoOriginal);
-    }
-}
-
-function actualizarEstadoScraping(refs, estado, detalle, tipo) {
-    if (refs.estadoScraping) refs.estadoScraping.textContent = estado;
-    if (refs.detalleScraping) refs.detalleScraping.textContent = detalle;
-    if (refs.scrapingEstadoBox) refs.scrapingEstadoBox.textContent = estado;
-    if (refs.scrapingUltimaAccion) refs.scrapingUltimaAccion.textContent = detalle;
-
-    if (refs.chipScraping) {
-        refs.chipScraping.className = "status-chip";
-
-        if (tipo === "success") refs.chipScraping.classList.add("status-chip-success");
-        else if (tipo === "error") refs.chipScraping.classList.add("status-chip-error");
-        else if (tipo === "info") refs.chipScraping.classList.add("status-chip-info");
-        else refs.chipScraping.classList.add("status-chip-neutral");
-
-        refs.chipScraping.textContent = estado;
     }
 }
 
