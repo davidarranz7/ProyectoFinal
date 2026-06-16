@@ -27,6 +27,8 @@ public class MailRelayScrapingService {
         respuesta.setTipo(tipoScraping.name());
         respuesta.setNombreProceso(tipoScraping.getNombreProceso());
         respuesta.setProductos(productos);
+        respuesta.setScrapingDisponible(true);
+        respuesta.setMensajeRelay("Scraping ejecutado en el relay local.");
         return respuesta;
     }
 }

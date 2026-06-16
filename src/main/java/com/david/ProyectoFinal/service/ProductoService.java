@@ -769,14 +769,12 @@ public class ProductoService {
                 registrarPuenteUsado(PUENTE_FALLBACK, "Scraping ejecutado mediante puente fallback");
                 return productos;
             } catch (IOException | RuntimeException e) {
-                LOGGER.warn("No hay ningun puente disponible, se deja pendiente", e);
-                registrarPuenteUsado(PUENTE_NINGUNO, "No hay ningun puente disponible, se deja pendiente");
+                registrarUltimoResultadoPuenteNoDisponible(e);
                 throw construirExcepcionPuentesNoDisponibles(errorPrincipal, e);
             }
         }
 
-        LOGGER.warn("No hay ningun puente disponible, se deja pendiente");
-        registrarPuenteUsado(PUENTE_NINGUNO, "No hay ningun puente disponible, se deja pendiente");
+        registrarUltimoResultadoPuenteNoDisponible(errorPrincipal);
         throw construirExcepcionPuentesNoDisponibles(errorPrincipal, null);
     }
 
@@ -817,6 +815,13 @@ public class ProductoService {
                 response.body(),
                 ScrapingRelayResponseDTO.class
         );
+
+        if (Boolean.FALSE.equals(respuesta.getScrapingDisponible())) {
+            throw new RelayScrapingNoDisponibleException(
+                    puenteUsado,
+                    construirMensajeRespuestaControladaRelay(respuesta, puenteUsado, tipoScraping)
+            );
+        }
 
         return respuesta.getProductos() == null ? List.of() : respuesta.getProductos();
     }
@@ -910,6 +915,21 @@ public class ProductoService {
         }
 
         return e.getMessage();
+    }
+
+    private String construirMensajeRespuestaControladaRelay(ScrapingRelayResponseDTO respuesta,
+                                                            String puenteUsado,
+                                                            TipoScrapingPendiente tipoScraping) {
+        if (respuesta != null
+                && respuesta.getMensajeRelay() != null
+                && !respuesta.getMensajeRelay().isBlank()) {
+            return respuesta.getMensajeRelay();
+        }
+
+        return "El puente " + nombrePuenteMinusculas(puenteUsado)
+                + " recibio la peticion para "
+                + tipoScraping.getNombreProceso()
+                + ", pero no puede ejecutar el scraping real ahora mismo.";
     }
 
     private ScrapingEjecucion registrarInicioEjecucion(TipoScrapingPendiente tipoScraping,
@@ -1015,7 +1035,12 @@ public class ProductoService {
 
                 if (response.statusCode() >= 200 && response.statusCode() < 300) {
                     estado.setRelayDisponible(true);
-                    estado.setRelayMensaje("Puente principal conectado y listo para scrapear.");
+                    estado.setRelayMensaje(
+                            resolverMensajeEstadoRelay(
+                                    response.body(),
+                                    "Puente principal conectado y listo para scrapear."
+                            )
+                    );
                     return;
                 }
 
@@ -1040,7 +1065,12 @@ public class ProductoService {
 
                 if (response.statusCode() >= 200 && response.statusCode() < 300) {
                     estado.setRelayDisponible(true);
-                    estado.setRelayMensaje("Puente fallback conectado y listo para scrapear.");
+                    estado.setRelayMensaje(
+                            resolverMensajeEstadoRelay(
+                                    response.body(),
+                                    "Puente fallback conectado y listo para scrapear."
+                            )
+                    );
                     return;
                 }
 
@@ -1061,6 +1091,35 @@ public class ProductoService {
 
         estado.setRelayDisponible(false);
         estado.setRelayMensaje(mensajeNoDisponible);
+    }
+
+    private String resolverMensajeEstadoRelay(String responseBody, String mensajePorDefecto) {
+        if (responseBody == null || responseBody.isBlank()) {
+            return mensajePorDefecto;
+        }
+
+        try {
+            Map<?, ?> payload = objectMapper.readValue(responseBody, Map.class);
+            Object mensaje = payload.get("message");
+
+            if (mensaje instanceof String mensajeTexto && !mensajeTexto.isBlank()) {
+                return mensajeTexto;
+            }
+        } catch (Exception ignored) {
+        }
+
+        return mensajePorDefecto;
+    }
+
+    private void registrarUltimoResultadoPuenteNoDisponible(Exception exception) {
+        if (exception instanceof RelayScrapingNoDisponibleException relayException) {
+            LOGGER.warn("No hay ningun puente disponible, se deja pendiente: {}", relayException.getMessage());
+            registrarPuenteUsado(relayException.getPuenteUsado(), relayException.getMessage());
+            return;
+        }
+
+        LOGGER.warn("No hay ningun puente disponible, se deja pendiente", exception);
+        registrarPuenteUsado(PUENTE_NINGUNO, "No hay ningun puente disponible, se deja pendiente");
     }
 
     private void registrarPuenteUsado(String puenteUsado, String mensajePuente) {
@@ -1114,6 +1173,20 @@ public class ProductoService {
         }
 
         return "principal";
+    }
+
+    private static class RelayScrapingNoDisponibleException extends IOException {
+
+        private final String puenteUsado;
+
+        private RelayScrapingNoDisponibleException(String puenteUsado, String message) {
+            super(message);
+            this.puenteUsado = puenteUsado;
+        }
+
+        private String getPuenteUsado() {
+            return puenteUsado;
+        }
     }
 
     private String construirPingUrlRelay(String relayUrl) {
