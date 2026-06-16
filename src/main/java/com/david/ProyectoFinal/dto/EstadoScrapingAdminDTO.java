@@ -8,6 +8,10 @@ public class EstadoScrapingAdminDTO {
     private boolean relayHabilitado;
     private boolean relayDisponible;
     private String relayMensaje;
+    private boolean puentePrincipalConfigurado;
+    private boolean puenteFallbackConfigurado;
+    private String ultimoPuenteUsado;
+    private String mensajePuente;
     private boolean automaticoHabilitado;
     private long frecuenciaAutomaticaMs;
     private long intervaloReintentoMs;
@@ -42,6 +46,38 @@ public class EstadoScrapingAdminDTO {
 
     public void setRelayMensaje(String relayMensaje) {
         this.relayMensaje = relayMensaje;
+    }
+
+    public boolean isPuentePrincipalConfigurado() {
+        return puentePrincipalConfigurado;
+    }
+
+    public void setPuentePrincipalConfigurado(boolean puentePrincipalConfigurado) {
+        this.puentePrincipalConfigurado = puentePrincipalConfigurado;
+    }
+
+    public boolean isPuenteFallbackConfigurado() {
+        return puenteFallbackConfigurado;
+    }
+
+    public void setPuenteFallbackConfigurado(boolean puenteFallbackConfigurado) {
+        this.puenteFallbackConfigurado = puenteFallbackConfigurado;
+    }
+
+    public String getUltimoPuenteUsado() {
+        return ultimoPuenteUsado;
+    }
+
+    public void setUltimoPuenteUsado(String ultimoPuenteUsado) {
+        this.ultimoPuenteUsado = ultimoPuenteUsado;
+    }
+
+    public String getMensajePuente() {
+        return mensajePuente;
+    }
+
+    public void setMensajePuente(String mensajePuente) {
+        this.mensajePuente = mensajePuente;
     }
 
     public boolean isAutomaticoHabilitado() {

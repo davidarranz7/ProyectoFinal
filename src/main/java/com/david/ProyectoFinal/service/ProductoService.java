@@ -9,6 +9,8 @@ import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.event.EventListener;
@@ -39,7 +41,11 @@ import java.util.stream.Collectors;
 @Service
 public class ProductoService {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(ProductoService.class);
     private static final int LIMITE_CAMBIOS_PRECIO_RESUMEN = 12;
+    private static final String PUENTE_PRINCIPAL = "PRINCIPAL";
+    private static final String PUENTE_FALLBACK = "FALLBACK";
+    private static final String PUENTE_NINGUNO = "NINGUNO";
 
     private final ProductoRepository productoRepository;
     private final GestorScraping gestorScraping;
@@ -62,6 +68,9 @@ public class ProductoService {
     @Value("${app.scraping.relay.receiver-url:http://127.0.0.1:8095/internal/mail-relay/scraping}")
     private String scrapingRelayReceiverUrl;
 
+    @Value("${app.scraping.relay.fallback-url:}")
+    private String scrapingRelayFallbackUrl;
+
     @Value("${app.scraping.relay.token:}")
     private String scrapingRelayToken;
 
@@ -79,6 +88,9 @@ public class ProductoService {
 
     @Value("${app.scraping.relay.retry-interval-ms:60000}")
     private long scrapingRelayRetryIntervalMs;
+
+    private volatile String ultimoPuenteUsado = PUENTE_NINGUNO;
+    private volatile String mensajePuente = "Todavia no se ha utilizado ningun puente de scraping.";
 
     public ProductoService(ProductoRepository productoRepository,
                            GestorScraping gestorScraping,
@@ -267,6 +279,10 @@ public class ProductoService {
     public EstadoScrapingAdminDTO obtenerEstadoScrapingAdmin() {
         EstadoScrapingAdminDTO estado = new EstadoScrapingAdminDTO();
         estado.setRelayHabilitado(scrapingRelayEnabled);
+        estado.setPuentePrincipalConfigurado(estaConfiguradoPuentePrincipal());
+        estado.setPuenteFallbackConfigurado(estaConfiguradoPuenteFallback());
+        estado.setUltimoPuenteUsado(ultimoPuenteUsado);
+        estado.setMensajePuente(mensajePuente);
         estado.setAutomaticoHabilitado(scrapingAutomaticoEnabled);
         estado.setFrecuenciaAutomaticaMs(scrapingAutomaticoFixedDelayMs);
         estado.setIntervaloReintentoMs(scrapingRelayRetryIntervalMs);
@@ -468,14 +484,14 @@ public class ProductoService {
             throws IOException, InterruptedException {
         actualizarMensajeEjecucion(
                 ejecucion,
-                "Conectando con el puente local de scraping."
+                "Preparando conexion con el puente de scraping."
         );
 
         List<Producto> productosScrapeados = solicitarProductosRelay(tipoScraping, ejecucion);
 
         actualizarMensajeEjecucion(
                 ejecucion,
-                "El scraping ha terminado en tu equipo local. Estamos insertando los productos en la base de datos."
+                construirMensajeFinScrapingRelay()
         );
 
         return guardarProductosScrapeadosConResultado(
@@ -716,11 +732,64 @@ public class ProductoService {
             throws IOException, InterruptedException {
         validarConfiguracionScrapingRelay();
 
+        Exception errorPrincipal = null;
+
+        if (estaConfiguradoPuentePrincipal()) {
+            try {
+                LOGGER.info("Intentando scraping con puente principal");
+                List<Producto> productos = solicitarProductosRelay(
+                        tipoScraping,
+                        ejecucion,
+                        scrapingRelayReceiverUrl,
+                        PUENTE_PRINCIPAL
+                );
+                LOGGER.info("Scraping ejecutado mediante puente principal");
+                registrarPuenteUsado(PUENTE_PRINCIPAL, "Scraping ejecutado mediante puente principal");
+                return productos;
+            } catch (IOException | RuntimeException e) {
+                errorPrincipal = e;
+                if (estaConfiguradoPuenteFallback()) {
+                    LOGGER.warn("Puente principal no disponible, probando fallback", e);
+                }
+            }
+        } else if (estaConfiguradoPuenteFallback()) {
+            LOGGER.warn("Puente principal no disponible, probando fallback");
+        }
+
+        if (estaConfiguradoPuenteFallback()) {
+            actualizarMensajeEjecucion(ejecucion, "Puente principal no disponible, probando fallback.");
+            try {
+                List<Producto> productos = solicitarProductosRelay(
+                        tipoScraping,
+                        ejecucion,
+                        scrapingRelayFallbackUrl,
+                        PUENTE_FALLBACK
+                );
+                LOGGER.info("Scraping ejecutado mediante puente fallback");
+                registrarPuenteUsado(PUENTE_FALLBACK, "Scraping ejecutado mediante puente fallback");
+                return productos;
+            } catch (IOException | RuntimeException e) {
+                LOGGER.warn("No hay ningun puente disponible, se deja pendiente", e);
+                registrarPuenteUsado(PUENTE_NINGUNO, "No hay ningun puente disponible, se deja pendiente");
+                throw construirExcepcionPuentesNoDisponibles(errorPrincipal, e);
+            }
+        }
+
+        LOGGER.warn("No hay ningun puente disponible, se deja pendiente");
+        registrarPuenteUsado(PUENTE_NINGUNO, "No hay ningun puente disponible, se deja pendiente");
+        throw construirExcepcionPuentesNoDisponibles(errorPrincipal, null);
+    }
+
+    private List<Producto> solicitarProductosRelay(TipoScrapingPendiente tipoScraping,
+                                                   ScrapingEjecucion ejecucion,
+                                                   String relayUrl,
+                                                   String puenteUsado)
+            throws IOException, InterruptedException {
         ScrapingRelayRequestDTO solicitud = new ScrapingRelayRequestDTO(tipoScraping.name());
         String payload = objectMapper.writeValueAsString(solicitud);
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(scrapingRelayReceiverUrl))
+                .uri(URI.create(relayUrl))
                 .timeout(Duration.ofMillis(scrapingRelayReadTimeoutMs))
                 .header("Content-Type", "application/json; charset=UTF-8")
                 .header("X-Relay-Token", scrapingRelayToken)
@@ -729,7 +798,7 @@ public class ProductoService {
 
         actualizarMensajeEjecucion(
                 ejecucion,
-                "El scraping se esta ejecutando en tu equipo local. Estamos esperando los datos."
+                "Intentando scraping con puente " + nombrePuenteMinusculas(puenteUsado) + "."
         );
 
         HttpResponse<String> response = crearHttpClientScraping().send(
@@ -738,7 +807,10 @@ public class ProductoService {
         );
 
         if (response.statusCode() < 200 || response.statusCode() >= 300) {
-            throw new IOException("Relay local de scraping no disponible. Codigo HTTP: " + response.statusCode());
+            throw new IOException(
+                    "Puente " + nombrePuenteMinusculas(puenteUsado)
+                            + " no disponible. Codigo HTTP: " + response.statusCode()
+            );
         }
 
         ScrapingRelayResponseDTO respuesta = objectMapper.readValue(
@@ -750,8 +822,10 @@ public class ProductoService {
     }
 
     private void validarConfiguracionScrapingRelay() {
-        if (scrapingRelayReceiverUrl == null || scrapingRelayReceiverUrl.isBlank()) {
-            throw new RuntimeException("Falta configurar app.scraping.relay.receiver-url");
+        if (!estaConfiguradoPuentePrincipal() && !estaConfiguradoPuenteFallback()) {
+            throw new RuntimeException(
+                    "Falta configurar app.scraping.relay.receiver-url o app.scraping.relay.fallback-url"
+            );
         }
 
         if (scrapingRelayToken == null || scrapingRelayToken.isBlank()) {
@@ -823,16 +897,16 @@ public class ProductoService {
 
         if (yaExistiaPendiente) {
             return tipoScraping.getNombreProceso()
-                    + " sigue pendiente. Se lanzara automaticamente en cuanto tu equipo local vuelva a estar disponible.";
+                    + " sigue pendiente. Se lanzara automaticamente en cuanto vuelva a estar disponible algun puente de scraping.";
         }
 
         return tipoScraping.getNombreProceso()
-                + " queda pendiente. Se ejecutara automaticamente en cuanto tu equipo local vuelva a estar disponible.";
+                + " queda pendiente. Se ejecutara automaticamente en cuanto vuelva a estar disponible algun puente de scraping.";
     }
 
     private String limpiarMensajeErrorScraping(Exception e) {
         if (e == null || e.getMessage() == null || e.getMessage().isBlank()) {
-            return "No se pudo contactar con el relay local de scraping.";
+            return "No se pudo contactar con ningun puente de scraping.";
         }
 
         return e.getMessage();
@@ -925,29 +999,133 @@ public class ProductoService {
     }
 
     private void actualizarEstadoRelayActual(EstadoScrapingAdminDTO estado) {
-        try {
-            HttpResponse<String> response = crearHttpClientEstadoRelay().send(
-                    HttpRequest.newBuilder()
-                            .uri(URI.create(construirPingUrlRelay()))
-                            .timeout(Duration.ofMillis(obtenerReadTimeoutEstadoRelay()))
-                            .header("X-Relay-Token", scrapingRelayToken)
-                            .GET()
-                            .build(),
-                    HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8)
-            );
+        String mensajeNoDisponible = "No hay ningun puente disponible, se deja pendiente";
 
-            if (response.statusCode() >= 200 && response.statusCode() < 300) {
-                estado.setRelayDisponible(true);
-                estado.setRelayMensaje("Puente local conectado y listo para scrapear.");
-                return;
+        if (estaConfiguradoPuentePrincipal()) {
+            try {
+                HttpResponse<String> response = crearHttpClientEstadoRelay().send(
+                        HttpRequest.newBuilder()
+                                .uri(URI.create(construirPingUrlRelay(scrapingRelayReceiverUrl)))
+                                .timeout(Duration.ofMillis(obtenerReadTimeoutEstadoRelay()))
+                                .header("X-Relay-Token", scrapingRelayToken)
+                                .GET()
+                                .build(),
+                        HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8)
+                );
+
+                if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                    estado.setRelayDisponible(true);
+                    estado.setRelayMensaje("Puente principal conectado y listo para scrapear.");
+                    return;
+                }
+
+                mensajeNoDisponible = "El puente principal no respondio correctamente (HTTP "
+                        + response.statusCode() + ").";
+            } catch (Exception e) {
+                mensajeNoDisponible = "El puente principal no esta disponible ahora mismo.";
             }
-
-            estado.setRelayDisponible(false);
-            estado.setRelayMensaje("El puente local no respondio correctamente (HTTP " + response.statusCode() + ").");
-        } catch (Exception e) {
-            estado.setRelayDisponible(false);
-            estado.setRelayMensaje("Servidor local apagado o relay no disponible ahora mismo.");
         }
+
+        if (estaConfiguradoPuenteFallback()) {
+            try {
+                HttpResponse<String> response = crearHttpClientEstadoRelay().send(
+                        HttpRequest.newBuilder()
+                                .uri(URI.create(construirPingUrlRelay(scrapingRelayFallbackUrl)))
+                                .timeout(Duration.ofMillis(obtenerReadTimeoutEstadoRelay()))
+                                .header("X-Relay-Token", scrapingRelayToken)
+                                .GET()
+                                .build(),
+                        HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8)
+                );
+
+                if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                    estado.setRelayDisponible(true);
+                    estado.setRelayMensaje("Puente fallback conectado y listo para scrapear.");
+                    return;
+                }
+
+                mensajeNoDisponible = "El puente fallback no respondio correctamente (HTTP "
+                        + response.statusCode() + ").";
+            } catch (Exception e) {
+                if (estaConfiguradoPuentePrincipal()) {
+                    mensajeNoDisponible = "Servidor local y fallback no disponibles ahora mismo.";
+                } else {
+                    mensajeNoDisponible = "El puente fallback no esta disponible ahora mismo.";
+                }
+            }
+        }
+
+        if (!estaConfiguradoPuentePrincipal() && !estaConfiguradoPuenteFallback()) {
+            mensajeNoDisponible = "No hay ningun puente de scraping configurado.";
+        }
+
+        estado.setRelayDisponible(false);
+        estado.setRelayMensaje(mensajeNoDisponible);
+    }
+
+    private void registrarPuenteUsado(String puenteUsado, String mensajePuente) {
+        this.ultimoPuenteUsado = puenteUsado;
+        this.mensajePuente = mensajePuente;
+    }
+
+    private IOException construirExcepcionPuentesNoDisponibles(Exception errorPrincipal, Exception errorFallback) {
+        StringBuilder mensaje = new StringBuilder("No hay ningun puente disponible para ejecutar el scraping.");
+
+        if (errorPrincipal != null) {
+            mensaje.append(" Principal: ").append(limpiarMensajeErrorScraping(errorPrincipal)).append('.');
+        }
+
+        if (errorFallback != null) {
+            mensaje.append(" Fallback: ").append(limpiarMensajeErrorScraping(errorFallback)).append('.');
+        }
+
+        IOException exception = new IOException(mensaje.toString());
+
+        if (errorPrincipal != null) {
+            exception.addSuppressed(errorPrincipal);
+        }
+
+        if (errorFallback != null) {
+            exception.addSuppressed(errorFallback);
+        }
+
+        return exception;
+    }
+
+    private boolean estaConfiguradoPuentePrincipal() {
+        return scrapingRelayReceiverUrl != null && !scrapingRelayReceiverUrl.isBlank();
+    }
+
+    private boolean estaConfiguradoPuenteFallback() {
+        return scrapingRelayFallbackUrl != null && !scrapingRelayFallbackUrl.isBlank();
+    }
+
+    private String construirMensajeFinScrapingRelay() {
+        if (PUENTE_FALLBACK.equals(ultimoPuenteUsado)) {
+            return "El scraping ha terminado mediante el puente fallback. Estamos insertando los productos en la base de datos.";
+        }
+
+        return "El scraping ha terminado mediante el puente principal. Estamos insertando los productos en la base de datos.";
+    }
+
+    private String nombrePuenteMinusculas(String puenteUsado) {
+        if (PUENTE_FALLBACK.equals(puenteUsado)) {
+            return "fallback";
+        }
+
+        return "principal";
+    }
+
+    private String construirPingUrlRelay(String relayUrl) {
+        if (relayUrl == null || relayUrl.isBlank()) {
+            return "http://127.0.0.1:8095/internal/mail-relay/ping";
+        }
+
+        if (relayUrl.endsWith("/scraping")) {
+            return relayUrl.substring(0, relayUrl.length() - "/scraping".length()) + "/ping";
+        }
+
+        return relayUrl + "/ping";
     }
 
     private HttpClient crearHttpClientEstadoRelay() {
@@ -961,18 +1139,6 @@ public class ProductoService {
 
     private long obtenerReadTimeoutEstadoRelay() {
         return Math.max(1000L, Math.min(scrapingRelayReadTimeoutMs, 3000L));
-    }
-
-    private String construirPingUrlRelay() {
-        if (scrapingRelayReceiverUrl == null || scrapingRelayReceiverUrl.isBlank()) {
-            return "http://127.0.0.1:8095/internal/mail-relay/ping";
-        }
-
-        if (scrapingRelayReceiverUrl.endsWith("/scraping")) {
-            return scrapingRelayReceiverUrl.substring(0, scrapingRelayReceiverUrl.length() - "/scraping".length()) + "/ping";
-        }
-
-        return scrapingRelayReceiverUrl + "/ping";
     }
 
     private ScrapingPendienteAdminDTO mapearPendienteAdmin(ScrapingPendiente scrapingPendiente) {
